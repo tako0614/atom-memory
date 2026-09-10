@@ -50,6 +50,7 @@ import {
   type SuccessorRecord,
 } from './engine.js';
 import { expand, graph, graphPage, materialize, pack } from './retrieval.js';
+import { composition, compositionPage, validateComposition } from './composition.js';
 import { positive, cancellable } from './control.js';
 interface Retrieval {
   s: Session;
@@ -66,6 +67,7 @@ interface Succession {
   revisions: PinnedRef[];
   relation: ProposedRevision;
   trace: Trace;
+  retainSnapshot: boolean;
 }
 export const draftClients = new WeakMap<Draft, MemoryClient>();
 export class MemoryHost {
@@ -224,6 +226,14 @@ export class MemoryClient implements MemoryAPI {
     const limit = positive(options.limit, 10);
     const key = this.key('search', query, { historical: options.historical ?? false });
     const { s, state } = await this.retrieve('search', { query }, options, key);
+    s.trace.plans ??= [];
+    if (!options.cursor)
+      s.trace.plans.push({
+        kind: 'search',
+        state: { query },
+        depth: 0,
+        historical: options.historical ?? false,
+      });
     const initialOffset = state.offset;
     const items: MemoryPage['items'][number][] = [];
     while (state.offset < state.candidates.length && items.length < limit) {
@@ -263,7 +273,8 @@ export class MemoryClient implements MemoryAPI {
       diagnostics: {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
-        derived: s.derived,
+        derived: s.pendingDerived ? 'pending' : s.derived,
+        ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
         stop: more ? 'page-limit' : 'completed',
       },
       usage: s.ledger.usage(),
@@ -283,6 +294,14 @@ export class MemoryClient implements MemoryAPI {
       key,
     );
     const seeds = state.candidates.slice(state.offset);
+    s.trace.plans ??= [];
+    if (!options.cursor)
+      s.trace.plans.push({
+        kind: 'search',
+        state: clone(input),
+        depth,
+        historical: options.historical ?? false,
+      });
     let candidates = seeds;
     let graphs = state.graph ? [state.graph] : [];
     if (depth > 0 && !state.graph) {
@@ -336,7 +355,8 @@ export class MemoryClient implements MemoryAPI {
       diagnostics: {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
-        derived: s.derived,
+        derived: s.pendingDerived ? 'pending' : s.derived,
+        ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
         stop: more ? 'budget' : 'completed',
         ...(packed.minimumTokens ? { minimumTokens: packed.minimumTokens } : {}),
       },
@@ -353,6 +373,7 @@ export class MemoryClient implements MemoryAPI {
       successor: options.successor ?? false,
       history: options.history,
       rangeStart: options.range?.start,
+      composition: options.composition,
     });
     const saved = options.cursor
       ? this.engine.cursor(options.cursor, this.binding, 'inspect', key, this.overlay)
@@ -383,6 +404,11 @@ export class MemoryClient implements MemoryAPI {
     ) {
       if (!history || history.until < Date.now()) fail('HISTORY_EXPIRED');
       if (!s.principal.readPolicies.includes(history.policy)) fail('ACCESS_DENIED');
+      if (history.snapshot) {
+        const retained = this.engine.storage.retainedSnapshot?.(history.snapshot);
+        if (!retained || retained.at !== history.at || retained.until < history.until)
+          fail('HISTORY_EXPIRED');
+      }
       s = this.engine.session(
         this.binding,
         options,
@@ -393,6 +419,14 @@ export class MemoryClient implements MemoryAPI {
       );
     }
     if (saved) s.trace = { ...clone(saved.trace), id: uid('trace') };
+    if (!history && !saved) {
+      (s.trace.plans ??= []).push({
+        kind: 'inspect',
+        target: options.version === 'latest' ? { kind: 'logical', atomId: root.atomId } : root,
+        depth,
+        ...(options.composition ? { composition: validateComposition(options.composition) } : {}),
+      });
+    }
     const r = this.engine.get(root, s, options.version === 'latest');
     const atom = this.engine.view(r, s, options.version === 'latest');
     if (r.body.kind === 'blob' || options.range)
@@ -400,9 +434,15 @@ export class MemoryClient implements MemoryAPI {
     let revisions: AtomRevision[];
     let complete: boolean;
     let graphState = saved?.graph;
+    let compositionState = saved?.composition;
     let offset = saved?.offset ?? 0;
     let candidates = saved?.candidates ?? [];
-    if (history && options.version !== 'latest' && !options.successor) {
+    if (history?.snapshot && options.version !== 'latest' && !options.successor) {
+      compositionState ??= composition(root, history.composition ?? fail('HISTORY_EXPIRED'));
+      const page = compositionPage(this.engine, s, compositionState, limit);
+      revisions = page.revisions;
+      complete = page.complete;
+    } else if (history && options.version !== 'latest' && !options.successor) {
       revisions = [];
       while (offset < history.count && revisions.length < limit) {
         const page =
@@ -413,6 +453,11 @@ export class MemoryClient implements MemoryAPI {
           revisions.push(this.engine.get(page[i]!, s));
       }
       complete = offset >= history.count;
+    } else if (options.composition) {
+      compositionState ??= composition(root, options.composition);
+      const page = compositionPage(this.engine, s, compositionState, limit);
+      revisions = page.revisions;
+      complete = page.complete;
     } else {
       graphState ??= graph(root, depth);
       const page = graphPage(this.engine, s, graphState, limit);
@@ -444,6 +489,7 @@ export class MemoryClient implements MemoryAPI {
           graph: graphState,
           root,
           historyId: history?.id,
+          composition: compositionState,
         })
       : undefined;
     return {
@@ -589,6 +635,10 @@ export class MemoryClient implements MemoryAPI {
     for (const citation of options.sources ?? []) {
       const entry = this.engine.resolve(citation.ref, s);
       const source = this.engine.get(entry.target, s, this.binding.actor.type === 'agent');
+      (s.trace.plans ??= []).push({
+        kind: 'source',
+        target: { kind: 'logical', atomId: source.atomId },
+      });
       const start = citation.start ?? 0;
       const end =
         citation.end ??
@@ -915,6 +965,20 @@ export class MemoryClient implements MemoryAPI {
                 ),
               );
             for (const succession of successions) {
+              if (succession.retainSnapshot) {
+                const token = this.engine.storage.retainSnapshot!(
+                  succession.manifest.at,
+                  succession.manifest.until,
+                );
+                const retained = this.engine.storage.retainedSnapshot!(token);
+                if (
+                  !retained ||
+                  retained.at !== succession.manifest.at ||
+                  retained.until < succession.manifest.until
+                )
+                  fail('HISTORY_INCOMPLETE', 'Backend did not retain the requested read state');
+                succession.manifest.snapshot = token;
+              }
               for (let i = 0; i < succession.manifest.pages.length; i++)
                 this.engine.storage.metaSet(
                   succession.manifest.pages[i]!,
@@ -983,12 +1047,49 @@ export class MemoryClient implements MemoryAPI {
     const oldRevision = this.engine.get(old, s, true);
     const newRevision = this.engine.get(next, s, true);
     if (oldRevision.policyId !== newRevision.policyId) fail('ACCESS_DENIED');
+    if (
+      this.engine.storage.metaGet(`sdk:successor:${old.atomId}`) ||
+      this.engine.storage.metaGet(`sdk:predecessor:${next.atomId}`)
+    )
+      fail('SUCCESSOR_CONFLICT');
     const capture = { ...s, overlay: undefined };
-    const state = graph(old, Number.MAX_SAFE_INTEGER);
+    const recorded =
+      this.overlay?.traces
+        .flatMap((t) => t.plans ?? [])
+        .flatMap((p) =>
+          p.kind === 'inspect' && p.target.atomId === old.atomId && p.composition
+            ? [p.composition]
+            : [],
+        ) ?? [];
+    const unique = [...new Map(recorded.map((p) => [canonical(p), p])).values()];
+    let plan = options.composition ?? (unique.length === 1 ? unique[0] : undefined);
+    if (!plan) {
+      const incoming = this.engine.scan(
+        { policies: s.trace.policies, relation: { target: old }, limit: 1 },
+        capture,
+        true,
+      );
+      s.ledger.charge({ maxCandidates: 1, maxBytes: Buffer.byteLength(canonical(incoming)) });
+      if (
+        unique.length > 1 ||
+        incoming.length ||
+        oldRevision.slots.some((slot) => slot.mode === 'refer')
+      )
+        fail(
+          'HISTORY_PLAN_REQUIRED',
+          'Declare which roles form this composition; neighbourhoods are not compositions',
+        );
+      plan = { relations: [] };
+    }
+    plan = validateComposition(plan);
+    const retainSnapshot = !!(
+      this.engine.storage.retainSnapshot && this.engine.storage.retainedSnapshot
+    );
     const max = this.engine.options.historyMaxAtoms ?? 256;
-    let page: ReturnType<typeof graphPage>;
+    let page = { revisions: [] as AtomRevision[], complete: true };
     try {
-      page = graphPage(this.engine, capture, state, max + 1);
+      if (!retainSnapshot)
+        page = compositionPage(this.engine, capture, composition(old, plan), max + 1);
     } catch (e) {
       if (e instanceof AtomMemoryError && e.code === 'BUDGET_EXHAUSTED') fail('HISTORY_INCOMPLETE');
       throw e;
@@ -1012,6 +1113,7 @@ export class MemoryClient implements MemoryAPI {
       policy: oldRevision.policyId,
       pages,
       count: revisions.length,
+      composition: plan,
     };
     const relationContent = this.content(
       {
@@ -1029,6 +1131,7 @@ export class MemoryClient implements MemoryAPI {
       manifest,
       revisions,
       trace: clone(capture.trace),
+      retainSnapshot,
       relation: {
         atomId: uid('atom'),
         revisionId: uid('revision'),
@@ -1061,6 +1164,11 @@ export class MemoryClient implements MemoryAPI {
     }
   }
   private validateSuccession(item: Succession, s: Session, overlay: OverlayState): void {
+    if (
+      this.engine.storage.metaGet(`sdk:successor:${item.old.atomId}`) ||
+      this.engine.storage.metaGet(`sdk:predecessor:${item.next.atomId}`)
+    )
+      fail('SUCCESSOR_CONFLICT');
     for (const observation of item.trace.queries) {
       s.ledger.charge({ maxCandidates: observation.revisions.length + 1 });
       const current = this.engine.storage.scan(observation.query, this.engine.storage.watermark());
@@ -1079,11 +1187,6 @@ export class MemoryClient implements MemoryAPI {
         fail('REVISION_CONFLICT', 'Historical capture input changed');
     }
     if (item.old.atomId === item.next.atomId) fail('SUCCESSOR_CYCLE');
-    if (
-      this.engine.storage.metaGet(`sdk:successor:${item.old.atomId}`) ||
-      this.engine.storage.metaGet(`sdk:predecessor:${item.next.atomId}`)
-    )
-      fail('SUCCESSOR_CONFLICT');
     for (const ref of [item.old, item.next]) {
       const staged = overlay.revisions.get(ref.atomId);
       const current = staged

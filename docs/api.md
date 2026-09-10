@@ -79,15 +79,16 @@ console.log(detail.atom.sources);
 console.log(detail.items.map((item) => item.text));
 ```
 
-| オプション  | 既定値       | 意味                                               |
-| ----------- | ------------ | -------------------------------------------------- |
-| `depth`     | `1`          | 正引き・逆引きの関係をたどる深さ。`0` は展開しない |
-| `limit`     | `20`         | 一ページの結果数                                   |
-| `version`   | `'observed'` | `'latest'` で同じ対象の最新版を選ぶ                |
-| `successor` | `false`      | 明示的に採用された後継へ進む                       |
-| `history`   | なし         | `'retained'` で保存した当時の構成を読む            |
-| `range`     | なし         | blob の本文を `{ start, bytes }` で範囲取得する    |
-| `cursor`    | なし         | 関係・履歴・blob の続きを読む                      |
+| オプション    | 既定値       | 意味                                                      |
+| ------------- | ------------ | --------------------------------------------------------- |
+| `depth`       | `1`          | 正引き・逆引きの関係をたどる深さ。`0` は展開しない        |
+| `limit`       | `20`         | 一ページの結果数                                          |
+| `version`     | `'observed'` | `'latest'` で同じ対象の最新版を選ぶ                       |
+| `successor`   | `false`      | 明示的に採用された後継へ進む                              |
+| `history`     | なし         | `'retained'` で保存した当時の構成を読む                   |
+| `range`       | なし         | blob の本文を `{ start, bytes }` で範囲取得する           |
+| `cursor`      | なし         | 関係・履歴・blob の続きを読む                             |
+| `composition` | なし         | ホストが指定した構成を展開する。一般の `depth` 探索とは別 |
 
 blob の本文は `range.text`、非テキストは `range.base64` に入ります。実行例は [保存アダプター](/adapters#長い原資料を読む)にあります。過去の版も、現在の閲覧許可で検証します。
 
@@ -114,6 +115,8 @@ console.log(recalled.text); // モデルへ渡す記憶
 
 `text` は記憶の本文・参照・出典を JSON でシリアライズした領域です。`refs` と `sources` は今回採用した情報、`receipt` は入力と読取状態を追跡する記録です。関連する情報が少なければ短い結果になります。
 
+同じ原資料・同じ版の逐語引用が重なる場合、本文は `evidence[].ranges[].text` に共有します。各 `memory` 項目の `quote: { ref, start, end, unit: 'utf8' }` が元の引用範囲を指します。離れた範囲は別要素と `omittedBefore` で表し、断片を一文に連結しません。`items` と `inspect` は元の内容を保持するため、モデルへは `text` を渡します。`items` 全体を追加すると共有前の引用が再送されます。
+
 トークン数はホストに設定した tokenizer で数えます。既定は UTF-8 の1 byteを1 tokenとする保守的なカウンターです。実モデルの全入力と出力予約の計測は [ハーネス](/runtime#予算を設定する)で扱います。
 
 ## edit
@@ -127,13 +130,13 @@ const edited = await memory.edit((draft) =>
 console.log(edited.value.text); // 招待リンクの有効期限は48時間です。
 ```
 
-| draft の操作                                         | 用途                                 |
-| ---------------------------------------------------- | ------------------------------------ |
-| `write(content, options?)`                           | 追加                                 |
-| `revise(ref, content, options?)`                     | 観測版を前提に改訂                   |
-| `retire(ref)`                                        | 対象を廃止                           |
-| `supersede(oldRef, newRef, { retainForMs? })`        | 当時の構成を保存し、整理の後継を採用 |
-| `search(query, options?)` / `inspect(ref, options?)` | 自分の変更を含めて読む               |
+| draft の操作                                                | 用途                                 |
+| ----------------------------------------------------------- | ------------------------------------ |
+| `write(content, options?)`                                  | 追加                                 |
+| `revise(ref, content, options?)`                            | 観測版を前提に改訂                   |
+| `retire(ref)`                                               | 対象を廃止                           |
+| `supersede(oldRef, newRef, { retainForMs?, composition? })` | 当時の構成を保存し、整理の後継を採用 |
+| `search(query, options?)` / `inspect(ref, options?)`        | 自分の変更を含めて読む               |
 
 他の実行には確定まで変更が見えません。失敗した draft の参照は外で使えません。戻り値 `value` 内の参照は確定後の参照に解決され、外に保持した draft 参照には `edited.resolve(ref)` を使えます。
 
@@ -141,22 +144,25 @@ console.log(edited.value.text); // 招待リンクの有効期限は48時間で�
 
 `basis: 'historical'` は、過去の資料を意図的に分析する編集に使います。読取履歴は残し、改訂自身の版の前提と後継採用の競合は引き続き検証します。
 
+構成は例えば `{ relations: [{ parent: '資料', children: ['補足'], recursive: true }] }` と指定します。役割名は自由で、複数の規則を使えます。同じedit内で `draft.inspect(ref, { composition })` に使った一意な計画は、`supersede` へ引き継げます。構成が宣言されていない一般リンクは、所属と推定しません。[履歴の例](/concepts#整理を更新して当時の構成も残す)を参照してください。
+
 ## 共通の戻り値と診断
 
 検索・参照・read は `receipt`、`diagnostics`、`usage` を返します。`usage` はその処理の消費量です。ハーネス内では同じ実行の予算に累積します。
 
-| フィールド                       | 読み方                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| `receipt`                        | 読取状態と検索信号をホストが追跡する記録                                  |
-| `cursor`                         | 続きがあるときに返る参照                                                  |
-| `diagnostics.method`             | 使った取得方式                                                            |
-| `traversal` / `scanned`          | 探索の完了状態と走査数                                                    |
-| `approximate`                    | 取得方式が近似かどうか                                                    |
-| `index`                          | `ready`：反映済み、`pending`：反映待ち、`unavailable`：索引を利用できない |
-| `derived`                        | 派生表現が `ready` / `pending` / `regenerated` / `unused` のどれか        |
-| `stop`                           | 完了・ページ上限・予算・期限のいずれで止まったか                          |
-| `minimumTokens` / `minimumBytes` | 出力が予算に入らないときの必要量                                          |
-| `coverageCertified`              | 現在は `false`。探索完了と意味的な網羅性は別に扱う                        |
+| フィールド                       | 読み方                                                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `receipt`                        | 読取状態と検索信号をホストが追跡する記録                                                                      |
+| `cursor`                         | 続きがあるときに返る参照                                                                                      |
+| `diagnostics.method`             | 使った取得方式                                                                                                |
+| `traversal` / `scanned`          | 探索の完了状態と走査数                                                                                        |
+| `approximate`                    | 取得方式が近似かどうか                                                                                        |
+| `index`                          | `ready`：反映済み、`pending`：反映待ち、`unavailable`：索引を利用できない                                     |
+| `derived`                        | 派生表現が `ready` / `pending` / `regenerated` / `unused` のどれか                                            |
+| `derivedReason`                  | `pending` の理由。`missing-plan`、`acquisition-incomplete`、`dependency-stale`、`unsupported-input`、`budget` |
+| `stop`                           | 完了・ページ上限・予算・期限のいずれで止まったか                                                              |
+| `minimumTokens` / `minimumBytes` | 出力が予算に入らないときの必要量                                                                              |
+| `coverageCertified`              | 現在は `false`。探索完了と意味的な網羅性は別に扱う                                                            |
 
 cursor は同じクエリまたは参照と探索設定で再開します。`limit` や今回の予算は変更できます。認証、読取状態、索引状態、検索信号に束縛されているため、失効した cursor は新しい検索から取り直します。
 
@@ -164,16 +170,18 @@ cursor は同じクエリまたは参照と探索設定で再開します。`lim
 
 ## エラーへの対処
 
-| エラー                 | 次にすること                               |
-| ---------------------- | ------------------------------------------ |
-| `INVALID_INPUT`        | 空の読取入力や範囲・件数を確認する         |
-| `INVALID_REF`          | 保存・検索・編集が発行した参照を使う       |
-| `REVISION_CONFLICT`    | 最新の内容を確認し、編集を判断し直す       |
-| `ACCESS_DENIED`        | ホスト側の現在の閲覧・書込許可を確認する   |
-| `CURSOR_EXPIRED`       | 新しい検索・参照から開始する               |
-| `BUDGET_EXHAUSTED`     | ページを小さくするか実行予算を調整する     |
-| `HISTORY_INCOMPLETE`   | 履歴を記録する予算や構成の大きさを確認する |
-| `HISTORY_EXPIRED`      | 保持期間内の履歴か確認する                 |
-| `MODEL_SPACE_MISMATCH` | エンコーダーと検索信号の互換設定を確認する |
+| エラー                  | 次にすること                                                     |
+| ----------------------- | ---------------------------------------------------------------- |
+| `INVALID_INPUT`         | 空の読取入力や範囲・件数を確認する                               |
+| `INVALID_REF`           | 保存・検索・編集が発行した参照を使う                             |
+| `REVISION_CONFLICT`     | 最新の内容を確認し、編集を判断し直す                             |
+| `STATE_INVALIDATED`     | 生成待ちの間などに入力・権限が変化したため、新しい状態で読み直す |
+| `ACCESS_DENIED`         | ホスト側の現在の閲覧・書込許可を確認する                         |
+| `CURSOR_EXPIRED`        | 新しい検索・参照から開始する                                     |
+| `BUDGET_EXHAUSTED`      | ページを小さくするか実行予算を調整する                           |
+| `HISTORY_INCOMPLETE`    | 履歴を記録する予算や構成の大きさを確認する                       |
+| `HISTORY_PLAN_REQUIRED` | ホストで構成の取得計画を指定する                                 |
+| `HISTORY_EXPIRED`       | 保持期間内の履歴か確認する                                       |
+| `MODEL_SPACE_MISMATCH`  | エンコーダーと検索信号の互換設定を確認する                       |
 
 履歴保持の設定、保存容量、索引方式については [保存と検索](/adapters)を参照してください。

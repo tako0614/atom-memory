@@ -26,6 +26,7 @@ import type {
   OperationOptions,
   SearchSignal,
   Trace,
+  CompositionPlan,
 } from './types.js';
 import { cancellable, cancellation, operationBudget } from './control.js';
 export const pinRevision = (r: AtomRevision): PinnedRef => ({
@@ -61,6 +62,8 @@ export interface Session {
   trace: Trace;
   charged: Set<string>;
   derived: Diagnostics['derived'];
+  derivedReason?: Diagnostics['derivedReason'];
+  pendingDerived?: boolean;
 }
 export interface QueryState {
   id: string;
@@ -86,6 +89,7 @@ export interface QueryState {
   root?: PinnedRef;
   blobOffset?: number;
   historyId?: string;
+  composition?: import('./composition.js').CompositionState;
 }
 export interface GraphTask {
   ref: PinnedRef;
@@ -109,6 +113,8 @@ export interface HistoryManifest {
   policy: string;
   pages: string[];
   count: number;
+  composition?: CompositionPlan;
+  snapshot?: string;
 }
 export interface SuccessorRecord {
   from: PinnedRef;
@@ -499,6 +505,11 @@ export class Engine {
       reads: [...reads.values()],
       current: [...current.values()],
       queries: traces.flatMap((t) => t.queries),
+      plans: [
+        ...new Map(
+          traces.flatMap((t) => t.plans ?? []).map((p) => [canonical(p), clone(p)]),
+        ).values(),
+      ],
       createdAt: Date.now(),
       config: this.config,
       signalDigest: digest(canonical(traces.map((t) => t.signalDigest))),

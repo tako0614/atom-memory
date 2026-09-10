@@ -1,10 +1,18 @@
 import type { AtomRevision, Origin, PinnedRef } from '../contracts.js';
 import type { ReceiptManifest } from '../core/kernel.js';
 import { sourceCoverage } from '../core/helpers.js';
-import { AtomMemoryError, canonical, digest, fail } from '../core/util.js';
-import type { AtomView, Candidate, SourceCitation, Trace } from './types.js';
+import { AtomMemoryError, canonical, clone, digest, fail } from '../core/util.js';
+import type {
+  AcquisitionPlan,
+  AtomView,
+  Candidate,
+  MemoryReceipt,
+  SourceCitation,
+  Trace,
+} from './types.js';
 import { Engine, pinRevision, type GraphState, type Session } from './engine.js';
 import { cancellable } from './control.js';
+import { composition, compositionPage } from './composition.js';
 
 /** A schema-independent, resumable traversal. Both outgoing slots and inverse postings participate. */
 export function graphPage(
@@ -41,7 +49,7 @@ export function graphPage(
         continue;
       }
       const slot = r.slots[task.slot]!;
-      const target = engine.get(slot.target, s);
+      const target = engine.get(slot.target, s, slot.target.kind === 'logical');
       task.slot++;
       if (!seen.has(target.revisionId))
         state.tasks.splice(1, 0, {
@@ -141,7 +149,7 @@ function compatible(
   const frozen = historical || m.historicalInputs;
   if (!frozen && trace && trace.config !== engine.config) return false;
   for (const ref of frozen ? [] : (m.currentReads ?? m.reads)) {
-    const current = engine.get({ kind: 'logical', atomId: ref.atomId }, s);
+    const current = engine.get({ kind: 'logical', atomId: ref.atomId }, s, true);
     if (current.revisionId !== ref.revisionId) return false;
   }
   for (const observation of frozen ? [] : m.observations) {
@@ -161,45 +169,171 @@ function compatible(
 }
 export interface Materialized {
   revisions: AtomRevision[];
-  temporary?: { text: string; sources: PinnedRef[] };
+  temporary?: { text: string; sources: PinnedRef[]; receipt: MemoryReceipt };
 }
-/** Validate transitive inputs, then regenerate explicitly or return current source material. */
+/** Re-evaluate host-recorded conditions at one snapshot. A cursor is never an acquisition plan. */
+async function acquire(engine: Engine, s: Session, plans: readonly AcquisitionPlan[]) {
+  const revisions = new Map<string, AtomRevision>();
+  let complete = true;
+  const max = Math.min(engine.options.maxScan ?? 10000, engine.kernel.limits.maxReadCandidates);
+  for (const plan of plans) {
+    engine.check(s);
+    let page: { revisions: AtomRevision[]; complete: boolean };
+    if (plan.kind === 'search') {
+      const state = clone(plan.state);
+      // Only persisted SDK plans may restore an already host-validated signal.
+      if (state.signal) engine.signals.add(state.signal);
+      const found = await engine.candidates(state, s);
+      const seeds = found.candidates.map((c) => ({
+        ...c,
+        revision: plan.historical
+          ? c.revision
+          : engine.get(engine.successor(pinRevision(c.revision), s), s),
+      }));
+      const expanded = await expand(engine, s, seeds, plan.depth, max + 1);
+      page = {
+        revisions: expanded.candidates.map((c) => c.revision),
+        complete: found.complete && expanded.complete,
+      };
+    } else {
+      const root = engine.get(plan.target, s, plan.target.kind === 'logical');
+      page =
+        root.state === 'retired'
+          ? { revisions: [], complete: true }
+          : plan.kind === 'inspect' && plan.composition
+            ? compositionPage(engine, s, composition(pinRevision(root), plan.composition), max + 1)
+            : graphPage(
+                engine,
+                s,
+                graph(pinRevision(root), plan.kind === 'inspect' ? plan.depth : 0),
+                max + 1,
+              );
+    }
+    for (const r of page.revisions)
+      if (r.state === 'active') {
+        engine.record(r, s, plan.kind === 'search');
+        revisions.set(r.revisionId, r);
+      }
+    complete &&= page.complete;
+    if (revisions.size > max) return { revisions: [], complete: false };
+  }
+  return { revisions: [...revisions.values()], complete };
+}
+function validateGenerationState(engine: Engine, s: Session): void {
+  engine.check(s);
+  const at = engine.storage.watermark();
+  if (at === s.at) return;
+  for (const ref of s.trace.current) {
+    s.ledger.charge({ maxCandidates: 1 });
+    if (
+      engine.storage.get({ kind: 'logical', atomId: ref.atomId }, at)?.revisionId !== ref.revisionId
+    )
+      fail('STATE_INVALIDATED', 'Regeneration inputs changed while the generator was running');
+  }
+  for (const observation of s.trace.queries) {
+    s.ledger.charge({ maxCandidates: observation.query.limit });
+    const rows = engine.storage.scan(observation.query, at);
+    s.ledger.charge({ maxBytes: Buffer.byteLength(canonical(rows)) });
+    if (canonical(rows.map((v) => v.revisionId)) !== canonical(observation.revisions))
+      fail('STATE_INVALIDATED', 'Regeneration selection changed while the generator was running');
+  }
+}
+/** Validate transitive inputs; regenerate only after complete declarative reacquisition. */
 export async function materialize(
   engine: Engine,
   r: AtomRevision,
   s: Session,
   regenerate = true,
+  visiting = new Set<string>(),
 ): Promise<Materialized> {
+  const pending = (revisions: AtomRevision[], reason?: Session['derivedReason']): Materialized => {
+    s.pendingDerived = true;
+    if (reason) s.derivedReason = reason;
+    return { revisions };
+  };
   if (compatible(engine, r, s)) {
     if (r.provenance.inputReceiptId && s.derived === 'unused') s.derived = 'ready';
     return { revisions: [r] };
   }
   s.derived = 'pending';
+  if (visiting.has(r.revisionId)) {
+    return pending([], 'dependency-stale');
+  }
+  visiting = new Set(visiting).add(r.revisionId);
+  const old = engine.storage.metaGet<Trace>(`sdk:trace:${r.provenance.inputReceiptId}`);
+  const recorded = old?.plans ?? [];
+  // Explicit citations are audit provenance when a retrieval plan exists, not extra current members.
+  const retrieval = recorded.filter((p) => p.kind !== 'source');
+  const plans = retrieval.length ? retrieval : recorded;
+  const fresh = engine.session(
+    s.binding,
+    { signal: s.signal },
+    s.ledger,
+    s.overlay,
+    s.at,
+    digest(canonical(plans)),
+  );
+  fresh.trace.plans = clone(plans);
+  if (!plans.length) {
+    // Old receipts cannot recover selection intent. Only explicitly cited source material is a fallback.
+    const revisions = r.origins
+      .map((o) => engine.get(o.source, s))
+      .filter((v) => v.provenance.kind === 'source' && v.state === 'active');
+    return pending(revisions, 'missing-plan');
+  }
+  const selected = await acquire(engine, fresh, plans);
   const originals = new Map<string, AtomRevision>();
-  const queue = [r];
-  const visited = new Set<string>();
-  while (queue.length) {
-    const node = queue.shift()!;
-    if (visited.has(node.revisionId)) continue;
-    visited.add(node.revisionId);
-    const m = node.provenance.inputReceiptId
-      ? engine.storage.metaGet<ReceiptManifest>(`receipt:${node.provenance.inputReceiptId}`)
-      : undefined;
-    const refs = [...node.origins.map((o) => o.source), ...(m?.reads ?? [])];
-    for (const ref of refs) {
-      const current = engine.get({ kind: 'logical', atomId: ref.atomId }, s, true);
-      if (current.provenance.kind === 'source') originals.set(current.revisionId, current);
-      else if (!visited.has(current.revisionId)) queue.push(current);
+  let complete = selected.complete;
+  let unsupported = false;
+  const nodes = [
+    ...selected.revisions,
+    ...r.slots
+      .filter((slot) => slot.mode === 'include' || slot.required)
+      .map((slot) => engine.get(slot.target, fresh, slot.target.kind === 'logical')),
+  ];
+  for (const node of nodes) {
+    if (node.revisionId === r.revisionId) continue;
+    const unit = bundle(engine, node, fresh);
+    if (!unit) {
+      complete = false;
+      const fallback = await materialize(engine, node, fresh, false, visiting);
+      for (const v of fallback.revisions) originals.set(v.revisionId, v);
+      continue;
+    }
+    for (const value of unit) {
+      if (value.body.kind === 'blob') unsupported = true;
+      originals.set(value.revisionId, value);
+      for (const origin of value.origins) {
+        const source = engine.get(origin.source, fresh);
+        if (source.body.kind === 'blob') unsupported = true;
+        if (source.state === 'active') originals.set(source.revisionId, source);
+      }
     }
   }
   const revisions = [...originals.values()];
+  const atoms = revisions.map((v) => engine.view(v, fresh, false));
+  // Dependency checks and model inputs belong to the caller's audit too, even when no generator runs.
+  s.trace = engine.merge([s.trace, fresh.trace], s.binding, s.at);
+  if (!complete || unsupported) {
+    return pending(
+      revisions,
+      unsupported
+        ? 'unsupported-input'
+        : selected.complete
+          ? 'dependency-stale'
+          : 'acquisition-incomplete',
+    );
+  }
   const generator = regenerate ? engine.options.generator : undefined;
-  if (!generator || !revisions.length) return { revisions };
-  const input = {
+  if (!generator) return pending(revisions);
+  const receipt = engine.trace(fresh);
+  const content = {
     previous: engine.text(r),
     sources: revisions.map((v) => ({ ref: pinRevision(v), text: engine.text(v) })),
+    atoms,
   };
-  const key = `sdk:cache:derived:${digest(canonical([s.trace.authBinding, s.principal.generation, s.trace.policies, generator.id, r.revisionId, input]))}`;
+  const input = { ...content, receipt };
+  const key = `sdk:cache:derived:${digest(canonical([s.trace.authBinding, s.principal.generation, s.trace.policies, engine.config, r.revisionId, content]))}`;
   const cached = engine.storage.metaGet<{ text: string; until: number }>(key);
   let text: string;
   if (cached && cached.until > Date.now()) text = cached.text;
@@ -210,20 +344,24 @@ export async function materialize(
       maxModelInputTokens: generator.tokenizer.count(canonical(input)),
       maxModelOutputTokens: generator.maxOutputTokens,
     };
-    if (!s.ledger.can(cost)) return { revisions };
+    if (!s.ledger.can(cost)) {
+      return pending(revisions, 'budget');
+    }
     s.ledger.charge(cost);
     text = await cancellable((signal) => generator.generate(input, signal), s.signal);
     engine.check(s);
+    validateGenerationState(engine, fresh);
     if (typeof text !== 'string' || generator.tokenizer.count(text) > generator.maxOutputTokens)
       fail('BUDGET_EXHAUSTED');
     engine.storage.metaSet(key, {
       text,
+      input: clone(fresh.trace),
       until: Date.now() + (engine.options.cacheTtlMs ?? 300000),
     });
     engine.trimCaches();
   }
   s.derived = 'regenerated';
-  return { revisions, temporary: { text, sources: revisions.map(pinRevision) } };
+  return { revisions, temporary: { text, sources: revisions.map(pinRevision), receipt } };
 }
 function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] | undefined {
   const output: AtomRevision[] = [];
@@ -233,9 +371,10 @@ function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] 
     const r = pending.shift()!;
     if (seen.has(r.revisionId)) continue;
     seen.add(r.revisionId);
-    engine.get(pinRevision(r), s, true);
+    engine.get(pinRevision(r), s);
     if (r.state === 'retired' || !compatible(engine, r, s)) {
       s.derived = 'pending';
+      s.pendingDerived = true;
       return;
     }
     output.push(r);
@@ -246,7 +385,8 @@ function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] 
   return output;
 }
 function quote(engine: Engine, r: AtomRevision, s: Session): Origin | undefined {
-  if (r.body.kind !== 'inline' || typeof r.body.value !== 'string' || r.slots.length) return;
+  if (r.body.kind !== 'inline' || typeof r.body.value !== 'string') return;
+  if (Buffer.from(r.body.value).toString('utf8') !== r.body.value) return;
   if (r.provenance.kind === 'source')
     return {
       source: pinRevision(r),
@@ -262,26 +402,11 @@ function quote(engine: Engine, r: AtomRevision, s: Session): Origin | undefined 
   const source = engine.get(o.source, s);
   if (source.body.kind !== 'inline' || typeof source.body.value !== 'string') return;
   const bytes = Buffer.from(source.body.value).subarray(o.selector.start, o.selector.end);
-  if (bytes.toString() === r.body.value) return o;
-}
-function uncovered(origin: Origin, prior: readonly Origin[]): { start: number; end: number }[] {
-  let pieces = [{ start: origin.selector.start, end: origin.selector.end }];
-  for (const o of prior) {
-    if (
-      o.source.atomId !== origin.source.atomId ||
-      o.source.revisionId !== origin.source.revisionId
-    )
-      continue;
-    pieces = pieces.flatMap((p) =>
-      o.selector.end <= p.start || o.selector.start >= p.end
-        ? [p]
-        : [
-            ...(o.selector.start > p.start ? [{ start: p.start, end: o.selector.start }] : []),
-            ...(o.selector.end < p.end ? [{ start: o.selector.end, end: p.end }] : []),
-          ],
-    );
-  }
-  return pieces;
+  if (
+    bytes.toString() === r.body.value &&
+    (!o.selector.quoteDigest || digest(bytes) === o.selector.quoteDigest)
+  )
+    return o;
 }
 export interface Packed {
   items: AtomView[];
@@ -301,7 +426,7 @@ export async function pack(
 ): Promise<Packed> {
   const items: AtomView[] = [];
   const selected = new Set<string>();
-  const evidence: Origin[] = [];
+  const quotes = new Map<AtomView['ref'], Origin>();
   const citations: Origin[] = [];
   const temporaries: { text: string; sources: SourceCitation[]; origin: 'generated-cache' }[] = [];
   const deferred: Candidate[] = [];
@@ -309,15 +434,52 @@ export async function pack(
   let tokenCount = 0;
   let minimumTokens: number | undefined;
   let used = 0;
-  const serialize = (views: AtomView[], origins: Origin[], temporary: typeof temporaries) =>
-    canonical({
-      memory: views,
-      evidence: sourceCoverage(origins).map((o) => ({
-        ref: engine.issue(engine.get(o.source, s), s),
-        ranges: o.ranges,
-      })),
+  const serialize = (views: AtomView[], spans: typeof quotes, temporary: typeof temporaries) => {
+    const selected = views.flatMap((v) => (spans.has(v.ref) ? [spans.get(v.ref)!] : []));
+    const key = (o: Origin) => canonical(o.source);
+    const shared = new Set<string>();
+    for (let i = 0; i < selected.length; i++)
+      for (let j = i + 1; j < selected.length; j++) {
+        const a = selected[i]!,
+          b = selected[j]!;
+        if (
+          key(a) === key(b) &&
+          a.selector.start < b.selector.end &&
+          b.selector.start < a.selector.end
+        )
+          shared.add(key(a));
+      }
+    return canonical({
+      memory: views.map((view) => {
+        const span = spans.get(view.ref);
+        if (!span || !shared.has(key(span))) return view;
+        const { text: _text, ...metadata } = view;
+        return {
+          ...metadata,
+          quote: {
+            ref: engine.issue(engine.get(span.source, s), s),
+            start: span.selector.start,
+            end: span.selector.end,
+            unit: 'utf8',
+          },
+        };
+      }),
+      evidence: sourceCoverage(selected.filter((o) => shared.has(key(o)))).map((o) => {
+        const source = engine.get(o.source, s);
+        const bytes = Buffer.from(engine.text(source));
+        return {
+          ref: engine.issue(source, s),
+          unit: 'utf8',
+          ranges: o.ranges.map((range, i) => ({
+            ...range,
+            ...(i > 0 ? { omittedBefore: { start: o.ranges[i - 1]!.end, end: range.start } } : {}),
+            text: bytes.subarray(range.start, range.end).toString('utf8'),
+          })),
+        };
+      }),
       temporary,
     });
+  };
   const ranked = [...candidates].sort(
     (a, b) =>
       b.score - a.score ||
@@ -348,23 +510,20 @@ export async function pack(
       }
       if (missingCompanion) continue;
       const views: AtomView[] = [];
-      const nextEvidence = [...evidence];
+      const nextQuotes = new Map(quotes);
       const nextCitations = [...citations];
       for (const r of all.values()) {
         if (selected.has(r.revisionId)) continue;
         const span = quote(engine, r, s);
         const view = engine.view(r, s, true);
         if (span) {
-          const pieces = uncovered(span, nextEvidence);
-          if (!pieces.length) continue;
           const source = engine.get(span.source, s);
           const sourceRef = engine.issue(source, s);
-          const bytes = Buffer.from(engine.text(source));
           views.push({
             ...view,
             sources: [{ ref: sourceRef, start: span.selector.start, end: span.selector.end }],
           });
-          nextEvidence.push(span);
+          nextQuotes.set(view.ref, span);
           nextCitations.push(span);
         } else {
           views.push(view);
@@ -374,6 +533,7 @@ export async function pack(
       const temporary = material.temporary
         ? {
             text: material.temporary.text,
+            receipt: material.temporary.receipt,
             sources: material.temporary.sources.map((ref) => ({
               ref: engine.issue(engine.get(ref, s), s),
             })),
@@ -381,7 +541,7 @@ export async function pack(
           }
         : undefined;
       if (!views.length && !temporary) continue;
-      const nextText = serialize([...items, ...views], nextCitations, [
+      const nextText = serialize([...items, ...views], nextQuotes, [
         ...temporaries,
         ...(temporary ? [temporary] : []),
       ]);
@@ -395,7 +555,7 @@ export async function pack(
       ) {
         minimumTokens = Math.min(
           minimumTokens ?? Infinity,
-          engine.tokenizer.count(serialize(views, nextCitations, temporary ? [temporary] : [])),
+          engine.tokenizer.count(serialize(views, nextQuotes, temporary ? [temporary] : [])),
         );
         deferred.push(candidate);
         continue;
@@ -403,7 +563,7 @@ export async function pack(
       s.ledger.charge({ maxAtoms: views.length });
       items.push(...views);
       all.forEach((r) => selected.add(r.revisionId));
-      evidence.splice(0, evidence.length, ...nextEvidence);
+      for (const [ref, span] of nextQuotes) quotes.set(ref, span);
       citations.splice(0, citations.length, ...nextCitations);
       if (temporary) temporaries.push(temporary);
       text = nextText;

@@ -1,0 +1,110 @@
+✖ memory: R1 newly attached member reaches the real regeneration input (15.866912ms)
+✖ memory: R2 overlapping quotations share the actual context evidence text (3.358182ms)
+✖ memory: R3 retaining P does not enumerate Q through their shared child (4.816497ms)
+✖ sqlite: R1 newly attached member reaches the real regeneration input (12.176825ms)
+✖ sqlite: R2 overlapping quotations share the actual context evidence text (3.677887ms)
+✖ sqlite: R3 retaining P does not enumerate Q through their shared child (7.434027ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107.140172
+
+✖ failing tests:
+
+test at test/client-corrections.test.mjs:26:3
+✖ memory: R1 newly attached member reaches the real regeneration input (15.866912ms)
+  AssertionError [ERR_ASSERTION]: Missing generator input: C newly attached member
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:45:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/client-corrections.test.mjs:47:3
+✖ memory: R2 overlapping quotations share the actual context evidence text (3.358182ms)
+  AssertionError [ERR_ASSERTION]: {"evidence":[{"ranges":[{"end":12,"start":0}],"ref":"ref:465a0252-84a1-4b7b-a6a0-ca6fd9f1445c"}],"memory":[{"links":[],"provenance":{"origin":"extraction","producer":"owner"},"ref":"ref:65454fed-4611-4879-8279-34d8ce68c664","sources":[{"end":12,"ref":"ref:465a0252-84a1-4b7b-a6a0-ca6fd9f1445c","start":4}],"state":"active","text":"BBBBCCCC"},{"links":[],"provenance":{"origin":"extraction","producer":"owner"},"ref":"ref:fcfba1a1-e706-4b28-bb90-c812b55e379b","sources":[{"end":8,"ref":"ref:465a0252-84a1-4b7b-a6a0-ca6fd9f1445c","start":0}],"state":"active","text":"AAAABBBB"}],"temporary":[]}
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:57:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/client-corrections.test.mjs:64:3
+✖ memory: R3 retaining P does not enumerate Q through their shared child (4.816497ms)
+  Error [AtomMemoryError]: Exact arrangement exceeded the history capture budget
+      at fail (file:///root/dev/github/sakana/subprojects/atom-memory/dist/core/util.js:11:11)
+      at MemoryClient.captureSuccession (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:813:13)
+      at Object.supersede (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:691:47)
+      at file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:76:27
+      at file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:696:67
+      at cancellable (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/control.js:52:36)
+      at MemoryClient.edit (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:696:33)
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:76:13)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    code: 'HISTORY_INCOMPLETE'
+  }
+
+test at test/client-corrections.test.mjs:26:3
+✖ sqlite: R1 newly attached member reaches the real regeneration input (12.176825ms)
+  AssertionError [ERR_ASSERTION]: Missing generator input: C newly attached member
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:45:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/client-corrections.test.mjs:47:3
+✖ sqlite: R2 overlapping quotations share the actual context evidence text (3.677887ms)
+  AssertionError [ERR_ASSERTION]: {"evidence":[{"ranges":[{"end":12,"start":0}],"ref":"ref:e1d4d892-b790-4c2a-b64e-fc1f6f5cb804"}],"memory":[{"links":[],"provenance":{"origin":"extraction","producer":"owner"},"ref":"ref:dd493286-bcdc-4ad2-847a-c9a840963fbd","sources":[{"end":8,"ref":"ref:e1d4d892-b790-4c2a-b64e-fc1f6f5cb804","start":0}],"state":"active","text":"AAAABBBB"},{"links":[],"provenance":{"origin":"extraction","producer":"owner"},"ref":"ref:347b92ee-61e0-4e31-a674-3d50a89d41ee","sources":[{"end":12,"ref":"ref:e1d4d892-b790-4c2a-b64e-fc1f6f5cb804","start":4}],"state":"active","text":"BBBBCCCC"}],"temporary":[]}
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:57:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/client-corrections.test.mjs:64:3
+✖ sqlite: R3 retaining P does not enumerate Q through their shared child (7.434027ms)
+  Error [AtomMemoryError]: Exact arrangement exceeded the history capture budget
+      at fail (file:///root/dev/github/sakana/subprojects/atom-memory/dist/core/util.js:11:11)
+      at MemoryClient.captureSuccession (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:813:13)
+      at Object.supersede (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:691:47)
+      at file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:76:27
+      at file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:696:67
+      at cancellable (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/control.js:52:36)
+      at MemoryClient.edit (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:696:33)
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/client-corrections.test.mjs:76:13)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    code: 'HISTORY_INCOMPLETE'
+  }

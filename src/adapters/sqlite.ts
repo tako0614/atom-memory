@@ -4,6 +4,26 @@ import type { ScanQuery, StorageAdapter } from './storage.js';
 import { uid } from '../core/util.js';
 /** Local durable adapter. SQLite coordinates concurrent processes through short write transactions. */
 export class SqliteStorage implements StorageAdapter {
+  retainSnapshot(at: number, until: number): string {
+    const token = uid('retained');
+    // All immutable rows survive reopen; explicit erase remains authoritative.
+    this.metaSet(`retained:${token}`, {
+      at,
+      until,
+      generation: this.metaGet<number>('retention-generation') ?? 0,
+    });
+    return token;
+  }
+  retainedSnapshot(token: string): { at: number; until: number } | undefined {
+    const value = this.metaGet<{ at: number; until: number; generation: number }>(
+      `retained:${token}`,
+    );
+    return value &&
+      value.until > Date.now() &&
+      value.generation === (this.metaGet<number>('retention-generation') ?? 0)
+      ? value
+      : undefined;
+  }
   readonly capabilities = { snapshot: true, atomicBatch: true, queryGuards: true };
   readonly id: string;
   #db: DatabaseSync;
@@ -161,6 +181,8 @@ export class SqliteStorage implements StorageAdapter {
     return !!this.#db.prepare('SELECT 1 FROM am_purged WHERE atom_id=?').get(atomId);
   }
   erase(atomIds: readonly string[]): void {
+    if (atomIds.length)
+      this.metaSet('retention-generation', (this.metaGet<number>('retention-generation') ?? 0) + 1);
     for (const id of atomIds) {
       this.#db.prepare('INSERT OR IGNORE INTO am_purged VALUES (?)').run(id);
       this.#db

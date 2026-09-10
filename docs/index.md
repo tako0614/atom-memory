@@ -9,7 +9,7 @@ title: エージェントに、思い出す力を。
 <div class="memory-hero">
 <div class="memory-hero-copy">
 <p class="memory-eyebrow">TypeScript × Agent Memory</p>
-<h1>エージェントに、<br><span>思い出す力を。</span></h1>
+<h1>エージェントに、<br>思い出す力を。</h1>
 <p class="memory-lead">ひと言を覚える。必要なときに取り出す。<br>いつものアプリに、記憶を足そう。</p>
 <div class="memory-actions">
 <a class="memory-primary" href="/guide">はじめる <span aria-hidden="true">→</span></a>
@@ -25,7 +25,7 @@ npm install atom-memory
 <p class="memory-platforms">Node.js 22.13+ <span aria-hidden="true">/</span> TypeScript <span aria-hidden="true">/</span> MIT</p>
 </div>
 <div class="memory-hero-example">
-<div class="memory-file"><span class="memory-file-dot" aria-hidden="true"></span>hello.mjs<span class="memory-file-note">まずは、ひとつ覚える</span></div>
+<div class="memory-file">hello.mjs<span class="memory-file-note">まずは、ひとつ覚える</span></div>
 
 <<< ../examples/hello.mjs
 

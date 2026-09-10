@@ -106,7 +106,18 @@ test('A35 legacy SQLite data and memberships keep exact IDs/revisions/origins ac
     'blob 日本語 content',
   );
   const next = await memory.write('new arrangement');
-  await memory.edit((d) => d.supersede(ref, next.ref));
+  await memory.edit((d) =>
+    d.supersede(ref, next.ref, {
+      composition: { relations: [{ parent: 'group', children: ['member'] }] },
+    }),
+  );
+  await memory.edit((d) =>
+    d.revise(
+      host.reference(pin('old-source', 'source-1'), binding),
+      'changed after retained snapshot',
+    ),
+  );
+  for (const [key] of storage.metaEntries('receipt:')) storage.metaDelete(key);
   storage.close();
   storage = new SqliteStorage(path);
   host = new MemoryHost({ storage, authority });

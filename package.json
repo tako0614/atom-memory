@@ -1,6 +1,6 @@
 {
   "name": "atom-memory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Contextual Atom memory with automatic recall, content search, observed references and private edits.",
   "type": "module",
   "license": "MIT",

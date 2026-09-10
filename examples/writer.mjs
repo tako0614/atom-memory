@@ -81,6 +81,24 @@ export async function writerScenario(model = scriptedWriter(), { timeoutMs = 300
     organized.changes.some((item) => item.ref !== parent.ref && item.links.length >= 2),
     'Writer must create a relationship Atom',
   );
+  // This workflow explicitly created one parent/source relation. The host validates that
+  // operation's endpoints and adopts its roles; arbitrary neighbouring links are not a plan.
+  const relationship = organized.changes.find(
+    (item) =>
+      item.links.some((link) => link.ref === parent.ref) &&
+      item.links.some((link) => link.ref === source.ref),
+  );
+  assert.ok(relationship, 'Writer must connect the chosen parent to the supplied source');
+  const composition = {
+    relations: relationship.links
+      .filter((link) => link.ref === parent.ref)
+      .map((link) => ({
+        parent: link.role,
+        children: relationship.links
+          .filter((child) => child.ref === source.ref)
+          .map((child) => child.role),
+      })),
+  };
   const first = await memory.read(
     { context: '旧クライアントは旧APIを使えるか' },
     { tokens: 12000 },
@@ -97,7 +115,7 @@ export async function writerScenario(model = scriptedWriter(), { timeoutMs = 300
       links: { 資料: replacement.ref, 根拠: source.ref },
     });
     // Capture the old snapshot before this batch changes its child and relationships.
-    await draft.supersede(parent.ref, replacement.ref);
+    await draft.supersede(parent.ref, replacement.ref, { composition });
     return replacement;
   });
   const reread = await memory.read(

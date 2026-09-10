@@ -77,6 +77,8 @@ export interface HarnessOptions {
   maxRecentObservations?: number;
   maxObservationBytes?: number;
   maxRefs?: number;
+  /** Host-approved composition for successor operations in this workflow. Never model-supplied. */
+  historyComposition?: import('../client/types.js').CompositionPlan;
   audit?: { maxEntries?: number; maxBytes?: number; retentionMs?: number };
 }
 export interface HarnessResult {
@@ -419,7 +421,9 @@ export class MemoryHarness {
               }),
             );
           else if (action.kind === 'supersede') {
-            await draft.supersede(reference(action.previous), reference(action.next));
+            await draft.supersede(reference(action.previous), reference(action.next), {
+              composition: this.options.historyComposition,
+            });
             addObservation({ operation: 'supersede', status: 'staged', superseded: true });
           } else fail('INVALID_INPUT', 'Unknown model operation');
         }

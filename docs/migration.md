@@ -2,6 +2,29 @@
 
 このページは既存の Atom Memory を更新する方向けです。新規利用は [はじめる](/guide)から進めてください。
 
+## v0.2 の再生成・引用・履歴の修正
+
+5つのAPIと単一Atomモデルは共通です。既存のID、不変版、出典をコピー・再採番する必要はありません。
+
+- **再生成**：新しく保存する派生物は、SDKがsearch・inspectの取得条件を記録します。旧データに計画がなければ、失効時は `pending / missing-plan` と明示し、自動生成しません。明示された出典だけを固定版の代替資料として返す場合があります。元の意図は古いreceiptだけから復元しません。
+- **引用表示**：`inspect(ref)` と `read.items` の元の内容は維持します。重なる逐語引用は `read.text` の共有証拠にまとめ、各Atomの参照と引用範囲を残します。独自ハーネスは `read.text` を使い、`items` の本文を追加しないでください。
+- **旧構成**：既存の履歴manifestは従来どおり読めます。新しい後継採用では、外付けの関係について `composition` を明示するか、同じedit内の構成inspectで指定します。宣言のない一般リンクは `HISTORY_PLAN_REQUIRED` になります。固定includeだけの構成には追加指定は不要です。
+
+旧い派生物へ計画を与える場合は、Writer/ホストが対象と構成を確かめ、現在の入力を読み直して**新しい版**を確定します。既存版や監査receiptへ後付けで推定した計画を書き込みません。
+
+```ts
+await writer.edit(async (draft) => {
+  const current = await draft.inspect(topic.ref, {
+    version: 'latest',
+    composition: { relations: [{ parent: '手順', children: ['ルール'] }] },
+  });
+  if (current.cursor) throw new Error('続きを取得してから要約を確定してください');
+  await draft.revise(summary.ref, correctedSummary);
+});
+```
+
+SQLiteのテーブル移行は不要です。追加の取得計画と保持snapshotは既存のmetadata領域へ保存します。通常のcursor/receipt期限と履歴保持は別です。現在のローカルadapterは、purge後に不完全な過去を完全と表示しないため、既存の保持snapshotをすべて失効させます。保持と物理容量の制約は [保存と検索](/adapters#保持期間と上限)を参照してください。
+
 ## v0.1 からの変更
 
 v0.2 は `MemoryHost` が発行する高水準クライアントを中心に使います。自動の記憶取得を `read`、候補の明示検索を `search`、正確な参照を `inspect`、追加を `write`、一括編集を `edit` に分けています。

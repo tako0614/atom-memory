@@ -58,6 +58,8 @@ export interface InspectOptions extends OperationOptions {
   readonly successor?: boolean;
   readonly history?: 'retained';
   readonly range?: { readonly start?: number; readonly bytes?: number };
+  /** Host-declared composition, separate from bidirectional neighbourhood depth. */
+  readonly composition?: CompositionPlan;
 }
 export interface WriteOptions {
   readonly idempotencyKey?: string;
@@ -91,6 +93,8 @@ export interface Diagnostics {
   readonly scanned: number;
   readonly index: 'ready' | 'pending' | 'unavailable';
   readonly derived: 'ready' | 'pending' | 'regenerated' | 'unused';
+  readonly derivedReason?:
+    'missing-plan' | 'acquisition-incomplete' | 'dependency-stale' | 'unsupported-input' | 'budget';
   readonly stop: 'completed' | 'page-limit' | 'budget' | 'deadline';
   readonly minimumTokens?: number;
   readonly minimumBytes?: number;
@@ -133,6 +137,16 @@ export interface WriteOutcome extends AtomView {
 }
 export interface SupersedeOptions {
   readonly retainForMs?: number;
+  readonly composition?: CompositionPlan;
+}
+/** Roles describe directed external relations. No reserved membership label is required.
+ * Fixed include slots are always followed. Recursive rules apply at each selected child. */
+export interface CompositionPlan {
+  readonly relations: readonly {
+    readonly parent: string;
+    readonly children: readonly string[];
+    readonly recursive?: boolean;
+  }[];
 }
 export interface Draft {
   write(content: MemoryContent, options?: WriteOptions): Promise<AtomView>;
@@ -177,6 +191,9 @@ export interface Generator {
     input: {
       readonly previous: string;
       readonly sources: readonly { ref: PinnedRef; text: string }[];
+      /** Current selected Atoms, including ordered roles and exact source ranges. */
+      readonly atoms: readonly AtomView[];
+      readonly receipt: MemoryReceipt;
     },
     signal: AbortSignal,
   ): Promise<string>;
@@ -242,8 +259,20 @@ export interface Trace {
   reads: PinnedRef[];
   current: PinnedRef[];
   queries: { query: import('../adapters/storage.js').ScanQuery; revisions: string[] }[];
+  /** Declarative acquisition, distinct from the immutable observed reads/pages. */
+  plans?: AcquisitionPlan[];
   readonly createdAt: number;
   readonly config: string;
 }
+/** SDK-owned records, never executable model instructions. Pages are always replayed from the start. */
+export type AcquisitionPlan =
+  | { kind: 'search'; state: MemoryState; depth: number; historical: boolean }
+  | {
+      kind: 'inspect';
+      target: import('../contracts.js').Ref;
+      depth: number;
+      composition?: CompositionPlan;
+    }
+  | { kind: 'source'; target: import('../contracts.js').Ref };
 export type Usage = Readonly<Record<Resource, number>>;
 export type AuditValue = Json;

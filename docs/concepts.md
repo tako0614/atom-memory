@@ -70,15 +70,19 @@ await memory.edit(async (draft) => {
     text: '改定後の手順に有効期限のルールを結び付ける。',
     links: { 手順: next.ref, ルール: rule.ref },
   });
-  await draft.supersede(topic.ref, next.ref);
+  await draft.supersede(topic.ref, next.ref, {
+    composition: { relations: [{ parent: '手順', children: ['ルール'] }] },
+  });
 });
 
 const past = await memory.inspect(topic.ref, { history: 'retained', limit: 20 });
 ```
 
-通常の検索・readでは採用した後継を優先します。`history: 'retained'` は置き換える前の関係と子の版を保存した manifest を読みます。その後ルールが変わっても、当時の構成を再現できます。
+`composition` は、この整理で「手順」から「ルール」へたどることをホストが指定する計画です。共有されたルールから別の手順へ逆に広がりません。子にも同じ構成を展開する場合は、その規則に `recursive: true` を付けます。明示した再帰は固定の深さで切らず、訪問済み管理とページ・実行予算で止めます。
 
-履歴は既定30日、構成の記録は既定256 Atomまでです。予算内で構成を記録できなければ編集全体が `HISTORY_INCOMPLETE` になります。後継の採用は一対一で、競合と循環を拒否します。削除・権限失効は保持期間内でも優先します。
+通常の検索・readでは採用した後継を優先します。`history: 'retained'` は置き換える前の読取状態で、この計画を実行します。その後ルールが変わっても、当時の構成を再現できます。
+
+履歴は既定30日です。MemoryStorage・SqliteStorage は版を保持した snapshot を記録し、保存時に子を全列挙しません。保持機能のないadapterでは、同じ計画の結果を既定256 Atomまでの manifest に保存します。保持に失敗すれば編集全体が `HISTORY_INCOMPLETE` になります。後継の採用は一対一で、競合と循環を拒否します。削除・権限失効は保持期間内でも優先します。
 
 ## 出典と生成された説明
 

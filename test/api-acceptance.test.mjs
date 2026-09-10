@@ -208,7 +208,9 @@ test('A17/A18 source union is used in actual packing without merging different d
   await extractor.write(source.text, { sources: [{ ref: source.ref }] });
   await extractor.write(source.text, { sources: [{ ref: source.ref }] });
   const packed = await m.read({ query: '認証' }, opts);
-  assert.equal(packed.items.filter((i) => i.text === source.text).length, 1);
+  // Distinct quotation Atoms keep their identities; only serialized evidence is shared.
+  assert.equal(packed.items.filter((i) => i.text === source.text).length, 3);
+  assert.equal((packed.text.match(/条件つきの認証を許可する。/g) ?? []).length, 1);
   assert.equal(packed.sources.length, 1);
   await writer.write('認証は承認を得た場合だけ許可する', { sources: [{ ref: source.ref }] });
   await writer.write('認証はテスト環境に限って許可する', { sources: [{ ref: source.ref }] });
@@ -349,7 +351,11 @@ test('A26-A30 exact historical arrangements outlive receipts and children; succe
   assert.ok((await m.search('parent')).items.some((i) => i.ref === p.ref));
   await m.write({ text: 'replace old with new', links: { previous: p.ref, successor: q.ref } });
   assert.ok((await m.search('parent')).items.some((i) => i.ref === p.ref));
-  await m.edit((d) => d.supersede(p.ref, q.ref));
+  await m.edit((d) =>
+    d.supersede(p.ref, q.ref, {
+      composition: { relations: [{ parent: '資料', children: ['補足'] }] },
+    }),
+  );
   const current = await m.search('parent');
   assert.ok(current.items.some((i) => i.ref === q.ref));
   assert.ok(!current.items.some((i) => i.ref === p.ref));
@@ -390,11 +396,17 @@ test('A30 successor cycles and multiple choices roll back, incomplete capture ca
     error('SUCCESSOR_CYCLE'),
   );
   const small = fixture({ historyMaxAtoms: 1 });
+  // Exercise a backend with snapshot reads but without a durable retention contract.
+  small.host.engine.storage.retainSnapshot = undefined;
   const a = await small.memory.write('A');
   const b = await small.memory.write('B');
   await small.memory.write({ text: 'relation', links: { a: a.ref } });
   await assert.rejects(
-    small.memory.edit((d) => d.supersede(a.ref, b.ref)),
+    small.memory.edit((d) =>
+      d.supersede(a.ref, b.ref, {
+        composition: { relations: [{ parent: 'a', children: ['member'] }] },
+      }),
+    ),
     error('HISTORY_INCOMPLETE'),
   );
   assert.equal((await small.memory.inspect(a.ref, { successor: true })).atom.ref, a.ref);

@@ -5,12 +5,11 @@ export default defineConfig({
   description: 'メモと関係を保存し、今の問いに必要な記憶をモデルへ渡す TypeScript ライブラリ。',
   cleanUrls: true,
   head: [
-    ['link', { rel: 'icon', href: '/mark.svg' }],
+    ['link', { rel: 'icon', href: 'data:,' }],
     ['meta', { name: 'theme-color', content: '#ffffff' }],
   ],
   sitemap: { hostname: 'https://atom-memory.takos.jp' },
   themeConfig: {
-    logo: '/mark.svg',
     nav: [
       { text: 'ドキュメント', link: '/guide' },
       { text: 'コード例', link: '/examples' },

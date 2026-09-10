@@ -1,0 +1,55 @@
+{
+  "reviewBaseline": "861995594d43ec37f01edcce1d06a328e8e2576d",
+  "startingHead": "78d3e1567cbac4172f63900194caa74d324e047a",
+  "adapters": [
+    "MemoryStorage",
+    "SqliteStorage"
+  ],
+  "checks": [
+    {
+      "command": "npm test (Node 26.1.0)",
+      "result": "140 passed, 0 failed",
+      "logSha256": "1765f3aded85fb56d82f36f1b83aad5245944940178bc33489813de8fc14374b"
+    },
+    {
+      "command": "Node 22.23.2 --test test/*.test.mjs",
+      "result": "140 passed, 0 failed",
+      "logSha256": "2595e35e6669ab19208a6ee2b3e5bb62e4f9c4c08591f385d0349d1cad976755"
+    },
+    {
+      "command": "Node 24.18.0 --test test/*.test.mjs",
+      "result": "140 passed, 0 failed",
+      "logSha256": "5bd1469e17821111846e330b8c236b904f9a1dab0483dd4a5577e4260d37e920"
+    },
+    {
+      "command": "npm run docs:examples",
+      "result": "12 extracted/typechecked/executed examples; 5 documented outputs verified",
+      "logSha256": "6c804b5e9eaa09c79379cf66f65fc6e80f29bff44e4c159bf74ffd7550de17db"
+    },
+    {
+      "command": "npm run format:check",
+      "result": "passed",
+      "logSha256": "2aa88041b8cbb3aabef1fda3338a17d15894a5fb789866ab7017e4a66c25761d"
+    },
+    {
+      "command": "npm run example",
+      "result": "passed",
+      "logSha256": "2a14a94214f7ec5c70d8755a44d9eb48b95f4d84078d2394ba12ae44625f3837"
+    },
+    {
+      "command": "npm run example:writer",
+      "result": "passed",
+      "logSha256": "20678bfd3d516ceb8bd44917b4ab1f84cde2f2a8febc8dad8815e4f7488a57e0"
+    },
+    {
+      "command": "node --test test/client-corrections.test.mjs (installed tarball)",
+      "result": "58 passed, 0 failed",
+      "logSha256": "325151513271aa6f0726cf31da97eee6c9f80934c5cbe73a7e081fc4a7d7f283"
+    },
+    {
+      "command": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2023 consumer.mts (installed tarball)",
+      "result": "passed",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

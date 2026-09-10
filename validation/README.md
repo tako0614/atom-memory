@@ -1,5 +1,7 @@
 # v0.2 API再設計の検証記録
 
+0.2.1の再生成・引用・履歴の修正は[追加検証記録](./corrections.md)を参照してください。以下は0.2.0時点の記録です。
+
 基準commit: `0c5a5aeb29b1a11195cb74d562f00c5dd6edec15`  
 作業branch: `feat/memory-api-v0.2`  
 検証日: 2026-09-10 UTC  

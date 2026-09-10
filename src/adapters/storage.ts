@@ -33,5 +33,9 @@ export interface StorageAdapter {
   isPurged(atomId: string): boolean;
   erase(atomIds: readonly string[]): void;
   blobRange?(blobId: string, start: number, length: number): Uint8Array | undefined;
+  /** Retain all immutable revisions at this watermark until the deadline, except explicit purge.
+   * Must participate in transaction(). Snapshot reads alone do not imply this retention guarantee. */
+  retainSnapshot?(at: number, until: number): string;
+  retainedSnapshot?(token: string): { at: number; until: number } | undefined;
   close(): void;
 }

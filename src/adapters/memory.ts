@@ -113,6 +113,8 @@ export class MemoryStorage implements StorageAdapter {
     return this.#purged.has(atomId);
   }
   erase(atomIds: readonly string[]): void {
+    if (atomIds.length)
+      this.metaSet('retention-generation', (this.metaGet<number>('retention-generation') ?? 0) + 1);
     for (const id of atomIds) {
       this.#purged.add(id);
       this.#rows.delete(id);
@@ -131,4 +133,24 @@ export class MemoryStorage implements StorageAdapter {
     ).subarray(offset, offset + length);
   }
   close(): void {}
+  retainSnapshot(at: number, until: number): string {
+    const token = uid('retained');
+    // This adapter never garbage-collects immutable versions. Purge always overrides retention.
+    this.metaSet(`retained:${token}`, {
+      at,
+      until,
+      generation: this.metaGet<number>('retention-generation') ?? 0,
+    });
+    return token;
+  }
+  retainedSnapshot(token: string): { at: number; until: number } | undefined {
+    const value = this.metaGet<{ at: number; until: number; generation: number }>(
+      `retained:${token}`,
+    );
+    return value &&
+      value.until > Date.now() &&
+      value.generation === (this.metaGet<number>('retention-generation') ?? 0)
+      ? value
+      : undefined;
+  }
 }

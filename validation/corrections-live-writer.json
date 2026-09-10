@@ -1,0 +1,119 @@
+{
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+  "syntheticData": true,
+  "workflow": "Host presents description/relationship/finish stages from validated observations; model generates content, roles and refs. This is not an unconstrained planner benchmark.",
+  "generatedAt": "2026-09-10T19:01:05.783Z",
+  "actions": [
+    {
+      "action": {
+        "kind": "write",
+        "content": {
+          "text": "旧クライアント認証の整理",
+          "links": {
+            "原資料": "m1"
+          }
+        }
+      },
+      "outputTokens": 30
+    },
+    {
+      "action": {
+        "kind": "write",
+        "content": {
+          "text": "旧クライアント認証の整理",
+          "links": {
+            "原資料": "m1",
+            "描述": "m2"
+          }
+        }
+      },
+      "outputTokens": 35
+    },
+    {
+      "action": {
+        "kind": "finish",
+        "output": {
+          "text": "Structured the source",
+          "links": {
+            "原資料": "m1",
+            "描述": "m2"
+          }
+        }
+      },
+      "outputTokens": 29
+    }
+  ],
+  "status": "passed",
+  "writer": {
+    "runId": "run:e04439a5-8c7f-41c7-b678-321f34956c0b",
+    "status": "completed",
+    "output": {
+      "text": "Structured the source",
+      "links": {
+        "原資料": "m1",
+        "描述": "m2"
+      }
+    },
+    "changes": [
+      {
+        "ref": "ref:22de1f91-1316-44b2-8045-47ca5db29563",
+        "text": "旧クライアント認証の整理",
+        "links": [
+          {
+            "role": "原資料",
+            "ref": "ref:e3d9919b-6b5d-403f-8017-538949b50d1f",
+            "at": "logical",
+            "required": false,
+            "orderKey": "0"
+          }
+        ],
+        "sources": [],
+        "provenance": {
+          "origin": "organization",
+          "producer": "example-owner"
+        },
+        "state": "active"
+      },
+      {
+        "ref": "ref:3627748e-4d6c-4f99-9274-e214c7c41f8f",
+        "text": "旧クライアント認証の整理",
+        "links": [
+          {
+            "role": "原資料",
+            "ref": "ref:e3d9919b-6b5d-403f-8017-538949b50d1f",
+            "at": "logical",
+            "required": false,
+            "orderKey": "0"
+          },
+          {
+            "role": "描述",
+            "ref": "ref:22de1f91-1316-44b2-8045-47ca5db29563",
+            "at": "logical",
+            "required": false,
+            "orderKey": "1"
+          }
+        ],
+        "sources": [],
+        "provenance": {
+          "origin": "organization",
+          "producer": "example-owner"
+        },
+        "state": "active"
+      }
+    ],
+    "usage": {
+      "maxAtoms": 8,
+      "maxCandidates": 73,
+      "maxBytes": 25799,
+      "maxNetworkCalls": 12,
+      "maxModelCalls": 3,
+      "maxModelInputTokens": 1723,
+      "maxModelOutputTokens": 3072,
+      "maxContextTokens": 2151
+    },
+    "steps": 3
+  },
+  "firstTokens": 1113,
+  "rereadTokens": 1638,
+  "historicalItems": 3
+}
