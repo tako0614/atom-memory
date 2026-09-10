@@ -25,7 +25,7 @@
 - ハーネス：`src/runtime/harness.ts`。ホストが承認した構成計画を後継操作へ渡す設定を追加
 - 試験：新規 `test/client-corrections.test.mjs`、`test/api-acceptance.test.mjs`、`test/client-hardening.test.mjs`
 - 実行例：新規 `examples/regeneration.mjs`、`examples/writer.mjs`
-- 説明：`docs/adapters.md`、`docs/api.md`、`docs/concepts.md`、`docs/guide.md`、`docs/migration.md`、`docs/runtime.md`、`docs/release.md`
+- 説明：`docs/adapters.md`、`docs/api.md`、`docs/concepts.md`、`docs/guide.md`、`docs/migration.md`、`docs/runtime.md`、`docs/release.md`、`docs/acceptance.md`
 - サイト：`docs/.vitepress/config.mts`、`docs/.vitepress/theme/style.css`、`docs/index.md`。`docs/public/mark.svg` を削除し、ロゴと独自のオレンジ系配色を無彩色へ変更。コードの構文色は保持
 - 版・検証：`package.json`、`package-lock.json`、`validation/README.md`、この記録と `corrections-*` の実行結果。公開照合用の `docs/public/release.json` と `validation/release.json` は公開時に更新
 
@@ -44,6 +44,10 @@
 | 配布tarballを別プロジェクトへ導入            | 追加58件成功、consumer型検査成功            | パッケージの公開exportを利用、両adapter                                 |
 
 コマンド結果とログのSHA-256は [corrections-checks.json](./corrections-checks.json) にある。
+
+公開後も、空のnpm cacheと別プロジェクトでregistryから0.2.1を導入し、両adapterの58件とconsumer型検査に成功した。registryのtarballは公開前に検証したものとSHA-256・integrityが一致する。初回CIは公開用 `docs/public/release.json` の書式で失敗し、整形後の `5780868` でNode 22・24の全工程が成功した。
+
+サイトの受入ページは今回の140件・実モデル入力比較へ更新した。npmの不変tarballに同梱された `docs/acceptance.md` の82件・旧比較表は0.2.0時点の結果で、最新の実行記録はこのファイルとサイトを参照する。公開済みtarballの上書きは行っていない。
 
 追加試験は、新規所属、retire・reviseによる解除、古い引用入力からの復活防止、空検索・空構成への追加、古いページ位置より前の追加、inspectの先頭からの再取得、生成中の改訂、予算不足、入力receiptとcache、旧計画なし、生成された子と原資料、blobの未対応診断を含む。
 

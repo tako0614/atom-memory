@@ -55,6 +55,16 @@
       "command": "npm run docs:build",
       "result": "passed",
       "logSha256": "cdc731c88011a4c91dc0cdf12fe2bd2cd45e218185e0a4d455656a9a3540e0b3"
+    },
+    {
+      "command": "node --test client-corrections.test.mjs (registry install, empty npm cache)",
+      "result": "58 passed, 0 failed",
+      "logSha256": "43837fdc547e6f86e8d6fa4436a69270038249defd6e3a9891ae9b6dbd527c2b"
+    },
+    {
+      "command": "tsc consumer.mts (strict NodeNext, registry install)",
+      "result": "passed",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ],
   "packageIntegrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA=="
