@@ -27,10 +27,14 @@ export class SqliteStorage implements StorageAdapter {
   readonly capabilities = { snapshot: true, atomicBatch: true, queryGuards: true };
   readonly id: string;
   #db: DatabaseSync;
-  constructor(path: string) {
+  #synchronous: 'FULL' | 'NORMAL';
+  constructor(path: string, options: { synchronous?: 'FULL' | 'NORMAL' } = {}) {
+    this.#synchronous = options.synchronous ?? 'FULL';
+    if (!['FULL', 'NORMAL'].includes(this.#synchronous))
+      throw new TypeError('Invalid SQLite synchronous mode');
     this.#db = new DatabaseSync(path);
     this.#db
-      .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;
+      .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=${this.#synchronous}; PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;
       CREATE TABLE IF NOT EXISTS am_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       INSERT OR IGNORE INTO am_state VALUES ('sequence','0');
       CREATE TABLE IF NOT EXISTS am_revisions (
@@ -48,6 +52,20 @@ export class SqliteStorage implements StorageAdapter {
     this.id = (
       this.#db.prepare("SELECT value FROM am_state WHERE key='id'").get() as { value: string }
     ).value;
+  }
+  /**
+   * NORMAL is for replayable imports. Its commits remain atomic, but callers
+   * must flush before acknowledging an external source or durable checkpoint.
+   * A real FULL commit syncs all preceding WAL writes before returning.
+   */
+  flush(): void {
+    if (this.#synchronous === 'FULL') return;
+    this.#db.exec('PRAGMA synchronous=FULL');
+    try {
+      this.transaction(() => this.metaSet('sqlite:durability-barrier', uid('flush')));
+    } finally {
+      this.#db.exec('PRAGMA synchronous=NORMAL');
+    }
   }
   watermark(): number {
     return Number(
