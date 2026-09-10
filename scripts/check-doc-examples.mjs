@@ -4,26 +4,27 @@ import { spawnSync } from 'node:child_process';
 const root = resolve(import.meta.dirname, '..');
 const temporary = resolve(root, '.doc-examples');
 mkdirSync(temporary, { recursive: true });
-const examples = [];
+const programs = new Set();
+const expectedOutputs = new Map();
 let index = 0;
 try {
   const documents = readdirSync(resolve(root, 'docs'))
     .filter((name) => name.endsWith('.md'))
     .sort()
     .map((name) => `docs/${name}`);
-  for (const doc of documents) {
+  for (const doc of [...documents, 'README.md']) {
     const markdown = readFileSync(resolve(root, doc), 'utf8');
     // A tutorial can explain each step separately while keeping one executable session.
     const session = [...markdown.matchAll(/```ts session\n([\s\S]*?)\n```/g)];
     if (session.length) {
       const path = resolve(temporary, `${basename(doc, '.md')}-session.ts`);
       writeFileSync(path, session.map((match) => match[1]).join('\n\n'));
-      examples.push(path);
+      programs.add(path);
     }
     for (const match of markdown.matchAll(/```ts runnable\n([\s\S]*?)\n```/g)) {
       const path = resolve(temporary, `snippet-${++index}.ts`);
       writeFileSync(path, match[1]);
-      examples.push(path);
+      programs.add(path);
     }
     for (const match of markdown.matchAll(/^<<< (.+\.mjs)$/gm)) {
       const path = resolve(dirname(resolve(root, doc)), match[1]);
@@ -32,8 +33,19 @@ try {
         dest,
         readFileSync(path, 'utf8').replaceAll("'../dist/index.js'", "'atom-memory'"),
       );
-      examples.push(dest);
+      programs.add(dest);
     }
+    for (const match of markdown.matchAll(/```text output:([\w.-]+)\n([\s\S]*?)\n```/g)) {
+      const expected = match[2].trim();
+      if (expectedOutputs.has(match[1]) && expectedOutputs.get(match[1]) !== expected)
+        throw Error(`Conflicting documented output for ${match[1]}`);
+      expectedOutputs.set(match[1], expected);
+    }
+  }
+  const examples = [...programs];
+  for (const name of expectedOutputs.keys()) {
+    if (!examples.some((path) => basename(path) === name))
+      throw Error(`Documented output has no executable example: ${name}`);
   }
   if (examples.length < 4)
     throw Error('Expected executable guide, API, runtime and storage examples');
@@ -72,8 +84,15 @@ try {
       env: process.env,
     });
     if (run.status !== 0) throw Error(`${source}: ${run.stdout}${run.stderr}`);
+    const expected = expectedOutputs.get(basename(source));
+    if (expected !== undefined && run.stdout.trim() !== expected)
+      throw Error(
+        `${source}: output differs from the documentation\nExpected: ${expected}\nActual: ${run.stdout}`,
+      );
   }
-  console.log(`Documentation: extracted, typechecked and executed ${examples.length} examples.`);
+  console.log(
+    `Documentation: extracted, typechecked and executed ${examples.length} examples; verified ${expectedOutputs.size} documented outputs.`,
+  );
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

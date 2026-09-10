@@ -6,34 +6,50 @@ export default defineConfig({
   cleanUrls: true,
   head: [
     ['link', { rel: 'icon', href: '/mark.svg' }],
-    ['meta', { name: 'theme-color', content: '#faf8f3' }],
+    ['meta', { name: 'theme-color', content: '#ffffff' }],
   ],
   sitemap: { hostname: 'https://atom-memory.takos.jp' },
   themeConfig: {
     logo: '/mark.svg',
     nav: [
-      { text: 'はじめる', link: '/guide' },
+      { text: 'ドキュメント', link: '/guide' },
+      { text: 'コード例', link: '/examples' },
       { text: 'API', link: '/api' },
-      { text: 'エージェント', link: '/runtime' },
-      { text: 'v0.2.0', link: '/release' },
     ],
     sidebar: [
       {
-        text: '使い方',
+        text: 'はじめる',
         items: [
-          { text: 'はじめる', link: '/guide' },
+          { text: 'Hello, Memory', link: '/guide' },
+          { text: '短いコードで試す', link: '/examples' },
+          { text: 'エージェントにつなぐ', link: '/runtime' },
+        ],
+      },
+      {
+        text: '使い方を広げる',
+        items: [
           { text: 'Atom と関係', link: '/concepts' },
-          { text: 'API リファレンス', link: '/api' },
-          { text: 'エージェントと Writer', link: '/runtime' },
           { text: 'ホストの設定', link: '/setup' },
           { text: '保存と検索の設定', link: '/adapters' },
         ],
       },
       {
+        text: 'API',
+        items: [
+          { text: '操作一覧', link: '/api' },
+          { text: 'write · 保存', link: '/api#write' },
+          { text: 'search · 検索', link: '/api#search' },
+          { text: 'inspect · 参照', link: '/api#inspect' },
+          { text: 'read · 記憶の取得', link: '/api#read' },
+          { text: 'edit · 編集', link: '/api#edit' },
+          { text: 'TypeScript', link: '/contracts' },
+        ],
+      },
+      {
         text: '実装と検証',
+        collapsed: true,
         items: [
           { text: 'アーキテクチャ', link: '/specification' },
-          { text: 'TypeScript', link: '/contracts' },
           { text: '受入条件と検証', link: '/acceptance' },
           { text: 'リリース', link: '/release' },
         ],

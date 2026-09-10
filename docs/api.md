@@ -1,6 +1,6 @@
 # API リファレンス
 
-アプリは、ホストが用意した `memory` クライアントを通して情報を扱います。保存や検索で返る `ref` を、参照・関係・改訂にそのまま使えます。
+保存する、探す、詳しく読む、思い出す、編集する。五つの操作は、同じ `memory` から使えます。
 
 | 操作                       | 使う場面                     | 主な戻り値                     |
 | -------------------------- | ---------------------------- | ------------------------------ |
@@ -12,26 +12,11 @@
 
 以下の例は、同じクライアントで上から順に実行できます。型の定義は [TypeScript](/contracts)にあります。
 
-<details>
-<summary>このページのクライアント設定</summary>
+例では [クイックスタート](/guide#_2-ファイルを用意する)のクライアントを使います。
 
 ```ts session
-import { MemoryHost, LocalAuthority } from 'atom-memory';
-const authority = new LocalAuthority();
-const auth = authority.issue({
-  subject: 'api-example',
-  readPolicies: ['notes'],
-  writePolicies: ['notes'],
-  canIngestSource: true,
-});
-const memory = new MemoryHost({ authority }).connect({
-  auth,
-  writePolicy: 'notes',
-  actor: { type: 'human' },
-});
+import { memory } from './memory.mjs';
 ```
-
-</details>
 
 ## write
 
@@ -111,16 +96,8 @@ blob の本文は `range.text`、非テキストは `range.base64` に入りま�
 今回の問いや作業の文脈から、モデルへ渡す資料を組み立てます。
 
 ```ts session
-const recalled = await memory.read(
-  {
-    query: '招待リンクはいつ切れる？',
-    context: '参加者への案内文を作っている。',
-    observations: ['招待メールは昨日送信した。'],
-  },
-  { tokens: 4096 },
-);
-console.log(recalled.text);
-console.log(recalled.tokenCount, recalled.refs, recalled.sources);
+const recalled = await memory.read({ context: '招待リンクはいつ切れる？' });
+console.log(recalled.text); // モデルへ渡す記憶
 ```
 
 入力の `query`、`context`、`thought`、`observations` は任意です。取得できる文脈や観測を渡せば動きます。`thought` は明示的な作業中の推論テキスト、`signal` はホストが設定したエンコーダーからの検索信号です。意味のある入力が一つもなければ `INVALID_INPUT` になります。
@@ -144,18 +121,10 @@ console.log(recalled.tokenCount, recalled.refs, recalled.sources);
 複数の変更を一つの非公開 draft にまとめます。callback が成功し、版や入力の前提を検証できたら、一度に確定します。
 
 ```ts session
-const edited = await memory.edit(async (draft) => {
-  const revised = await draft.revise(rule.ref, '招待リンクの有効期限は48時間です。');
-  const note = await draft.write({
-    text: '案内文には更新後の有効期限を記載する。',
-    links: { 参照: revised.ref },
-  });
-  const preview = await draft.inspect(revised.ref);
-  console.log(preview.atom.text); // 確定前に自分の変更を確認
-  return { rule: revised, note };
-});
-console.log(edited.value.rule.ref); // 確定済みの参照
-console.log(edited.changes.length); // 2
+const edited = await memory.edit((draft) =>
+  draft.revise(rule.ref, '招待リンクの有効期限は48時間です。'),
+);
+console.log(edited.value.text); // 招待リンクの有効期限は48時間です。
 ```
 
 | draft の操作                                         | 用途                                 |

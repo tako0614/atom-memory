@@ -1,71 +1,54 @@
 # Atom Memory
 
-A TypeScript library that gives agents relevant memory for each model call. Store notes and their relationships, retrieve the evidence a task needs, and keep track of where it came from—even after a correction.
+Give your agent something to remember.
 
-`MemoryHarness` selects a fresh memory block before each model call. An agent can also search for more information, inspect a particular source, or propose edits. All of these operations use the same Atom store.
+Atom Memory is a TypeScript library for saving notes, finding relevant information, and bringing it back into an agent's context. Start with a sentence. Connect related notes. Update them when things change.
 
 ```sh
 npm install atom-memory
 ```
 
-Node.js 22.13+, ESM, TypeScript declarations, no runtime dependencies. Use the in-process store to get started or SQLite to keep data on disk.
+## Hello, Memory
 
-## Save and recall
+```ts runnable
+import { memory } from './memory.mjs';
 
-Once the host has [configured a client](https://atom-memory.takos.jp/setup), application code is short:
+await memory.write('I like my coffee black.');
 
-```ts
-await memory.write('Invitation links expire after 24 hours.');
-
-const found = await memory.search('Invitation links');
-console.log(found.items.map((item) => item.text));
-
-const recalled = await memory.read({ context: 'When do invitation links expire?' });
-// Pass recalled.text to your model as reference material.
+const recalled = await memory.read({ context: 'Suggest a coffee I would enjoy.' });
+console.log(recalled.items[0]?.text);
+// I like my coffee black.
 ```
 
-`search` returns candidates to inspect. `read` selects relevant material within a token budget for the model's current task. The [runnable example](examples/basic.mjs) imports its client from a separate [host setup file](examples/memory.mjs).
+The [quickstart](https://atom-memory.takos.jp/guide) includes both this application code and the `memory.mjs` setup file. It runs locally with Node.js 22.13+. No model or API key is needed for this first example.
 
-## Connect information
+## A few operations. Plenty to build.
 
-A note, a topic description, and a relationship are all Atoms. Describe a connection in text and attach references with the roles that make sense for your data:
+| You want to…                       | Use              |
+| ---------------------------------- | ---------------- |
+| Remember a note                    | `write(content)` |
+| Find relevant notes                | `search(query)`  |
+| Check a note and its sources       | `inspect(ref)`   |
+| Select memory for the current task | `read(state)`    |
+| Correct or organize notes          | `edit(callback)` |
 
-```ts
-const rule = await memory.write('Invitation links expire after 24 hours.');
-const topic = await memory.write('Invitation and onboarding procedures');
-await memory.write({
-  text: 'The invitation procedure includes the link expiry rule.',
-  links: { topic: topic.ref, rule: rule.ref },
-});
-```
+Use `MemoryHarness` to select a fresh memory block before each model call. Notes, descriptions and relationships share the same store. Keep data in memory while trying things out, then use SQLite to save it on disk.
 
-Search discovers content. Relation traversal finds connected information in either direction and preserves the roles. You can add another connection without rewriting the topic or copying its notes.
+## Try it
 
-| When you want to…                                 | Use                        |
-| ------------------------------------------------- | -------------------------- |
-| Give a model relevant memory for its current task | `read(state, { tokens })`  |
-| Find candidate notes and relationships            | `search(query, { limit })` |
-| Examine a returned Atom, its source and neighbors | `inspect(ref, { depth })`  |
-| Save a note or relationship                       | `write(content)`           |
-| Revise or organize several Atoms together         | `edit(callback)`           |
+- [Hello, Memory](https://atom-memory.takos.jp/guide) — your first saved memory.
+- [Short examples](https://atom-memory.takos.jp/examples) — search, corrections and conditions.
+- [Connect an agent](https://atom-memory.takos.jp/runtime) — automatic recall and a working llama.cpp adapter.
+- [API reference](https://atom-memory.takos.jp/api) — methods, options and return values.
 
-## Learn and run
-
-- [Getting started](https://atom-memory.takos.jp/guide): save, connect, search and correct a note.
-- [API reference](https://atom-memory.takos.jp/api): examples, options, returned values and errors.
-- [Agents and Writer](https://atom-memory.takos.jp/runtime): automatic recall and a runnable llama.cpp connection.
-- [Storage and search](https://atom-memory.takos.jp/adapters): SQLite, embeddings and resource limits.
-- [Migration](https://atom-memory.takos.jp/migration) for existing installations; [verification](https://atom-memory.takos.jp/acceptance) for test and model-evaluation results.
-
-To run the repository examples:
+To run the examples from this repository:
 
 ```sh
 npm ci
-npm run check
-npm run example
-npm run example:writer
+npm run build
+node examples/hello.mjs
 ```
 
-The basic and Writer examples run locally with deterministic behavior. `npm run example:live` connects to a configured llama.cpp server; setup is in the [agent guide](https://atom-memory.takos.jp/runtime#ローカルモデルで動かす).
+Run `npm run check` for the test suite and executable documentation checks. [Verification records](validation/README.md), [storage configuration](https://atom-memory.takos.jp/adapters), and [migration](https://atom-memory.takos.jp/migration) are available separately.
 
-MIT License.
+ESM · TypeScript declarations · No runtime dependencies · MIT

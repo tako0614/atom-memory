@@ -1,4 +1,4 @@
-# エージェントと Writer
+# エージェントにつなぐ
 
 `MemoryHarness` は、モデルを呼ぶ前にその作業に関連する記憶を取得します。アプリがユーザーの要求を渡すと、ハーネスが `read`、モデル呼出し、モデルが選んだ操作、次の `read` を進めます。
 
@@ -22,30 +22,13 @@
 
 ## 自動取得を試す
 
-次の例は、モデルに届いた記憶をそのまま返すテスト用モデルです。モデルが検索操作を選ばなくても、招待ルールが入力に入ることを確認できます。外部通信は発生しません。
+次の例は、モデルに届いた記憶をそのまま返すテスト用モデルです。モデルが検索操作を選ばなくても、コーヒーの好みが入力に入ることを確認できます。[クイックスタート](/guide#_2-ファイルを用意する)の `memory.mjs` と一緒に使います。外部通信は発生しません。
 
 ```ts runnable
-import {
-  MemoryHost,
-  LocalAuthority,
-  MemoryHarness,
-  utf8Tokenizer,
-  type HarnessModel,
-} from 'atom-memory';
+import { MemoryHarness, utf8Tokenizer, type HarnessModel } from 'atom-memory';
+import { memory } from './memory.mjs';
 
-const authority = new LocalAuthority();
-const auth = authority.issue({
-  subject: 'support-agent',
-  readPolicies: ['notes'],
-  writePolicies: ['notes'],
-  canIngestSource: true,
-});
-const memory = new MemoryHost({ authority }).connect({
-  auth,
-  writePolicy: 'notes',
-  actor: { type: 'human' },
-});
-await memory.write('招待リンクの有効期限は24時間です。');
+await memory.write('コーヒーはブラックが好き。');
 
 const model: HarnessModel = {
   id: 'show-recalled-memory',
@@ -59,10 +42,10 @@ const model: HarnessModel = {
 const harness = new MemoryHarness({
   memory,
   model,
-  instruction: '記憶を参考資料として使い、参加者への案内を作る。',
+  instruction: '記憶を参考に、ユーザーの好みに合わせて提案する。',
   memoryTokens: 4096,
 });
-const result = await harness.run({ input: '招待リンクはいつまで使える？' });
+const result = await harness.run({ input: 'コーヒーの好みに合わせて提案して。' });
 if (result.status !== 'completed') throw new Error(result.error);
 console.log(result.output);
 ```
