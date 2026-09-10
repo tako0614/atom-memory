@@ -1,0 +1,80 @@
+{
+  "at": "2026-09-10T17:27:06.471Z",
+  "npm": {
+    "version": "0.2.0",
+    "latest": "0.2.0",
+    "tarball": "https://registry.npmjs.org/atom-memory/-/atom-memory-0.2.0.tgz",
+    "integrity": "sha512-FQLiPQJioxnL7AoGcz3lJ0gW/cq4p9Xr8FMypalQfT6SG+fT9fh5yUUejlvxhOPGE3xbBUsDYmlgq2o0iCI80g==",
+    "sha256": "e16f257e6989bb51665de44cfcf94540780069aeaae0987558a0579384eebeca",
+    "published": true,
+    "registryInstall": "passed with empty npm cache in a new consumer project",
+    "consumerNodeVersions": ["22.23.2", "24.18.0"],
+    "publicAPI": "write/search/inspect/read/edit and automatic MemoryHarness passed",
+    "sqlite": "passed",
+    "consumerTypes": "passed"
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "pages": [
+      {
+        "path": "/",
+        "status": 200,
+        "sha256": "537d37cf59c4cbd8f42051d3f50b9b194eefc26712776a46347376fcf53ef955"
+      },
+      {
+        "path": "/guide",
+        "status": 200,
+        "sha256": "8439397f9b5ac9090cc14814f24a919e626ffadf2690a1542cbefd5949bc35a4"
+      },
+      {
+        "path": "/api",
+        "status": 200,
+        "sha256": "f98433ae9ee3b6e30cfcd04256d01c1bdd12a22e2f8f22c917d059b1eaaa66bb"
+      },
+      {
+        "path": "/runtime",
+        "status": 200,
+        "sha256": "e7bf6335426be13529136a9258ff1e2f86164acc040f616a9a43958c8d416539"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "sha256": "8adff2230dfe4769b3cf0fc98fbf29f846d0b591d8686344a35d943b10f8d25b"
+      },
+      {
+        "path": "/release.json",
+        "status": 200,
+        "sha256": "32abe2bce6fb909d4838ef394a903b4466689bd769d6c3c7b3041884ea686149"
+      }
+    ],
+    "published": true,
+    "tool": "Wrangler 4.130.0 via npm run docs:deploy",
+    "worker": "atom-memory-docs",
+    "versionId": "b1909689-566f-4cb6-9bce-188955a2efd1",
+    "previousVersionId": "796a6bf0-7fe9-4c59-ac2a-d2c96e7e0109",
+    "workersDev": "https://atom-memory-docs.shoutatomiyama0614.workers.dev",
+    "releaseManifest": "verified on custom domain and workers.dev",
+    "browser": {
+      "status": "passed",
+      "page": "/guide",
+      "checks": [
+        "v0.2.0 navigation and install command rendered",
+        "public API navigation link resolves to /api",
+        "accessibility tree loaded",
+        "390px mobile viewport has menu and no document overflow"
+      ]
+    }
+  },
+  "baseline": "0c5a5aeb29b1a11195cb74d562f00c5dd6edec15",
+  "sourceCommit": "7702e1812af2d4cb094e7e042abf3fde4f4fc37b",
+  "tag": "v0.2.0",
+  "ci": {
+    "url": "https://github.com/tako0614/atom-memory/actions/runs/34507867206",
+    "conclusion": "success",
+    "matrix": [22, 24]
+  },
+  "regression": {
+    "tests": 82,
+    "nodeVersions": ["22.23.2", "24.18.0", "26.1.0"]
+  }
+}

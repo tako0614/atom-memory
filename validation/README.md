@@ -5,7 +5,7 @@
 基準commit: `0c5a5aeb29b1a11195cb74d562f00c5dd6edec15`  
 作業branch: `feat/memory-api-v0.2`  
 検証日: 2026-09-10 UTC  
-パッケージ: **0.2.0**。npm・サイトの公開と読戻し結果は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)へ記録します。既存データの消去は行いません。
+パッケージ: **0.2.0**。npm・サイトの公開と読戻し結果は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.2.0.json)へ記録します。既存データの消去は行いません。
 
 ## 実装範囲
 
