@@ -1,0 +1,183 @@
+{
+  "at": "2026-09-10T18:23:36.498171+00:00",
+  "sourceCommit": "6251d30875436d6669e7ac6478954cc87a313241",
+  "previousCommit": "861995594d43ec37f01edcce1d06a328e8e2576d",
+  "scope": "Documentation experience, visual theme, executable examples and documented output verification",
+  "designReference": [
+    "https://hono.dev/",
+    "https://hono.dev/docs/getting-started/basic"
+  ],
+  "changes": [
+    "Code and real read result appear together on the landing page",
+    "Hello, Memory quickstart includes both runnable files in one tab group",
+    "Short search, correction and condition examples show verified output",
+    "Progressive navigation separates getting started, usage, API, implementation and migration"
+  ],
+  "validation": {
+    "docProgramsTypecheckedAndExecuted": 11,
+    "documentedOutputsVerified": 4,
+    "siteBuild": "passed",
+    "format": "passed",
+    "internalPageAndAnchorLinksChecked": 474,
+    "htmlPages": 15,
+    "wranglerDryRun": "passed",
+    "ci": {
+      "url": "https://github.com/tako0614/atom-memory/actions/runs/34513899357",
+      "conclusion": "success",
+      "nodeVersions": [
+        22,
+        24
+      ],
+      "checks": [
+        "npm run check",
+        "npm run example",
+        "npm run example:writer",
+        "npm run format:check",
+        "npm pack --dry-run"
+      ]
+    }
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "tool": "Wrangler 4.130.0 via npm run docs:deploy",
+    "versionId": "fdf09ace-a703-451e-beea-b205c127171a",
+    "previousVersionId": "a36c3eca-b8ad-4671-8179-3cb49834ab78",
+    "pages": [
+      {
+        "path": "/",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "a09e5ab39e6f60ba00cecdd1fcc945dad1371810ed086494815451b4514fc3ed"
+      },
+      {
+        "path": "/guide",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "c78d9bad05bccd28331c9eeede00264d276a617bd3853a65b08cd5823b52aadd"
+      },
+      {
+        "path": "/examples",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "b4c20ccbb0d6fac7f89439dc8b09fb1f08251dbf7c781bc0b5f27db665af0654"
+      },
+      {
+        "path": "/setup",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "23188683d22afe142b9f99446ceaca3d6bc2783281a379872a77a21f3600924f"
+      },
+      {
+        "path": "/api",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "5e87e2c741e1071e2b3a52eec8067d6971892cd5f27954732794088c7971854d"
+      },
+      {
+        "path": "/concepts",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "04dd3780a0cc4ca31166cee7b5143aaadf42632bf3e21bc7b24f867b58565edf"
+      },
+      {
+        "path": "/runtime",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "686c71f41838f67bda059e4778bc4eac5d6d55a67de3ed6634c84e955a639ebf"
+      },
+      {
+        "path": "/adapters",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "f6024962f5be10ec3f1ed4e9666635d234472755675fce77780cd1f844b2e4c6"
+      },
+      {
+        "path": "/contracts",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "cc338d52b55f439a5fcf4c00467669ce74004c32f8a9566fed45d49a3b6331c6"
+      },
+      {
+        "path": "/specification",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "b4b6bc70a3599ca53153952b9a44f49b7b1d88872a0f127f164322685bb62b49"
+      },
+      {
+        "path": "/acceptance",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "6194ebafbb9f7849fe64c0be25230abff4aa1f71045b310e7bf6ee5a085471b2"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "8a787e2ad9ded3e20dbce2e927b4c6b38e584ae30ba4a84fa839d653ee620285"
+      },
+      {
+        "path": "/migration-architecture",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "9a69818cc0343940aca7db8be689708b41b816a7c89b55891478fed67ab9db90"
+      },
+      {
+        "path": "/release",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "54837664a150c42851036ff285f98f211cf763e91229bf95c26bb2e3884ca58a"
+      },
+      {
+        "path": "/release.json",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "9a037408f3890ad4d38f227aae3906663ab4498e78f488f147ad0bf29cd68664"
+      },
+      {
+        "path": "/mark.svg",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "28f3a5fb7a40696c962e23b135380f772d08b1d3a9d142d1afc11cfd25aa45cf"
+      },
+      {
+        "path": "/assets/style.D3e3xAmX.css",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "ca4472dc257cdb833a937dc242ee4c4dc24cfdf0a03b56452c00d829b89ab505"
+      },
+      {
+        "path": "/assets/vp-icons.139f4833.css",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "139f4833d28d32f92759a9afc552fe03400467f0ea54e164b8aa4cd371adce17"
+      }
+    ],
+    "workersDevHome": "matches build",
+    "browser": {
+      "status": "passed",
+      "viewports": [
+        1440,
+        390
+      ],
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "homeShowsCodeAndActualResult": true,
+      "mobileDocumentOverflow": false,
+      "mobileHomeCodeOverflow": false,
+      "homeToGuideNavigation": "passed",
+      "guideFiles": [
+        "hello.mjs",
+        "memory.mjs"
+      ],
+      "guideSetupTab": "passed",
+      "guideRunCommand": "node hello.mjs"
+    }
+  },
+  "package": {
+    "version": "0.2.0",
+    "publishedInThisUpdate": false
+  },
+  "liveModelRunInThisUpdate": false
+}
