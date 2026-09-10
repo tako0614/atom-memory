@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   lang: 'ja-JP',
   title: 'Atom Memory',
-  description: '一つの Atom モデルで、出典・履歴・関係を保つエージェントメモリ。',
+  description: 'メモと関係を保存し、今の問いに必要な記憶をモデルへ渡す TypeScript ライブラリ。',
   cleanUrls: true,
   head: [
     ['link', { rel: 'icon', href: '/mark.svg' }],
@@ -14,28 +14,36 @@ export default defineConfig({
     nav: [
       { text: 'はじめる', link: '/guide' },
       { text: 'API', link: '/api' },
-      { text: '設計仕様', link: '/specification' },
+      { text: 'エージェント', link: '/runtime' },
       { text: 'v0.2.0', link: '/release' },
     ],
     sidebar: [
       {
-        text: 'Atom Memory',
+        text: '使い方',
         items: [
-          { text: 'はじめに', link: '/guide' },
+          { text: 'はじめる', link: '/guide' },
           { text: 'Atom と関係', link: '/concepts' },
-          { text: '公開API', link: '/api' },
-          { text: 'Writer と共通ハーネス', link: '/runtime' },
-          { text: '保存・検索アダプター', link: '/adapters' },
-          { text: 'v0.1からの移行', link: '/migration' },
+          { text: 'API リファレンス', link: '/api' },
+          { text: 'エージェントと Writer', link: '/runtime' },
+          { text: 'ホストの設定', link: '/setup' },
+          { text: '保存と検索の設定', link: '/adapters' },
         ],
       },
       {
-        text: '仕様と検証',
+        text: '実装と検証',
         items: [
-          { text: '受入条件 A01–A36 / F01–F20', link: '/acceptance' },
-          { text: '最終設計 v1.0', link: '/specification' },
-          { text: 'TypeScript 契約', link: '/contracts' },
-          { text: 'リリースと公開手順', link: '/release' },
+          { text: 'アーキテクチャ', link: '/specification' },
+          { text: 'TypeScript', link: '/contracts' },
+          { text: '受入条件と検証', link: '/acceptance' },
+          { text: 'リリース', link: '/release' },
+        ],
+      },
+      {
+        text: '移行',
+        collapsed: true,
+        items: [
+          { text: 'v0.1 からの移行', link: '/migration' },
+          { text: '歴史資料：設計 v1.0', link: '/migration-architecture' },
         ],
       },
     ],

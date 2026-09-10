@@ -1,14 +1,63 @@
 # Atom Memory
 
-One Atom model for content, descriptions and roleful relationships. An authenticated client provides `read`, `search`, `inspect`, `write` and `edit`, with automatic IDs, observed references, provenance and finite budgets.
+A TypeScript library that gives agents relevant memory for each model call. Store notes and their relationships, retrieve the evidence a task needs, and keep track of where it came from—even after a correction.
 
-**v0.2.0 introduces the new client API.** Upgrading from v0.1 requires the [migration steps](docs/migration.md).
+`MemoryHarness` selects a fresh memory block before each model call. An agent can also search for more information, inspect a particular source, or propose edits. All of these operations use the same Atom store.
 
 ```sh
-npm install atom-memory@0.2.0
+npm install atom-memory
 ```
 
-To verify this repository and run its examples:
+Node.js 22.13+, ESM, TypeScript declarations, no runtime dependencies. Use the in-process store to get started or SQLite to keep data on disk.
+
+## Save and recall
+
+Once the host has [configured a client](https://atom-memory.takos.jp/setup), application code is short:
+
+```ts
+await memory.write('Invitation links expire after 24 hours.');
+
+const found = await memory.search('Invitation links');
+console.log(found.items.map((item) => item.text));
+
+const recalled = await memory.read({ context: 'When do invitation links expire?' });
+// Pass recalled.text to your model as reference material.
+```
+
+`search` returns candidates to inspect. `read` selects relevant material within a token budget for the model's current task. The [runnable example](examples/basic.mjs) imports its client from a separate [host setup file](examples/memory.mjs).
+
+## Connect information
+
+A note, a topic description, and a relationship are all Atoms. Describe a connection in text and attach references with the roles that make sense for your data:
+
+```ts
+const rule = await memory.write('Invitation links expire after 24 hours.');
+const topic = await memory.write('Invitation and onboarding procedures');
+await memory.write({
+  text: 'The invitation procedure includes the link expiry rule.',
+  links: { topic: topic.ref, rule: rule.ref },
+});
+```
+
+Search discovers content. Relation traversal finds connected information in either direction and preserves the roles. You can add another connection without rewriting the topic or copying its notes.
+
+| When you want to…                                 | Use                        |
+| ------------------------------------------------- | -------------------------- |
+| Give a model relevant memory for its current task | `read(state, { tokens })`  |
+| Find candidate notes and relationships            | `search(query, { limit })` |
+| Examine a returned Atom, its source and neighbors | `inspect(ref, { depth })`  |
+| Save a note or relationship                       | `write(content)`           |
+| Revise or organize several Atoms together         | `edit(callback)`           |
+
+## Learn and run
+
+- [Getting started](https://atom-memory.takos.jp/guide): save, connect, search and correct a note.
+- [API reference](https://atom-memory.takos.jp/api): examples, options, returned values and errors.
+- [Agents and Writer](https://atom-memory.takos.jp/runtime): automatic recall and a runnable llama.cpp connection.
+- [Storage and search](https://atom-memory.takos.jp/adapters): SQLite, embeddings and resource limits.
+- [Migration](https://atom-memory.takos.jp/migration) for existing installations; [verification](https://atom-memory.takos.jp/acceptance) for test and model-evaluation results.
+
+To run the repository examples:
 
 ```sh
 npm ci
@@ -17,25 +66,6 @@ npm run example
 npm run example:writer
 ```
 
-Host setup is in [the executable example](examples/basic.mjs). Once a client is bound:
+The basic and Writer examples run locally with deterministic behavior. `npm run example:live` connects to a configured llama.cpp server; setup is in the [agent guide](https://atom-memory.takos.jp/runtime#ローカルモデルで動かす).
 
-```ts
-const fact = await memory.write('旧クライアントは旧APIを利用している');
-const group = await memory.write('旧クライアントの認証に関する情報');
-await memory.write({
-  text: 'このまとまりに、この情報が含まれる',
-  links: { group: group.ref, member: fact.ref },
-});
-const page = await memory.search('旧クライアントの認証', { limit: 10 });
-if (page.items[0]) await memory.inspect(page.items[0].ref, { depth: 1 });
-const recalled = await memory.read({ context: '旧クライアントの認証' }, { tokens: 4096 });
-await memory.edit((draft) => draft.revise(fact.ref, '訂正された本文'));
-```
-
-`MemoryHarness` (`AgentHarness`) automatically replaces the memory block before every model call. Explicit tools search, inspect and edit through the same store and retrieval engine. `AtomKernel` remains a low-level API; the old harness is `LegacyAgentHarness`.
-
-Node.js >=22.13, ESM, TypeScript declarations, no runtime package dependencies. Memory and SQLite implement local synchronous storage transactions; the asynchronous client does not imply distributed storage support. The exact lexical/vector candidate provider ranks the whole scanned scope, reports scan limits and keeps lexical access while embeddings are pending. It is a local reference implementation, not ANN.
-
-See [guide](docs/guide.md), [API](docs/api.md), [runtime](docs/runtime.md), [migration](docs/migration.md), [acceptance](docs/acceptance.md), and [verification record](validation/README.md). [The llama.cpp example](examples/llama-cpp.mjs) is an actual model adapter with token counting, bounded calls and cancellation. Deterministic tests do not establish model quality; the real-model run is explicitly recorded separately.
-
-The historical v1 specification remains unchanged in `spec/`. The [v0.2 requirements](spec/api-v0.2/README.md) supersede its two-operation API and schema-driven retrieval. MIT License.
+MIT License.

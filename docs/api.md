@@ -1,65 +1,210 @@
-# 公開クライアント API
+# API リファレンス
 
-`MemoryHost.connect()` または `createMemory()` が返すクライアントは、同じAtomストア・候補取得・関係展開・版解決を利用します。`kind`、`schema`、意味分類の`space`、ID、版、`policyId`を通常引数に要求しません。
+アプリは、ホストが用意した `memory` クライアントを通して情報を扱います。保存や検索で返る `ref` を、参照・関係・改訂にそのまま使えます。
 
-| 操作                                                                                | 契約                                                              |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `read(state, { tokens?, limit?, depth?, cursor? })`                                 | 今回モデルへ渡す記憶を選び、本文・refs・出典・receipt・診断を返す |
-| `search(query, { limit?, cursor?, historical? })`                                   | 内容による有限の候補ページ。回答は生成しない                      |
-| `inspect(ref, { depth?, limit?, version?, successor?, history?, range?, cursor? })` | 観測した固定版と周辺の関係・出典を読む                            |
-| `write(textOrContent, { sources?, idempotencyKey?, signal? })`                      | 一つのAtomを追加する。ID・版・時刻・操作IDはホストが発行          |
-| `edit(callback, { basis?, signal?, deadline?, budget? })`                           | 非公開の差分を一度だけ検証・確定する                              |
+| 操作                       | 使う場面                     | 主な戻り値                     |
+| -------------------------- | ---------------------------- | ------------------------------ |
+| `write(content, options?)` | 一つのメモや関係を追加する   | 保存した本文、`ref`、索引状態  |
+| `search(query, options?)`  | 内容で候補を探す             | `items`、次ページの `cursor`   |
+| `inspect(ref, options?)`   | 特定の情報と根拠を調べる     | `atom`、周辺の `items`、出典   |
+| `read(state, options?)`    | 今回モデルに渡す記憶を選ぶ   | `text`、採用した `refs`、出典  |
+| `edit(callback, options?)` | 複数の変更をまとめて確定する | callback の `value`、`changes` |
 
-型の全体は [契約](/contracts)、実行コードは [guide](/guide)と[Writerサンプル](/runtime)にあります。
+以下の例は、同じクライアントで上から順に実行できます。型の定義は [TypeScript](/contracts)にあります。
 
-## read の入力と出力
+<details>
+<summary>このページのクライアント設定</summary>
 
-`state` は `query`、`context`、任意の明示的な`thought`、`observations: string[]`、ホストが検証した`signal`を受け取ります。有効な入力が一つもなければ `INVALID_INPUT`。推論テキストは不要で、原資料の出典にもなりません。
+```ts session
+import { MemoryHost, LocalAuthority } from 'atom-memory';
+const authority = new LocalAuthority();
+const auth = authority.issue({
+  subject: 'api-example',
+  readPolicies: ['notes'],
+  writePolicies: ['notes'],
+  canIngestSource: true,
+});
+const memory = new MemoryHost({ authority }).connect({
+  auth,
+  writePolicy: 'notes',
+  actor: { type: 'human' },
+});
+```
 
-候補を内容で発見し、任意の役割付き関係を両方向に展開してから、関連度・同一版・本文長・出典の重複と必要な付随本文を扱います。同じ原資料・版・範囲の逐語引用は実際の出力から重複を除去します。部分的な重なりは出典区間の和集合にし、文の途中を切って意味を変える処理はしません。別の原資料の同文、同じ出典からの異なる要約は残します。
+</details>
 
-`required: true` の参照先は本文を含める依存です。条件本文が予算に入らない、または依存表現が失効している場合、主張を単独で返しません。`required` を指定しない一般リンクは有限の関係探索に使い、全文の固定構成にはしません。条件の必要性を自然言語だけから完全に推測できるとは主張しません。
+## write
 
-返却する`text`は決定的にシリアライズした記憶領域です。`tokenCount`は設定したtokenizerで測定します。既定は1 UTF-8 byteを1 tokenとする参照用語彙で、実モデル固有の語彙ではありません。`read`は最終回答を作らず、意味Atom・所属を自動保存しません。
+文字列、または `{ text, links }` を保存します。ID、版、時刻はライブラリが発行します。
 
-## links と refs
+```ts session
+const rule = await memory.write('招待リンクの有効期限は24時間です。');
+const topic = await memory.write('招待と参加の手順');
+await memory.write({
+  text: '手順に有効期限のルールを結び付ける。',
+  links: { 手順: topic.ref, ルール: rule.ref },
+});
+console.log(rule.ref, rule.text, rule.indexing);
+```
 
-`{ text, links: { 資料: ref, 補足: [ref1, ref2] } }` が通常形です。同じ役割の順序・繰り返しを明示する場合は `links: [{ role: '資料', target: ref }, ...]` も使えます。三者関係を一つのAtomで保存でき、役割の交換は異なる記述として残ります。
+戻り値は `AtomView` の本文・関係・出典に、`operationId`、`repeated`、`indexing` が加わります。`indexing: 'pending'` は保存済みで埋め込み索引への反映待ちという意味です。語彙による検索には使えます。
 
-| 使用箇所                              | 既定の意味                                   |
-| ------------------------------------- | -------------------------------------------- |
-| `inspect(ref)`                        | 観測した不変版                               |
-| `draft.revise(ref, content)`          | 観測版をCASの前提として同じ対象を改訂        |
-| 通常の`links`                         | 同じ論理対象。読む版は読取状態で解決         |
-| `{ ref, at: 'observed' }`             | 観測した版へ固定。全文を無制限には展開しない |
-| `inspect(ref, { version: 'latest' })` | 最新版を明示的に読む                         |
-| `inspect(ref, { successor: true })`   | 認証済み編集で採用した後継へ進む             |
+同じ本文を二度 `write` すると、別の入力として保存します。入力アダプターが同じイベントを再送する場合は、イベントIDを `idempotencyKey` に指定します。同じキーと内容の再送は確定済みの結果を返し、異なる内容は `IDEMPOTENCY_CONFLICT` になります。
 
-refはホストの登録表で検証する不透明な値です。型のbrandだけを認可とせず、偽造ref・失効した権限・abortしたdraftのrefを拒否します。通常リンクの生成時に見た版も入力receiptへ記録します。
+| オプション                         | 用途                                     |
+| ---------------------------------- | ---------------------------------------- |
+| `idempotencyKey`                   | プロセスをまたいで同じイベントを再送する |
+| `sources: [{ ref, start?, end? }]` | 使用した資料と UTF-8 byte 範囲を示す     |
+| `signal`                           | 処理をキャンセルする                     |
 
-## 編集と再送
+出典区分はホストの書き手設定に基づきます。生成物への `sources` 指定は引用の指定であり、原資料への区分変更ではありません。
 
-draftは`write`、`revise`、`retire`、`supersede`、`search`、`inspect`を持ちます。自分の差分が本人の検索・参照に反映され、ほかの実行からは見えません。結果の`value`内のrefは確定後のrefへ解決し、`changes`と`resolve(ref)`も返します。
+## search
 
-一つのcallbackでは一つの論理Atomにつき一つの改訂案を扱います。すでにstageした対象の再改訂は明示的に拒否します。有限バッチの全件を検証し、失敗時は部分公開しません。CAS競合でcallbackやLLM呼出しを再実行しません。
+```ts session
+const query = '招待';
+const page = await memory.search(query, { limit: 2 });
+console.log(page.items.map((item) => ({ ref: item.ref, text: item.text, score: item.score })));
 
-二回の通常writeは本文が同じでも別の出来事です。任意の`idempotencyKey`はプロセスをまたぐ原資料イベントの再送に使います。同じキーで異なる引数は `IDEMPOTENCY_CONFLICT`。SDK内部は、一回発行した要求全体を保存して明示的な`RetryableCommitError`のみ有限回再試行します。これはローカル確定境界の故障注入試験を含む契約で、リモートストレージを実装したという意味ではありません。
+if (page.cursor) {
+  const next = await memory.search(query, { limit: 2, cursor: page.cursor });
+  console.log(next.items.map((item) => item.text));
+}
+```
 
-`basis: 'historical'`は意図的な過去資料の分析です。監査の読取依存を残し、現在性の主張とは区別します。改訂自身のCASや後継採用の競合は免除しません。
+`items` は本文や検索表現の関連度で並べた候補です。説明と関係も候補になり、必要なら `inspect` で根拠を調べられます。`score` は順位づけの値で、事実の信頼度を表す確率ではありません。
 
-## 続き・blob・診断
+| オプション   | 既定値  | 意味                                   |
+| ------------ | ------- | -------------------------------------- |
+| `limit`      | `10`    | 一ページの結果数                       |
+| `cursor`     | なし    | 同じクエリの候補探索を続ける           |
+| `historical` | `false` | 後継に置き換えられた整理も候補に含める |
 
-cursorは検索信号、認証、読取状態、索引状態、設定へ束縛します。同じquery/refと探索設定で再開し、`limit`や今回の予算を変更できます。`read`の続きは今回の予算で再パックし、前回の本文を無制限に追加しません。`CURSOR_EXPIRED`を正常な0件に変えません。
+`items: []` は結果がないページです。索引の反映待ちや走査の途中かどうかは `diagnostics` と `cursor` を併せて確認します。
 
-`inspect(ref, { range: { start: 0, bytes: 4096 } })`でblobの本文を読みます。UTF-8境界を保ち、テキストは`range.text`、それ以外は`range.base64`を返します。残りはcursorで再開します。高次数の隣接関係と履歴manifestもページで読みます。
+## inspect
 
-| 診断                                  | 意味                                                                |
-| ------------------------------------- | ------------------------------------------------------------------- |
-| `method`                              | 実装した候補取得方式                                                |
-| `traversal`, `scanned`, `approximate` | 走査終了か上限による部分探索か                                      |
-| `index`                               | `ready` / `pending` / `unavailable`。未索引は情報なしと同義ではない |
-| `derived`                             | `ready` / `pending` / `regenerated` / `unused`                      |
-| `minimumTokens`, `minimumBytes`       | 空ページの最小出力に必要な予算の手掛かり                            |
-| `coverageCertified`                   | 常にfalse。意味的な網羅を保証しない                                 |
+保存・検索で得た参照が指す版を調べます。`atom` が指定した情報、`items` が関係探索で返った情報です。
 
-出力を進められない候補・隣接探索は `BUDGET_EXHAUSTED` とし、同じ未処理位置の空ページを無限に返しません。トークン不足は必要量とcursorを返すので、予算を増やして再開できます。searchのscoreは確率や事実の信頼度ではありません。
+```ts session
+const detail = await memory.inspect(rule.ref, { depth: 1, limit: 20 });
+console.log(detail.atom.text);
+console.log(detail.atom.links);
+console.log(detail.atom.sources);
+console.log(detail.items.map((item) => item.text));
+```
+
+| オプション  | 既定値       | 意味                                               |
+| ----------- | ------------ | -------------------------------------------------- |
+| `depth`     | `1`          | 正引き・逆引きの関係をたどる深さ。`0` は展開しない |
+| `limit`     | `20`         | 一ページの結果数                                   |
+| `version`   | `'observed'` | `'latest'` で同じ対象の最新版を選ぶ                |
+| `successor` | `false`      | 明示的に採用された後継へ進む                       |
+| `history`   | なし         | `'retained'` で保存した当時の構成を読む            |
+| `range`     | なし         | blob の本文を `{ start, bytes }` で範囲取得する    |
+| `cursor`    | なし         | 関係・履歴・blob の続きを読む                      |
+
+blob の本文は `range.text`、非テキストは `range.base64` に入ります。実行例は [保存アダプター](/adapters#長い原資料を読む)にあります。過去の版も、現在の閲覧許可で検証します。
+
+## read
+
+今回の問いや作業の文脈から、モデルへ渡す資料を組み立てます。
+
+```ts session
+const recalled = await memory.read(
+  {
+    query: '招待リンクはいつ切れる？',
+    context: '参加者への案内文を作っている。',
+    observations: ['招待メールは昨日送信した。'],
+  },
+  { tokens: 4096 },
+);
+console.log(recalled.text);
+console.log(recalled.tokenCount, recalled.refs, recalled.sources);
+```
+
+入力の `query`、`context`、`thought`、`observations` は任意です。取得できる文脈や観測を渡せば動きます。`thought` は明示的な作業中の推論テキスト、`signal` はホストが設定したエンコーダーからの検索信号です。意味のある入力が一つもなければ `INVALID_INPUT` になります。
+
+`read` は内容で候補を探し、関係を広げ、関連度と長さを見て今回の情報を選びます。同じ証拠への重複経路を整理し、`required` の依存は本文ごと含めます。同じ出典から作った異なる要約や、別人による同文の入力は、出典一致だけでは統合しません。
+
+| オプション   | 既定値  | 意味                                     |
+| ------------ | ------- | ---------------------------------------- |
+| `tokens`     | `4096`  | 今回返す記憶領域の上限                   |
+| `limit`      | `24`    | 採用する結果数の上限                     |
+| `depth`      | `1`     | 関係をたどる深さ                         |
+| `cursor`     | なし    | 候補探索を続け、今回の予算で再パックする |
+| `historical` | `false` | 過去の整理も候補に含める                 |
+
+`text` は記憶の本文・参照・出典を JSON でシリアライズした領域です。`refs` と `sources` は今回採用した情報、`receipt` は入力と読取状態を追跡する記録です。関連する情報が少なければ短い結果になります。
+
+トークン数はホストに設定した tokenizer で数えます。既定は UTF-8 の1 byteを1 tokenとする保守的なカウンターです。実モデルの全入力と出力予約の計測は [ハーネス](/runtime#予算を設定する)で扱います。
+
+## edit
+
+複数の変更を一つの非公開 draft にまとめます。callback が成功し、版や入力の前提を検証できたら、一度に確定します。
+
+```ts session
+const edited = await memory.edit(async (draft) => {
+  const revised = await draft.revise(rule.ref, '招待リンクの有効期限は48時間です。');
+  const note = await draft.write({
+    text: '案内文には更新後の有効期限を記載する。',
+    links: { 参照: revised.ref },
+  });
+  const preview = await draft.inspect(revised.ref);
+  console.log(preview.atom.text); // 確定前に自分の変更を確認
+  return { rule: revised, note };
+});
+console.log(edited.value.rule.ref); // 確定済みの参照
+console.log(edited.changes.length); // 2
+```
+
+| draft の操作                                         | 用途                                 |
+| ---------------------------------------------------- | ------------------------------------ |
+| `write(content, options?)`                           | 追加                                 |
+| `revise(ref, content, options?)`                     | 観測版を前提に改訂                   |
+| `retire(ref)`                                        | 対象を廃止                           |
+| `supersede(oldRef, newRef, { retainForMs? })`        | 当時の構成を保存し、整理の後継を採用 |
+| `search(query, options?)` / `inspect(ref, options?)` | 自分の変更を含めて読む               |
+
+他の実行には確定まで変更が見えません。失敗した draft の参照は外で使えません。戻り値 `value` 内の参照は確定後の参照に解決され、外に保持した draft 参照には `edited.resolve(ref)` を使えます。
+
+改訂の前提版は `ref` から決まります。先行する改訂があれば `REVISION_CONFLICT` となり、callback は自動で再実行されません。現在の内容を読み直し、アプリや Writer が次の編集を判断してください。一回の callback で扱える改訂案は、一つの論理 Atom につき一つです。
+
+`basis: 'historical'` は、過去の資料を意図的に分析する編集に使います。読取履歴は残し、改訂自身の版の前提と後継採用の競合は引き続き検証します。
+
+## 共通の戻り値と診断
+
+検索・参照・read は `receipt`、`diagnostics`、`usage` を返します。`usage` はその処理の消費量です。ハーネス内では同じ実行の予算に累積します。
+
+| フィールド                       | 読み方                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `receipt`                        | 読取状態と検索信号をホストが追跡する記録                                  |
+| `cursor`                         | 続きがあるときに返る参照                                                  |
+| `diagnostics.method`             | 使った取得方式                                                            |
+| `traversal` / `scanned`          | 探索の完了状態と走査数                                                    |
+| `approximate`                    | 取得方式が近似かどうか                                                    |
+| `index`                          | `ready`：反映済み、`pending`：反映待ち、`unavailable`：索引を利用できない |
+| `derived`                        | 派生表現が `ready` / `pending` / `regenerated` / `unused` のどれか        |
+| `stop`                           | 完了・ページ上限・予算・期限のいずれで止まったか                          |
+| `minimumTokens` / `minimumBytes` | 出力が予算に入らないときの必要量                                          |
+| `coverageCertified`              | 現在は `false`。探索完了と意味的な網羅性は別に扱う                        |
+
+cursor は同じクエリまたは参照と探索設定で再開します。`limit` や今回の予算は変更できます。認証、読取状態、索引状態、検索信号に束縛されているため、失効した cursor は新しい検索から取り直します。
+
+`search`・`inspect`・`read`・`edit` は `signal`、ISO日時の `deadline`、`budget` による上限設定を受け取ります。普段は既定値を使い、外部呼出しや長い処理を行うホスト側で調整できます。
+
+## エラーへの対処
+
+| エラー                 | 次にすること                               |
+| ---------------------- | ------------------------------------------ |
+| `INVALID_INPUT`        | 空の読取入力や範囲・件数を確認する         |
+| `INVALID_REF`          | 保存・検索・編集が発行した参照を使う       |
+| `REVISION_CONFLICT`    | 最新の内容を確認し、編集を判断し直す       |
+| `ACCESS_DENIED`        | ホスト側の現在の閲覧・書込許可を確認する   |
+| `CURSOR_EXPIRED`       | 新しい検索・参照から開始する               |
+| `BUDGET_EXHAUSTED`     | ページを小さくするか実行予算を調整する     |
+| `HISTORY_INCOMPLETE`   | 履歴を記録する予算や構成の大きさを確認する |
+| `HISTORY_EXPIRED`      | 保持期間内の履歴か確認する                 |
+| `MODEL_SPACE_MISMATCH` | エンコーダーと検索信号の互換設定を確認する |
+
+履歴保持の設定、保存容量、索引方式については [保存と検索](/adapters)を参照してください。

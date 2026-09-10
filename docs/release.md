@@ -1,12 +1,23 @@
-# v0.2.0 の実装と公開
+# リリース
 
-v0.2.0は、基準commit`0c5a5aeb29b1a11195cb74d562f00c5dd6edec15`からのAPI再設計です。新規利用は`npm install atom-memory@0.2.0`、v0.1からの更新は[移行手順](/migration)を使ってください。旧版を上書きせず、新しい版として提供します。
+**atom-memory 0.2.0** を npm で公開しています。Node.js 22.13 以降の ESM プロジェクトで利用でき、TypeScript の型宣言を同梱しています。
 
-新しい公開クライアント、自動readによる記憶置換、任意の関係探索、自動参照とCAS、private edit、出典パッキング、失効時の原資料への復帰・明示生成器、旧構成manifestと後継採用をローカルで実装しています。実装・検証範囲は[受入試験](/acceptance)と[検証記録](https://github.com/tako0614/atom-memory/blob/main/validation/README.md)に記録しています。
+```sh
+npm install atom-memory
+```
 
-決定的mock、ローカル検索・隣接数・競合の測定、実LLMによる合成資料の試験は別々に報告します。分散保存、分散検索、ANN品質、一般的なタスク成功率や研究上の新規性をこの版の達成事項に含みません。
+この版では、内容の検索、関係の探索、参照からの改訂、自動 read によるモデルへの記憶供給を使えます。保存先はプロセス内メモリと SQLite です。[はじめる](/guide)から試せます。
 
-## 検証と公開手順
+| 公開物                       | 参照先                                                                             |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| npm パッケージ               | [atom-memory](https://www.npmjs.com/package/atom-memory)                           |
+| ソースと配布 tarball         | [GitHub v0.2.0](https://github.com/tako0614/atom-memory/releases/tag/v0.2.0)       |
+| パッケージ・ソースの照合情報 | [release.json](/release.json)                                                      |
+| 実行した試験と環境           | [検証記録](https://github.com/tako0614/atom-memory/blob/main/validation/README.md) |
+
+ドキュメントのサンプルは型検査・実行で確認します。ライブラリの受入試験、検索量・関係数・競合の測定、実モデルでの合成資料の比較は [検証ページ](/acceptance)にまとめています。既存アプリの更新は [移行](/migration)を参照してください。
+
+## メンテナー向けの公開手順
 
 ```sh
 npm ci
@@ -17,8 +28,8 @@ npm run evaluate
 npm pack
 ```
 
-生成したtarballを空のプロジェクトへインストールし、rootとSQLiteの公開export・型・自動readを確認します。検証した同じtarballをnpmへ公開し、registryから再インストールして検証します。サイトはリポジトリの`wrangler.jsonc`を使い、`wrangler deploy --dry-run`の後に`npm run docs:deploy`で公開します。独自のCloudflareアップロード経路は使いません。
+生成した tarball を空のプロジェクトへインストールし、公開 export、型、SQLite、自動 read を確認します。同じ tarball を npm へ公開し、registry から再インストールして照合します。
 
-npmの版・integrity、GitHub commit/tag、Wrangler deploymentと公開URLの読戻し結果は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)に残します。公開は通常のcheckには含めません。既存データの消去も行いません。
+サイトはリポジトリの `wrangler.jsonc` を使います。`wrangler deploy --dry-run` で設定を確認し、`npm run docs:deploy` でビルドとデプロイを行います。公開 URL の本文と導線を読み戻して確認します。
 
-歴史上のv0.1.0は元の最終設計v1.0に基づく版です。原仕様を保存した`spec/`のうち、二操作APIとschema依存の探索はv0.2要求に置き換わります。
+npm の integrity、commit と tag、Wrangler の deployment は [公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)に保存します。公開操作は通常の `check` には含めません。

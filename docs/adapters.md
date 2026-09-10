@@ -1,29 +1,149 @@
-# 保存と候補取得
+# 保存と検索の設定
 
-## ローカル保存の境界
+ホストの設定で、保存先・検索表現・予算を選べます。アプリから使う `write`、`search`、`inspect`、`read`、`edit` の流れは共通です。
 
-`MemoryStorage`はプロセス内、`SqliteStorage`はローカル永続化を提供します。どちらも不変版、snapshot、有限の原子バッチ、逆引きの関係探索を持ちます。SQLiteは短い同期トランザクションとWALを使います。モデル待機中にDBトランザクションを保持しません。
+| 設定したいこと               | 選択肢                 |
+| ---------------------------- | ---------------------- |
+| まず動かす、テストで使う     | 既定の `MemoryStorage` |
+| ローカルのファイルに残す     | `SqliteStorage`        |
+| ベクトルによる候補も取得する | `embedding`            |
+| 候補取得の方式を実装する     | `candidateProvider`    |
+| 失効した生成表現を作り直す   | `generator`            |
 
-`StorageAdapter`の`get`、`scan`、`transaction`は同期です。Promiseを返す高水準APIで包んだことを理由に、非同期ネットワーク保存まで同じ保証で交換可能とは扱いません。リモート保存は通信・整合性・再試行・キャンセルの別実装が必要です。
+## SQLite に保存する
 
-## 候補取得の交換点
+`atom-memory/sqlite` の `SqliteStorage` にファイルパスを渡します。本文、関係、不変版、出典、履歴の構成を同じデータベースに保存します。
 
-既定の`ExactCandidateProvider`は`local-exact-lexical-vector-v1`です。正規化語彙の一致率と、互換なベクトルの非負cosineを使います。検索対象を走査して関連度を計算した後に、結果数を制限します。ID順の先頭N件だけを意味検索の完成形とは扱いません。
+```ts runnable
+import { MemoryHost, LocalAuthority } from 'atom-memory';
+import { SqliteStorage } from 'atom-memory/sqlite';
 
-この初版はローカルの正解比較用方式です。独立した大規模FTS/ANNエンジンは実装していません。走査上限に達したページは不完全と診断し、その先をcursorで探索できます。件数上限まで走査できた場合も意味的な網羅やscoreの校正は保証しません。候補数・bytesの計数はホストが処理した情報量であり、DB内部の全I/OやCPU時間の厳密な上限ではありません。
+const storage = new SqliteStorage('notes.sqlite');
+const authority = new LocalAuthority();
+const auth = authority.issue({
+  subject: 'support-app',
+  readPolicies: ['notes'],
+  writePolicies: ['notes'],
+  canIngestSource: true,
+});
+const memory = new MemoryHost({ storage, authority }).connect({
+  auth,
+  writePolicy: 'notes',
+  actor: { type: 'human' },
+});
+try {
+  const rule = await memory.write('招待リンクの有効期限は24時間です。');
+  console.log((await memory.inspect(rule.ref)).atom.text);
+} finally {
+  storage.close();
+}
+```
 
-ホストは`candidateProvider`へ同じ`CandidateAccess`と実行ledgerを受け取る実装を渡せます。検索用・read用・Writer用の別実装を増やす必要はありません。リモート索引を実装する場合は、許可範囲の事前絞込み、各通信の課金、signalの伝搬と同じsnapshotを満たす必要があります。
+このファイルは終了後も残ります。テストでファイルを作りたくない場合は `':memory:'` を指定します。SQLite は WAL と短い同期トランザクションを使い、モデル応答待ちの間はトランザクションを保持しません。
 
-## 埋め込みと未索引データ
+`LocalAuthority` はプロセス内の認証を試すための実装です。再起動をまたいで同じクライアントの参照や cursor を使うアプリでは、ホストが安定した認証ハンドルを解決する `Authorizer` を実装します。保存と認証の寿命を合わせて設計してください。
 
-`MemoryHost`の`embedding`にID・次元・tokenizer・通信回数と`embed(texts, signal)`を登録します。通常利用者はspaceや次元を毎回指定しません。本文と順序付きの役割・参照先本文から表現を作り、方向を失った単なる集合や子の再帰平均だけにはしません。
+## 埋め込みを設定する
 
-保存は埋め込み完了を待ちません。ホストの`prepareIndex(binding, { limit, cursor })`で有限ページを索引へ反映します。cursorで続きを処理でき、語彙の候補入口は未索引の新資料にも残ります。未反映は`index: pending`です。
+`MemoryHost` の `embedding` にエンコーダーを一度設定します。検索時の通常引数は引き続きテキストです。設定する `EmbeddingProvider` は次の情報を持ちます。
 
-同一入力・同じ設定の埋め込みは、認証ハンドル・権限世代・許可範囲を含むキーで再利用します。cacheは既定512件・5分です。次元が同じ別encoderや、未検証の隠れ状態ベクトルは比較しません。この版は隠れ状態の写像アダプターを実装しておらず、不明な互換性を拒否します。
+| フィールド             | ホストが指定する内容                             |
+| ---------------------- | ------------------------------------------------ |
+| `id`                   | エンコーダーの版と変換設定を識別する名前         |
+| `dimensions`           | 出力ベクトルの次元                               |
+| `tokenizer`            | 埋め込み入力の消費量を数えるカウンター           |
+| `networkCallsPerCall`  | 一回の `embed` で使う通信回数                    |
+| `embed(texts, signal)` | 入力順にベクトルを返す処理。キャンセルを伝搬する |
 
-## 既定の上限
+設定済みの `embedding` と認証を使い、次のように索引を準備します。
 
-一Atom64KiB、slots/origins各128、確定バッチ256、確定要求2MiB、候補走査10,000件です。一つの継続する入力manifestも10,000版までに制限します。blob本文はホストアダプターから保存し、inspectで範囲取得します。
+```ts
+const host = new MemoryHost({ authority, embedding });
+const binding = {
+  auth,
+  writePolicy: 'notes',
+  actor: { type: 'human' as const },
+};
+const memory = host.connect(binding);
+await memory.write('招待リンクの有効期限は24時間です。');
 
-一時の読取traceは既定1時間・1,024件、cursorは5分です。確定Atomの入力manifestと不変版は意味データの出典として保持します。保存全体の容量・バックアップ・物理削除はホストが管理します。`purge`は原資料と依存物を拒否・消去し、派生cacheと索引・cursorを無効化します。SQLiteの物理ページ回収と外部ログの削除は別途ホストが実施します。
+const prepared = await host.prepareIndex(binding, { limit: 100 });
+if (prepared.cursor) {
+  await host.prepareIndex(binding, { limit: 100, cursor: prepared.cursor });
+}
+const page = await memory.search('招待リンクの期限');
+```
+
+保存直後は語彙から検索でき、`prepareIndex` が埋め込み索引を更新します。大量の投入では `cursor` をホストのジョブに持たせて処理を続けます。検索結果の `diagnostics.index` で反映待ちを確認できます。
+
+検索表現には本文と順序付きの役割・参照先本文を使います。同一入力・同一設定の埋め込みは、認証と権限を含むキーで再利用します。エンコーダーの版や変換を変えたら設定も更新してください。次元が同じでも、互換でない検索信号は `MODEL_SPACE_MISMATCH` になります。
+
+## 候補の探し方と規模
+
+既定の方式は `local-exact-lexical-vector-v1` です。語彙の一致と、利用可能な互換ベクトルの cosine を使って候補を評価します。走査した範囲を採点してから関連度順にページを返します。
+
+一回の走査は既定10,000件までです。それより大きい対象は部分探索となり、cursor で先を探索できます。最初のページだけで全データの上位結果を確定できるわけではないため、`diagnostics.traversal` と `scanned` を確認してください。[ローカル測定](/acceptance)に件数別の結果があります。
+
+`candidateProvider` に独自の `CandidateProvider` を渡すと、同じ取得処理を search・read・Writer で共有できます。プロバイダーには許可された資料への `CandidateAccess`、共有予算、キャンセル信号が渡されます。
+
+同梱の検索はローカルの完全走査を基準とする実装です。大規模な ANN やリモート索引を導入する場合は、取得品質、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。`StorageAdapter` 自体は同期ローカル保存の契約です。
+
+## 長い原資料を読む
+
+長文や非テキストの原資料は、入力アダプターが `host.ingestBlob` から保存できます。`inspect` の範囲指定で必要な部分を取得します。
+
+```ts runnable
+import { MemoryHost, LocalAuthority, type ClientBinding } from 'atom-memory';
+
+const authority = new LocalAuthority();
+const auth = authority.issue({
+  subject: 'document-importer',
+  readPolicies: ['notes'],
+  writePolicies: ['notes'],
+  canIngestSource: true,
+});
+const host = new MemoryHost({ authority });
+const binding: ClientBinding = {
+  auth,
+  writePolicy: 'notes',
+  actor: { type: 'input-adapter' },
+};
+const memory = host.connect(binding);
+const document = await host.ingestBlob(
+  new TextEncoder().encode('招待手順の原文。リンクの有効期限は24時間です。'),
+  'text/plain',
+  binding,
+);
+const detail = await memory.inspect(document.ref, {
+  depth: 0,
+  range: { start: 0, bytes: 48 },
+});
+console.log(detail.range?.text);
+if (detail.cursor) {
+  const next = await memory.inspect(document.ref, {
+    depth: 0,
+    range: { start: 0, bytes: 48 },
+    cursor: detail.cursor,
+  });
+  console.log(next.range?.text);
+}
+```
+
+範囲は UTF-8 の境界を保ちます。非テキストでは `range.base64`、全体の大きさは `range.totalBytes` で受け取ります。継続時は同じ範囲設定と cursor を渡します。
+
+## 保持期間と上限
+
+| 対象                     | 既定値・上限                 |
+| ------------------------ | ---------------------------- |
+| 一つの Atom              | 本文64KiB、参照・出典各128件 |
+| 一回の確定               | 256 Atom、要求2MiB           |
+| 候補走査                 | 10,000件                     |
+| 継続する入力 manifest    | 10,000版                     |
+| cursor                   | 5分                          |
+| 一時的な読取 trace       | 1,024件・1時間               |
+| 埋め込み cache           | 512件・5分                   |
+| 後継採用時に記録する履歴 | 256 Atom、30日               |
+
+`MemoryHost` の `maxScan`、`cursorTtlMs`、`traceMaxEntries`、`traceTtlMs`、`cacheMaxEntries`、`cacheTtlMs`、`historyMaxAtoms`、`historyRetentionMs` で対応する値を設定できます。各実行の予算は [API](/api#共通の戻り値と診断)と [ハーネス](/runtime#予算を設定する)で調整します。
+
+確定した版と出典 manifest は保存先に残ります。このローカル実装は旧版を自動 GC しないため、保存容量・バックアップ・物理削除はホストで管理します。管理操作 `purge` は対象と依存物の閲覧を拒否し、派生 cache・索引・cursor を無効化します。SQLite の物理ページ回収や外部ログの削除も、保存先の運用に含めてください。

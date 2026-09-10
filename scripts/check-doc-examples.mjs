@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
 import { resolve, dirname, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 const root = resolve(import.meta.dirname, '..');
@@ -7,8 +7,19 @@ mkdirSync(temporary, { recursive: true });
 const examples = [];
 let index = 0;
 try {
-  for (const doc of ['docs/guide.md', 'docs/runtime.md']) {
+  const documents = readdirSync(resolve(root, 'docs'))
+    .filter((name) => name.endsWith('.md'))
+    .sort()
+    .map((name) => `docs/${name}`);
+  for (const doc of documents) {
     const markdown = readFileSync(resolve(root, doc), 'utf8');
+    // A tutorial can explain each step separately while keeping one executable session.
+    const session = [...markdown.matchAll(/```ts session\n([\s\S]*?)\n```/g)];
+    if (session.length) {
+      const path = resolve(temporary, `${basename(doc, '.md')}-session.ts`);
+      writeFileSync(path, session.map((match) => match[1]).join('\n\n'));
+      examples.push(path);
+    }
     for (const match of markdown.matchAll(/```ts runnable\n([\s\S]*?)\n```/g)) {
       const path = resolve(temporary, `snippet-${++index}.ts`);
       writeFileSync(path, match[1]);
@@ -25,7 +36,7 @@ try {
     }
   }
   if (examples.length < 4)
-    throw Error('Expected the guide, runtime and Writer documentation examples');
+    throw Error('Expected executable guide, API, runtime and storage examples');
   const result = spawnSync(
     resolve(root, 'node_modules/.bin/tsc'),
     [
@@ -55,7 +66,7 @@ try {
   for (const source of examples) {
     const file = resolve(temporary, 'out', basename(source).replace(/\.ts$/, '.js'));
     const run = spawnSync(process.execPath, [file], {
-      cwd: root,
+      cwd: temporary,
       encoding: 'utf8',
       timeout: 60000,
       env: process.env,
