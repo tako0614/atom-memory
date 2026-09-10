@@ -40,7 +40,7 @@
       "replacement": 1120
     }
   },
-  "publication": "prepared; authoritative readback recorded in release.json",
+  "publication": "npm@0.2.0 latest and Wrangler site published; registry installation and HTTP readback passed. See release.json.",
   "dependencyAudit": {
     "total": 0,
     "command": "npm audit --json"

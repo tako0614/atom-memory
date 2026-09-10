@@ -1,0 +1,8 @@
+{
+  "version": "0.2.0",
+  "sourceCommit": "7702e1812af2d4cb094e7e042abf3fde4f4fc37b",
+  "baseline": "0c5a5aeb29b1a11195cb74d562f00c5dd6edec15",
+  "packageIntegrity": "sha512-FQLiPQJioxnL7AoGcz3lJ0gW/cq4p9Xr8FMypalQfT6SG+fT9fh5yUUejlvxhOPGE3xbBUsDYmlgq2o0iCI80g==",
+  "packageSha256": "e16f257e6989bb51665de44cfcf94540780069aeaae0987558a0579384eebeca",
+  "api": ["read", "search", "inspect", "write", "edit"]
+}
