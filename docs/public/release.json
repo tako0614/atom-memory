@@ -1,8 +1,14 @@
 {
-  "version": "0.2.0",
-  "sourceCommit": "7702e1812af2d4cb094e7e042abf3fde4f4fc37b",
-  "baseline": "0c5a5aeb29b1a11195cb74d562f00c5dd6edec15",
-  "packageIntegrity": "sha512-FQLiPQJioxnL7AoGcz3lJ0gW/cq4p9Xr8FMypalQfT6SG+fT9fh5yUUejlvxhOPGE3xbBUsDYmlgq2o0iCI80g==",
-  "packageSha256": "e16f257e6989bb51665de44cfcf94540780069aeaae0987558a0579384eebeca",
-  "api": ["read", "search", "inspect", "write", "edit"]
+  "version": "0.2.1",
+  "sourceCommit": "22f243f637a0f06ff18bc049243b1031bda513f4",
+  "baseline": "861995594d43ec37f01edcce1d06a328e8e2576d",
+  "packageIntegrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA==",
+  "packageSha256": "a9a94a9987946608449697feb99d17a2df9391380abf053438696ae53bce2e72",
+  "api": [
+    "read",
+    "search",
+    "inspect",
+    "write",
+    "edit"
+  ]
 }
