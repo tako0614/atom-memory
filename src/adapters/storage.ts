@@ -32,5 +32,6 @@ export interface StorageAdapter {
   metaDelete(key: string): void;
   isPurged(atomId: string): boolean;
   erase(atomIds: readonly string[]): void;
+  blobRange?(blobId: string, start: number, length: number): Uint8Array | undefined;
   close(): void;
 }

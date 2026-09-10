@@ -1,49 +1,24 @@
-# リリースと公開手順
+# v0.2.0 の実装と公開
 
-## v0.1.0
+v0.2.0は、基準commit`0c5a5aeb29b1a11195cb74d562f00c5dd6edec15`からのAPI再設計です。新規利用は`npm install atom-memory@0.2.0`、v0.1からの更新は[移行手順](/migration)を使ってください。旧版を上書きせず、新しい版として提供します。
 
-`atom_memory_final_v1.zip` の最終設計 v1.0 に基づく初回ライブラリ実装です。仕様原本は `spec/` に保存しています。
+新しい公開クライアント、自動readによる記憶置換、任意の関係探索、自動参照とCAS、private edit、出典パッキング、失効時の原資料への復帰・明示生成器、旧構成manifestと後継採用をローカルで実装しています。実装・検証範囲は[受入試験](/acceptance)と[検証記録](https://github.com/tako0614/atom-memory/blob/main/validation/README.md)に記録しています。
 
-- npm: [atom-memory](https://www.npmjs.com/package/atom-memory)
-- リポジトリ: [tako0614/atom-memory](https://github.com/tako0614/atom-memory)
-- ドキュメント: [atom-memory.takos.jp](https://atom-memory.takos.jp)
+決定的mock、ローカル検索・隣接数・競合の測定、実LLMによる合成資料の試験は別々に報告します。分散保存、分散検索、ANN品質、一般的なタスク成功率や研究上の新規性をこの版の達成事項に含みません。
 
-## 実装と評価の境界
-
-不変 Atom、独立 membership、CAS / 冪等 write、固定 include DAG、出典検証、現在の権限、snapshot / 継続、範囲依存、共有予算、overlay / 共通ハーネス、ローカル永続化を実装しています。
-
-同梱の検索は語彙入口と有限候補内のベクトル比較です。実 LLM、tokenizer、埋め込みサービスはホストが接続します。分散合意、分散 ANN、ネットワーク分断耐性、研究上の新規性・意味品質・スループットの実証は今後の範囲です。ローカル版はこれらを保証したとは表示しません。
-
-## 開発と検証
+## 検証と公開手順
 
 ```sh
 npm ci
 npm run check
 npm run example
-npm pack --dry-run
+npm run example:writer
+npm run evaluate
+npm pack
 ```
 
-ドキュメントは VitePress で静的生成します。開発ツールにのみ依存パッケージがあり、公開ライブラリの runtime dependencies は 0 です。VitePress は v2 alpha を固定した lockfile で使用しています。
+生成したtarballを空のプロジェクトへインストールし、rootとSQLiteの公開export・型・自動readを確認します。検証した同じtarballをnpmへ公開し、registryから再インストールして検証します。サイトはリポジトリの`wrangler.jsonc`を使い、`wrangler deploy --dry-run`の後に`npm run docs:deploy`で公開します。独自のCloudflareアップロード経路は使いません。
 
-Wrangler の依存する `sharp` は修正版 `0.35.4` へ override しています。上流の miniflare が修正版へ追随したら override を削除してください。
+npmの版・integrity、GitHub commit/tag、Wrangler deploymentと公開URLの読戻し結果は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)に残します。公開は通常のcheckには含めません。既存データの消去も行いません。
 
-## npm へ公開
-
-リリース対象の commit で検証後、認証した npm アカウントから公開します。
-
-```sh
-npm publish --access public
-```
-
-公開後は空のプロジェクトへ registry からインストールし、root import と `atom-memory/sqlite` の read / write を確認します。npm の同じ版は上書きせず、変更は次の版として公開します。
-
-## ドキュメントを公開
-
-```sh
-npx wrangler whoami
-npm run docs:deploy
-```
-
-`wrangler.jsonc` が `atom-memory-docs` とカスタムドメインを所有します。VitePress の生成先は `docs/.vitepress/dist`。Cloudflare Workers Static Assets が配信します。
-
-GitHub Actions は Node.js の対応バージョンでライブラリとドキュメントを検証します。認証を伴う npm / Cloudflare の再公開は上の明示的なコマンドで行えます。
+歴史上のv0.1.0は元の最終設計v1.0に基づく版です。原仕様を保存した`spec/`のうち、二操作APIとschema依存の探索はv0.2要求に置き換わります。

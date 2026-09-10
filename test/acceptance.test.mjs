@@ -15,7 +15,7 @@ import {
   origin,
   sourceCoverage,
   BudgetLedger,
-  AgentHarness,
+  LegacyAgentHarness as AgentHarness,
   utf8Tokenizer,
 } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';

@@ -1,40 +1,46 @@
 # はじめる
 
-Atom Memory は Node.js 22.13 以降の ESM ライブラリです。ランタイム依存パッケージはありません。
+このページは **v0.2.0** 用です。v0.1とはAPIが異なるため、更新時は[移行手順](/migration)を確認してください。Node.js 22.13以降に対応し、ランタイムの依存パッケージはありません。
 
 ```sh
-npm install atom-memory
+npm install atom-memory@0.2.0
 ```
 
-## 最初の read / write
+リポジトリのサンプルを実行する場合は、checkoutで`npm ci && npm run build`を実行してください。
 
-この例はリポジトリの `npm run example` で実行できます。
+## ホストを一度設定する
+
+認証主体・保存・書込先の権限・呼出し主体はホストが設定します。通常の操作では分類名や ID を指定しません。
 
 <<< ../examples/basic.mjs
 
-`LocalAuthority` はホストが持つ権限管理です。認証済みの利用者を確認した後にハンドルを発行してください。モデルや HTTP リクエストから `issue()` を自由に呼べるようにしないでください。
+上の実コードは `npm run example` で実行できます。`npm run docs:examples` はドキュメントが参照する主要サンプルを抽出し、型検査して実行します。
 
-`canIngestSource` は原資料として記録する権限です。Writer が生成した内容には `organization`、`extraction`、`derived` などの区分を使います。ハーネスは入力を読んだ receipt を差分へ付け、生成物を `source` と申告する操作を拒否します。
+`LocalAuthority` の `issue` は認証済み主体に対するホスト操作です。モデルに公開しません。人間の入力は発言として `source` に記録します。外界の真実であると保証する区分ではありません。生成エージェントはホストが `actor: { type: 'agent' }` へ束縛します。
 
-## SQLite に保存する
+## SQLite
 
-```ts
-import { AtomKernel, LocalAuthority } from 'atom-memory';
+```ts runnable
+import { MemoryHost, LocalAuthority } from 'atom-memory';
 import { SqliteStorage } from 'atom-memory/sqlite';
-
-const storage = new SqliteStorage('./memory.sqlite');
+const storage = new SqliteStorage(':memory:'); // 永続化時はホストがファイルパスを選ぶ
 const authority = new LocalAuthority();
-const memory = new AtomKernel({ storage, authority });
-
-// read / write は同じ API
-// 終了時:
+const auth = authority.issue({
+  subject: 'example',
+  readPolicies: ['private'],
+  writePolicies: ['private'],
+  canIngestSource: true,
+});
+const memory = new MemoryHost({ storage, authority }).connect({
+  auth,
+  writePolicy: 'private',
+  actor: { type: 'human' },
+});
+const saved = await memory.write('分類名と手動IDがなくても保存できる');
+console.log((await memory.inspect(saved.ref)).atom.text);
 storage.close();
 ```
 
-SQLite は版、読取 receipt、cursor、冪等キー、blob、埋め込みを永続化します。`LocalAuthority` のハンドルはプロセス内の権限です。再起動をまたぐ認証は、アプリ側の `Authorizer` を実装してください。永続化した DB に、権限自体が自動的に付与されることはありません。
+SQLite は不変版、出典、ref、cursor、入力manifest、後継記録を保存します。`LocalAuthority` はプロセス内の認証です。再起動をまたぐアプリでは安定した認証ハンドルを解決する `Authorizer` が必要です。保存済みrefも、その時点の閲覧許可を検証します。
 
-## 次に読む
-
-- [Atom と関係](/concepts)：所属・固定構成・改訂の違い
-- [read / write](/api)：ページ、予算、競合、出典
-- [Writer と共通ハーネス](/runtime)：一時差分からホストの承認を経て確定
+次は [API](/api)、[自動readとWriter](/runtime)、[v0.1からの移行](/migration)を参照してください。

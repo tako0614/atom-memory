@@ -19,10 +19,19 @@ export { content, membership, logical, pin, origin, sourceCoverage } from './cor
 export { MemoryStorage } from './adapters/memory.js';
 export type { StorageAdapter, StorageCapabilities, ScanQuery } from './adapters/storage.js';
 export {
-  AgentHarness,
+  MemoryHarness,
+  MemoryHarness as AgentHarness,
   type HarnessModel,
   type ModelAction,
   type ModelInput,
-  type Instruction,
+  type HarnessResult,
   type HarnessOptions,
 } from './runtime/harness.js';
+
+export { MemoryHost, MemoryClient, createMemory } from './client/memory.js';
+export type * from './client/types.js';
+export { ExactCandidateProvider } from './core/candidates.js';
+
+export { AgentHarness as LegacyAgentHarness } from './runtime/legacy-harness.js';
+
+export { RetryableCommitError } from './client/engine.js';

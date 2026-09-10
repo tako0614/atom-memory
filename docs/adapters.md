@@ -1,47 +1,29 @@
-# 保存・検索アダプター
+# 保存と候補取得
 
-## 同梱する保存
+## ローカル保存の境界
 
-| adapter         | 用途                         | 保証                                                                             |
-| --------------- | ---------------------------- | -------------------------------------------------------------------------------- |
-| `MemoryStorage` | 参照実装、試験、一時的な実行 | プロセス内 snapshot・原子バッチ                                                  |
-| `SqliteStorage` | ローカルの永続メモリ         | 不変版履歴、短い SQLite トランザクション、再起動後の receipt / cursor / 冪等キー |
+`MemoryStorage`はプロセス内、`SqliteStorage`はローカル永続化を提供します。どちらも不変版、snapshot、有限の原子バッチ、逆引きの関係探索を持ちます。SQLiteは短い同期トランザクションとWALを使います。モデル待機中にDBトランザクションを保持しません。
 
-SQLite は WAL と `synchronous=FULL` を使います。同じ DB を複数プロセスから使う場合も、write は DB のトランザクションで確定します。ローカルの commit 順を、分散環境の全世界時刻とは扱いません。
+`StorageAdapter`の`get`、`scan`、`transaction`は同期です。Promiseを返す高水準APIで包んだことを理由に、非同期ネットワーク保存まで同じ保証で交換可能とは扱いません。リモート保存は通信・整合性・再試行・キャンセルの別実装が必要です。
 
-メモリ adapter の検索は参照用の走査です。SQLite は版 ID と関係の索引を持ち、語彙入口は正規化された本文への部分一致です。ベクトル検索も有限候補内の参照実装です。大規模データ向けの FTS / ANN、分散配置・移動・複製は別 adapter の実装と評価が必要です。
+## 候補取得の交換点
 
-## 埋め込み
+既定の`ExactCandidateProvider`は`local-exact-lexical-vector-v1`です。正規化語彙の一致率と、互換なベクトルの非負cosineを使います。検索対象を走査して関連度を計算した後に、結果数を制限します。ID順の先頭N件だけを意味検索の完成形とは扱いません。
 
-```ts
-const memory = new AtomKernel({
-  authority,
-  storage,
-  tokenizer: answerModelTokenizer,
-  embedding: {
-    id: 'encoder-v1:space-768',
-    dimensions: 768,
-    tokenizer: encoderTokenizer,
-    networkCallsPerCall: 1,
-    async embed(texts, signal) {
-      return yourEncoder(texts, { signal });
-    },
-  },
-});
+この初版はローカルの正解比較用方式です。独立した大規模FTS/ANNエンジンは実装していません。走査上限に達したページは不完全と診断し、その先をcursorで探索できます。件数上限まで走査できた場合も意味的な網羅やscoreの校正は保証しません。候補数・bytesの計数はホストが処理した情報量であり、DB内部の全I/OやCPU時間の厳密な上限ではありません。
 
-await memory.index(pin('note', 'note:1'), auth, defaultBudget);
-```
+ホストは`candidateProvider`へ同じ`CandidateAccess`と実行ledgerを受け取る実装を渡せます。検索用・read用・Writer用の別実装を増やす必要はありません。リモート索引を実装する場合は、許可範囲の事前絞込み、各通信の課金、signalの伝搬と同じsnapshotを満たす必要があります。
 
-`index()` は明示的なホスト操作です。原資料の write は高価な埋め込みの完了を待ちません。索引未作成の新情報も語彙・有限候補の入口に残り、診断は `lagging` になります。
+## 埋め込みと未索引データ
 
-空間 ID と次元が一致するベクトルだけを比較します。入力の query / context / reasoningState は存在するものを同じ encoder へ渡します。異なるモデルの隠れ状態を自動的に比較しません。
+`MemoryHost`の`embedding`にID・次元・tokenizer・通信回数と`embed(texts, signal)`を登録します。通常利用者はspaceや次元を毎回指定しません。本文と順序付きの役割・参照先本文から表現を作り、方向を失った単なる集合や子の再帰平均だけにはしません。
 
-## 独自 adapter の責任
+保存は埋め込み完了を待ちません。ホストの`prepareIndex(binding, { limit, cursor })`で有限ページを索引へ反映します。cursorで続きを処理でき、語彙の候補入口は未索引の新資料にも残ります。未反映は`index: pending`です。
 
-`StorageAdapter` は内部インターフェースです。`transaction()` は同期の短い操作に限定します。`get` と `scan` は指定 watermark の版を返し、現在の purge を適用してください。保存先を変えても Atom ID は変えません。
+同一入力・同じ設定の埋め込みは、認証ハンドル・権限世代・許可範囲を含むキーで再利用します。cacheは既定512件・5分です。次元が同じ別encoderや、未検証の隠れ状態ベクトルは比較しません。この版は隠れ状態の写像アダプターを実装しておらず、不明な互換性を拒否します。
 
-`capabilities` で提供できる保証を宣言します。snapshot・原子バッチ・範囲 guard の非対応を隠してはいけません。リモートの非同期ストレージを接続する場合は、同期ローカル契約の置換だけで済むとせず、通信予算・整合性・短い確定のプロトコルまで実装してください。
+## 既定の上限
 
-## ローカル参照実装の上限
+一Atom64KiB、slots/origins各128、確定バッチ256、確定要求2MiB、候補走査10,000件です。一つの継続する入力manifestも10,000版までに制限します。blob本文はホストアダプターから保存し、inspectで範囲取得します。
 
-既定では一 Atom 64 KiB、slot / origin 各 128、write バッチ 256、write 要求 2 MiB、一 read の候補上限 10,000 です。ホストの `limits` で設定できます。一つの継続 context の依存 manifest にも候補上限を適用します。これは操作・実行状態の上限であり、ライブラリ全体の保存件数の上限ではありません。
+一時の読取traceは既定1時間・1,024件、cursorは5分です。確定Atomの入力manifestと不変版は意味データの出典として保持します。保存全体の容量・バックアップ・物理削除はホストが管理します。`purge`は原資料と依存物を拒否・消去し、派生cacheと索引・cursorを無効化します。SQLiteの物理ページ回収と外部ログの削除は別途ホストが実施します。

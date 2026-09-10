@@ -1,0 +1,329 @@
+{
+  "baseline": "0c5a5aeb29b1a11195cb74d562f00c5dd6edec15",
+  "runtime": "v26.1.0",
+  "generatedAt": "2026-09-10T16:59:53.348Z",
+  "kind": "deterministic-mock",
+  "claims": "Synthetic fixture coverage and local resource measurements only. No semantic, ANN, distributed, or task-success guarantee.",
+  "search": [
+    {
+      "noiseAtoms": 10,
+      "recallAt1": 1,
+      "elapsedMs": 3.86,
+      "scanned": 11,
+      "usage": {
+        "maxAtoms": 1,
+        "maxCandidates": 13,
+        "maxBytes": 601,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 0,
+        "maxModelInputTokens": 0,
+        "maxModelOutputTokens": 0,
+        "maxContextTokens": 0
+      },
+      "method": "local-exact-lexical-vector-v1"
+    },
+    {
+      "noiseAtoms": 100,
+      "recallAt1": 1,
+      "elapsedMs": 3.36,
+      "scanned": 101,
+      "usage": {
+        "maxAtoms": 1,
+        "maxCandidates": 103,
+        "maxBytes": 3211,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 0,
+        "maxModelInputTokens": 0,
+        "maxModelOutputTokens": 0,
+        "maxContextTokens": 0
+      },
+      "method": "local-exact-lexical-vector-v1"
+    },
+    {
+      "noiseAtoms": 1000,
+      "recallAt1": 1,
+      "elapsedMs": 17.11,
+      "scanned": 1001,
+      "usage": {
+        "maxAtoms": 1,
+        "maxCandidates": 1003,
+        "maxBytes": 29311,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 0,
+        "maxModelInputTokens": 0,
+        "maxModelOutputTokens": 0,
+        "maxContextTokens": 0
+      },
+      "method": "local-exact-lexical-vector-v1"
+    },
+    {
+      "noiseAtoms": 10000,
+      "recallAt1": 1,
+      "elapsedMs": 159.1,
+      "scanned": 10001,
+      "usage": {
+        "maxAtoms": 1,
+        "maxCandidates": 10003,
+        "maxBytes": 290311,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 0,
+        "maxModelInputTokens": 0,
+        "maxModelOutputTokens": 0,
+        "maxContextTokens": 0
+      },
+      "method": "local-exact-lexical-vector-v1"
+    }
+  ],
+  "adjacency": [
+    {
+      "links": 10,
+      "pages": 1,
+      "returned": 11,
+      "complete": true,
+      "scanned": 21,
+      "elapsedMs": 1.44
+    },
+    {
+      "links": 100,
+      "pages": 6,
+      "returned": 101,
+      "complete": true,
+      "scanned": 206,
+      "elapsedMs": 10.19
+    },
+    {
+      "links": 300,
+      "pages": 16,
+      "returned": 301,
+      "complete": true,
+      "scanned": 616,
+      "elapsedMs": 76.91
+    }
+  ],
+  "concurrentRevisions": [
+    {
+      "writers": 2,
+      "committed": 1,
+      "conflicts": 1,
+      "elapsedMs": 1.02
+    },
+    {
+      "writers": 8,
+      "committed": 1,
+      "conflicts": 7,
+      "elapsedMs": 1.8
+    },
+    {
+      "writers": 32,
+      "committed": 1,
+      "conflicts": 31,
+      "elapsedMs": 11.46
+    }
+  ],
+  "comparison": [
+    {
+      "mode": "none",
+      "model": "deterministic-comparison-v1",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 0,
+        "maxCandidates": 0,
+        "maxBytes": 0,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 3716,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 0
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 929,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 929,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 929,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 929,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": "{\"memory\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"memory\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"memory\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"memory\":[]}"
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    },
+    {
+      "mode": "history",
+      "model": "deterministic-comparison-v1",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 4,
+        "maxCandidates": 40,
+        "maxBytes": 13131,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 6684,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 1617
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 1241,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 1534,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 1808,
+          "requiredEvidence": true,
+          "staleInformation": true,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 2101,
+          "requiredEvidence": true,
+          "staleInformation": true,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": "{\"previousMemory\":[{\"evidence\":[{\"ranges\":[{\"end\":67,\"start\":0}],\"ref\":\"m1\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m1\",\"sources\":[{\"end\":67,\"ref\":\"m1\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit allowed only after operator approval. obsolete-permit\"}],\"temporary\":[]}]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"previousMemory\":[{\"evidence\":[{\"ranges\":[{\"end\":67,\"start\":0}],\"ref\":\"m1\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m1\",\"sources\":[{\"end\":67,\"ref\":\"m1\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit allowed only after operator approval. obsolete-permit\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]}]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"previousMemory\":[{\"evidence\":[{\"ranges\":[{\"end\":67,\"start\":0}],\"ref\":\"m1\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m1\",\"sources\":[{\"end\":67,\"ref\":\"m1\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit allowed only after operator approval. obsolete-permit\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":36,\"start\":0}],\"ref\":\"m3\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m3\",\"sources\":[{\"end\":36,\"ref\":\"m3\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit denied. current-permit\"}],\"temporary\":[]}]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"previousMemory\":[{\"evidence\":[{\"ranges\":[{\"end\":67,\"start\":0}],\"ref\":\"m1\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m1\",\"sources\":[{\"end\":67,\"ref\":\"m1\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit allowed only after operator approval. obsolete-permit\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":36,\"start\":0}],\"ref\":\"m3\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m3\",\"sources\":[{\"end\":36,\"ref\":\"m3\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit denied. current-permit\"}],\"temporary\":[]},{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]}]}"
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    },
+    {
+      "mode": "replacement",
+      "model": "deterministic-comparison-v1",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 4,
+        "maxCandidates": 40,
+        "maxBytes": 13131,
+        "maxNetworkCalls": 0,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 4825,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 1617
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 1220,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 1208,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 1189,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 1208,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": "{\"evidence\":[{\"ranges\":[{\"end\":67,\"start\":0}],\"ref\":\"m1\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m1\",\"sources\":[{\"end\":67,\"ref\":\"m1\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit allowed only after operator approval. obsolete-permit\"}],\"temporary\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"evidence\":[{\"ranges\":[{\"end\":36,\"start\":0}],\"ref\":\"m3\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m3\",\"sources\":[{\"end\":36,\"ref\":\"m3\",\"start\":0}],\"state\":\"active\",\"text\":\"harbor permit denied. current-permit\"}],\"temporary\":[]}"
+        },
+        {
+          "kind": "finish",
+          "output": "{\"evidence\":[{\"ranges\":[{\"end\":55,\"start\":0}],\"ref\":\"m2\"}],\"memory\":[{\"links\":[],\"provenance\":{\"origin\":\"source\",\"producer\":\"evaluation\"},\"ref\":\"m2\",\"sources\":[{\"end\":55,\"ref\":\"m2\",\"start\":0}],\"state\":\"active\",\"text\":\"stellar cargo requires officer approval. cargo-evidence\"}],\"temporary\":[]}"
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    }
+  ]
+}

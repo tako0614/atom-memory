@@ -1,0 +1,25 @@
+{
+  "package": "atom-memory",
+  "version": "0.2.0",
+  "sha256": "e16f257e6989bb51665de44cfcf94540780069aeaae0987558a0579384eebeca",
+  "integrity": "sha512-FQLiPQJioxnL7AoGcz3lJ0gW/cq4p9Xr8FMypalQfT6SG+fT9fh5yUUejlvxhOPGE3xbBUsDYmlgq2o0iCI80g==",
+  "bytes": 180690,
+  "files": 122,
+  "installedFrom": "Final local npm pack tarball in a new isolated consumer project",
+  "nodeVersions": [
+    "22.23.2",
+    "24.18.0"
+  ],
+  "publicOperations": [
+    "write",
+    "search",
+    "inspect",
+    "read",
+    "edit"
+  ],
+  "sqlite": "passed",
+  "automaticRead": "passed",
+  "consumerTypecheck": "passed",
+  "legacyExports": "passed",
+  "publicationReadback": "release.json"
+}

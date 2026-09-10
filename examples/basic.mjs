@@ -1,12 +1,6 @@
-import {
-  AtomKernel,
-  LocalAuthority,
-  content,
-  membership,
-  logical,
-  defaultBudget,
-} from 'atom-memory';
+import { MemoryHost, LocalAuthority } from 'atom-memory';
 
+// Host setup: authorization and source identity are bound once.
 const authority = new LocalAuthority();
 const auth = authority.issue({
   subject: 'example-host',
@@ -14,44 +8,22 @@ const auth = authority.issue({
   writePolicies: ['notes'],
   canIngestSource: true,
 });
-const memory = new AtomKernel({ authority });
+const host = new MemoryHost({ authority });
+const memory = host.connect({ auth, writePolicy: 'notes', actor: { type: 'human' } });
 
-await memory.write(
-  {
-    idempotencyKey: 'example:seed',
-    guards: [],
-    revisions: [
-      {
-        atomId: 'note',
-        revisionId: 'note:1',
-        expectedHead: null,
-        content: content('source', 'Atom の所属は独立した Atom で表す。', 'notes'),
-      },
-      {
-        atomId: 'topic',
-        revisionId: 'topic:1',
-        expectedHead: null,
-        content: content('collection', { form: 'set', title: '設計ノート' }, 'notes'),
-      },
-      {
-        atomId: 'link',
-        revisionId: 'link:1',
-        expectedHead: null,
-        content: membership('topic', 'note', 'notes'),
-      },
-    ],
-  },
-  auth,
+const fact = await memory.write('旧クライアントは旧APIを利用している');
+const group = await memory.write('旧クライアントの認証に関する情報');
+await memory.write({
+  text: 'このまとまりに、この情報が含まれる',
+  links: { group: group.ref, member: fact.ref },
+});
+const page = await memory.search('旧クライアントの認証', { limit: 10 });
+if (page.items[0])
+  console.log((await memory.inspect(page.items[0].ref, { depth: 1, limit: 20 })).atom.text);
+const recalled = await memory.read({ context: '旧クライアントの認証' }, { tokens: 4096 });
+console.log(recalled.text);
+const edited = await memory.edit((draft) =>
+  draft.revise(fact.ref, '訂正：旧クライアントは新APIへ移行する'),
 );
-
-const result = await memory.read(
-  {
-    selector: { kind: 'relations', target: logical('topic'), role: 'group', schema: 'membership' },
-    context: { requestedPolicyIds: ['notes'], consistency: { mode: 'snapshot' } },
-    budget: defaultBudget,
-    render: 'evidence',
-  },
-  auth,
-);
-console.log(result.atoms.map((atom) => `${atom.atomId}@${atom.revisionId}`).join('\n'));
-console.log(result.diagnostics);
+console.log((await memory.inspect(edited.value.ref)).atom.text);
+console.log((await memory.inspect(fact.ref)).atom.text); // Observed old revision.

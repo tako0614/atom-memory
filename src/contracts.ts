@@ -20,6 +20,7 @@ export type Ref = PinnedRef | LogicalRef;
 
 export type Slot = {
   readonly role: string;
+  readonly required?: boolean; // Host-known companion dependency for context packing.
   readonly orderKey?: string; // Display/declared sequence order, not causal proof.
 } & (
   | { readonly mode: 'include'; readonly target: PinnedRef }
@@ -202,7 +203,10 @@ export type ErrorCode =
   | 'INCLUDE_CYCLE' | 'REVISION_CONFLICT' | 'IDEMPOTENCY_CONFLICT'
   | 'ATOMICITY_UNAVAILABLE' | 'CONSISTENCY_UNAVAILABLE'
   | 'GUARD_VALIDATION_UNAVAILABLE' | 'INDEX_NOT_READY'
-  | 'CURSOR_EXPIRED' | 'MODEL_SPACE_MISMATCH' | 'BUDGET_EXHAUSTED';
+  | 'CURSOR_EXPIRED' | 'MODEL_SPACE_MISMATCH' | 'BUDGET_EXHAUSTED'
+  | 'INVALID_INPUT' | 'INVALID_REF' | 'ABORTED' | 'HISTORY_INCOMPLETE'
+  | 'HISTORY_EXPIRED' | 'SUCCESSOR_CONFLICT' | 'SUCCESSOR_CYCLE'
+  | 'CONTEXT_WINDOW_EXCEEDED' | 'STATE_INVALIDATED';
 
 /** A common host loop; Writer and answer runs differ by task and capabilities. */
 export interface Harness {

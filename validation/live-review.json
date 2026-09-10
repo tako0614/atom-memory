@@ -1,0 +1,45 @@
+{
+  "reviewedAt": "2026-09-10T17:21:40.905Z",
+  "reviewer": "Implementation agent manual review of the fixed synthetic fixture; not an independent or blinded benchmark",
+  "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+  "replicates": 1,
+  "rubric": [
+    "Step 1: harbor permit allowed only after operator approval",
+    "Steps 2 and 4: stellar cargo requires officer approval",
+    "Step 3: corrected harbor permit is denied; do not infer a cargo-permit dependency"
+  ],
+  "results": [
+    {
+      "mode": "none",
+      "correctRequiredAnswers": 0,
+      "total": 4,
+      "notes": "No source evidence was supplied. Responses invent reference-like strings and unsupported descriptions rather than abstaining. Output strings do not become validated host references."
+    },
+    {
+      "mode": "history",
+      "correctRequiredAnswers": 3,
+      "total": 4,
+      "incorrectSteps": [3],
+      "notes": "Step 3 invents a cargo/harbor dependency and fails to answer the current permit denial. Approval conditions are retained in steps 1, 2, 4."
+    },
+    {
+      "mode": "replacement",
+      "correctRequiredAnswers": 4,
+      "total": 4,
+      "notes": "All four required facts and their conditions are expressed. Step 3 is Chinese despite the requested English. All outputs use objects rather than the requested sentence string."
+    }
+  ],
+  "limitations": [
+    "Single synthetic fixture, one seed and one quantized model; no general quality or causal guarantee.",
+    "Input coverage and stale input counts are measured separately from these answer judgments.",
+    "The finite Writer workflow is explicitly driven by host stages; it is not a test of unconstrained autonomous planning.",
+    "Schema constrains operations, not truth or trustworthiness of free-form finish output."
+  ],
+  "writer": {
+    "steps": 3,
+    "modelInputTokens": 1788,
+    "actualOutputTokens": 101,
+    "reservedOutputTokens": 3072,
+    "networkCalls": 12
+  }
+}

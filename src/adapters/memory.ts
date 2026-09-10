@@ -118,5 +118,17 @@ export class MemoryStorage implements StorageAdapter {
       this.#rows.delete(id);
     }
   }
+  blobRange(blobId: string, start: number, length: number): Uint8Array | undefined {
+    const blob = this.#metadata.get(`blob:${blobId}`) as { bytes: string } | undefined;
+    if (!blob) return;
+    const offset = start % 3;
+    return Buffer.from(
+      blob.bytes.slice(
+        Math.floor(start / 3) * 4,
+        Math.floor(start / 3) * 4 + Math.ceil((offset + length) / 3) * 4,
+      ),
+      'base64',
+    ).subarray(offset, offset + length);
+  }
   close(): void {}
 }

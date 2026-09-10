@@ -1,5 +1,7 @@
 # TypeScript 契約
 
-ZIP の `contracts.ts` に基づく公開契約です。型の readonly は、実行時の権限や不変性の代替にはなりません。`AtomKernel`、各 adapter、ハーネスが実際の検証を担当します。
+v0.2の通常クライアントの型です。実行時のref検証・認可・版の前提はSDKとホストが担当します。
 
-<<< ../src/contracts.ts
+<<< ../src/client/types.ts
+
+低水準の旧AtomKernel契約は`src/contracts.ts`、新ハーネスは`src/runtime/harness.ts`にあります。旧Kernelと新クライアントのreadは契約が異なります。[移行説明](/migration)を参照してください。

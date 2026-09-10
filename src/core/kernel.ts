@@ -53,6 +53,11 @@ export interface ReceiptManifest {
   policies: string[];
   watermark: number;
   reads: PinnedRef[];
+  /** Optional explicit currentness preconditions, distinct from the complete audit. */
+  currentReads?: PinnedRef[];
+  /** The SDK commits these outputs as one dependency unit; prevents artificial intra-batch cycles. */
+  ownedRevisionIds?: string[];
+  historicalInputs?: boolean;
   observations: {
     observationId: string;
     selector: Selector;
@@ -217,7 +222,7 @@ export class AtomKernel implements AtomMemory {
       )
     )
       return false;
-    return m.reads.every(
+    return (m.currentReads ?? m.reads).every(
       (ref) =>
         this.storage.get({ kind: 'logical', atomId: ref.atomId }, at)?.revisionId ===
           ref.revisionId ||
@@ -242,7 +247,11 @@ export class AtomKernel implements AtomMemory {
     // read() returns immutable blob metadata, not unbounded bytes.
     return canonical(r.body);
   }
-  async write(request: WriteRequest, auth: AuthContext): Promise<WriteResult> {
+  async write(
+    request: WriteRequest,
+    auth: AuthContext,
+    hooks?: { validate?(): void; committed?(result: WriteResult): void },
+  ): Promise<WriteResult> {
     const input = clone(request);
     const p = this.#principal(auth);
     if (!this.storage.capabilities.atomicBatch) fail('ATOMICITY_UNAVAILABLE');
@@ -278,18 +287,29 @@ export class AtomKernel implements AtomMemory {
           fail('ACCESS_DENIED');
         return { ...previous.result, repeatedInput: true };
       }
+      hooks?.validate?.();
       const at = this.storage.watermark();
-      const actor = input.actorInputReceiptId
-        ? this.#manifest(input.actorInputReceiptId, auth, p)
-        : undefined;
-      if (
-        actor &&
-        !this.#currentDependency(actor, at, {
+      const manifests = new Map<string, ReceiptManifest>();
+      const manifestFor = (id: string): ReceiptManifest => {
+        const saved = manifests.get(id);
+        if (saved) return saved;
+        const manifest = this.#manifest(id, auth, p);
+        manifests.set(id, manifest);
+        return manifest;
+      };
+      const validated = new Set<string>();
+      const currentDependency = (manifest: ReceiptManifest): boolean => {
+        if (validated.has(manifest.receipt.receiptId)) return true;
+        const current = this.#currentDependency(manifest, at, {
           authBinding: authBinding(auth),
           watermark: at,
           revisions: input.revisions,
-        })
-      )
+        });
+        if (current) validated.add(manifest.receipt.receiptId);
+        return current;
+      };
+      const actor = input.actorInputReceiptId ? manifestFor(input.actorInputReceiptId) : undefined;
+      if (actor && !currentDependency(actor))
         fail('REVISION_CONFLICT', 'Read dependencies changed');
       const ids = new Set<string>();
       const revisions = new Set<string>();
@@ -334,20 +354,12 @@ export class AtomKernel implements AtomMemory {
       for (const item of input.revisions) {
         const c = item.content;
         const receiptId = c.provenance.inputReceiptId;
-        const receipt = receiptId ? this.#manifest(receiptId, auth, p) : undefined;
+        const receipt = receiptId ? manifestFor(receiptId) : undefined;
         if (actor && receiptId !== actor.receipt.receiptId)
           fail('ACCESS_DENIED', 'All Writer changes must retain the host input receipt');
         if (receipt && receipt.policies.some((id) => id !== c.policyId))
           fail('ACCESS_DENIED', 'Persistent derivation cannot cross policies');
-        if (
-          receipt &&
-          !this.#currentDependency(receipt, at, {
-            authBinding: authBinding(auth),
-            watermark: at,
-            revisions: input.revisions,
-          })
-        )
-          fail('REVISION_CONFLICT');
+        if (receipt && !currentDependency(receipt)) fail('REVISION_CONFLICT');
         for (const slot of c.slots) {
           const target = resolve(slot.target);
           if (target.policyId !== c.policyId)
@@ -421,6 +433,7 @@ export class AtomKernel implements AtomMemory {
         result,
         policies: [...new Set(committed.map((r) => r.policyId))],
       });
+      hooks?.committed?.(result);
       return result;
     });
   }
@@ -1007,6 +1020,9 @@ export class AtomKernel implements AtomMemory {
         if (m.reads.some((r) => erased.has(r.atomId))) this.storage.metaDelete(key);
       for (const [key, e] of this.storage.metaEntries<Embedding>('embedding:'))
         if (erased.has(e.owner.atomId)) this.storage.metaDelete(key);
+      for (const [key] of this.storage.metaEntries('sdk:cache:')) this.storage.metaDelete(key);
+      for (const [key] of this.storage.metaEntries('sdk:cursor:')) this.storage.metaDelete(key);
+      for (const [key] of this.storage.metaEntries('sdk:index:')) this.storage.metaDelete(key);
       this.#overlays.clear();
       return { erasedAtomIds: [...erased], physicalStorageReclaimed: false };
     });

@@ -3,7 +3,7 @@ layout: home
 hero:
   name: Atom Memory
   text: 記憶を小さく。<br>関係を失わずに。
-  tagline: 情報も、まとまりも、所属も Atom。出典と不変の版を保ちながら、有限の read と小さな write で扱う TypeScript ライブラリです。
+  tagline: 情報も、まとまりも、所属も Atom。出典と不変の版を保ちながら、自動のreadと内容・関係の編集 で扱う TypeScript ライブラリです。
   actions:
     - theme: brand
       text: 使いはじめる
@@ -20,16 +20,8 @@ features:
     details: 候補数、本文 bytes、モデル呼出し、tokens を制限。途中結果と継続、索引遅延を明示して返します。
 ---
 
-## 二つの操作から始める
+## 分類名と手動IDを要求しない
 
-```sh
-npm install atom-memory
-```
+`write(content)`で保存し、`search(query)`で探し、`inspect(ref)`で観測した版を確認します。`read(state)`はモデルへ渡す記憶を組み立て、`edit(callback)`は非公開の差分を一度だけ確定します。同じ内容・関係・ベクトルを共通の取得処理で利用します。
 
-<div class="atom-model">
-  <div class="box"><small>READ</small><strong>文脈に必要な版を読む</strong><p>既知 ID、役割付き関係、語彙・ベクトルから探し、出典と読取状態を持ち帰る。</p></div>
-  <div class="arrow" aria-hidden="true">⇄</div>
-  <div class="box"><small>WRITE</small><strong>小さな差分を確定する</strong><p>期待する版、権限、参照、出典を検証して、有限バッチを一度に受理する。</p></div>
-</div>
-
-**v0.1.0 は Node.js 向けのローカル参照実装です。** メモリ上と SQLite の保存、共通ハーネス、交換可能なモデル・tokenizer 契約を含みます。分散ストレージや検索品質の実証は、[今後の評価範囲](/release#実装と評価の境界)です。
+**v0.2.0はローカルのMemory/SQLite実装に対応しています。** v0.1からは[移行](/migration)が必要です。[はじめる](/guide)で実行コード、[runtime](/runtime)で自動取得と記憶領域の置換を確認できます。

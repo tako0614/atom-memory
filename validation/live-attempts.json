@@ -1,0 +1,527 @@
+{
+  "note": "Synthetic local Qwen2.5-1.5B Writer attempts. Failures are retained; none committed the private overlay. Subsequent successful runs do not imply arbitrary small models are reliable.",
+  "attempts": [
+    {
+      "stage": "plain-writer-actions.json",
+      "result": [
+        {
+          "action": {
+            "kind": "write",
+            "content": "整理した旧クライアント認証"
+          },
+          "outputTokens": 26
+        },
+        {
+          "action": {
+            "kind": "write",
+            "content": {
+              "text": "整理した旧クライアント認証"
+            }
+          },
+          "outputTokens": 33
+        },
+        {
+          "action": {
+            "kind": "write",
+            "content": {
+              "text": "整理した旧クライアント認証"
+            }
+          },
+          "outputTokens": 33
+        },
+        {
+          "action": {
+            "kind": "write",
+            "content": {
+              "text": "整理した旧クライアント認証"
+            }
+          },
+          "outputTokens": 33
+        },
+        {
+          "action": {
+            "kind": "write",
+            "content": {
+              "text": "整理した旧クライアント認証"
+            }
+          },
+          "outputTokens": 33
+        },
+        {
+          "action": {
+            "kind": "write",
+            "content": {
+              "text": "整理した旧クライアント認証"
+            }
+          },
+          "outputTokens": 33
+        }
+      ]
+    },
+    {
+      "stage": "writer-1.5b.json",
+      "result": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "syntheticData": true,
+        "generatedAt": "2026-09-10T16:56:07.830Z",
+        "actions": [
+          {
+            "action": {
+              "kind": "write",
+              "content": "string or {text,links}",
+              "sources": []
+            },
+            "outputTokens": 19
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "string or {text,links}",
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 35
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "string or {text,links}",
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 35
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "string or {text,links}"
+            },
+            "outputTokens": 16
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "string or {text,links}",
+              "sources": [
+                {
+                  "ref": "m1"
+                }
+              ]
+            },
+            "outputTokens": 24
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "m5",
+              "state": {},
+              "sources": [
+                {
+                  "ref": "m1"
+                }
+              ]
+            },
+            "outputTokens": 23
+          }
+        ],
+        "status": "failed",
+        "error": "BUDGET_EXHAUSTED\n+ actual - expected\n\n+ 'budget-exhausted'\n- 'completed'\n"
+      }
+    },
+    {
+      "stage": "writer-1.5b-workflow.json",
+      "result": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "syntheticData": true,
+        "generatedAt": "2026-09-10T16:58:21.582Z",
+        "actions": [
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。"
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 59
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "producer",
+                  "another role": "origin"
+                }
+              }
+            },
+            "outputTokens": 53
+          }
+        ],
+        "status": "failed",
+        "error": "INVALID_REF\n+ actual - expected\n\n+ 'failed'\n- 'completed'\n"
+      }
+    },
+    {
+      "stage": "writer-1.5b-refs.json",
+      "result": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "syntheticData": true,
+        "generatedAt": "2026-09-10T16:59:26.727Z",
+        "actions": [
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。"
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 59
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "m1",
+                  "another role": "m2"
+                }
+              }
+            },
+            "outputTokens": 55
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "m1",
+                  "another role": "m2"
+                }
+              }
+            },
+            "outputTokens": 55
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "m1",
+                  "another role": "m2"
+                }
+              }
+            },
+            "outputTokens": 55
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "m1",
+                  "another role": "m2"
+                }
+              }
+            },
+            "outputTokens": 55
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理: 旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "role name": "m1",
+                  "another role": "m2"
+                }
+              }
+            },
+            "outputTokens": 55
+          }
+        ],
+        "status": "failed",
+        "error": "BUDGET_EXHAUSTED\n+ actual - expected\n\n+ 'budget-exhausted'\n- 'completed'\n"
+      }
+    },
+    {
+      "stage": "7b-before-observation-and-workflow-fix",
+      "result": {
+        "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+        "syntheticData": true,
+        "generatedAt": "2026-09-10T17:05:08.351Z",
+        "actions": [
+          {
+            "action": {
+              "kind": "write",
+              "content": "旧クライアント認証の整理：旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 54
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理。",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 54
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 60
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": "旧クライアント認証の整理：旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 54
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理：旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 71
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアントは旧APIを利用できる。ただし管理者承認が必要。",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 60
+          }
+        ],
+        "status": "failed",
+        "error": "BUDGET_EXHAUSTED\n+ actual - expected\n\n+ 'budget-exhausted'\n- 'completed'\n"
+      }
+    },
+    {
+      "stage": "7b-unconstrained-termination",
+      "result": {
+        "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+        "syntheticData": true,
+        "generatedAt": "2026-09-10T17:09:05.621Z",
+        "actions": [
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 47
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 53
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 53
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 53
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 53
+          },
+          {
+            "action": {
+              "kind": "write",
+              "content": {
+                "text": "旧クライアント認証の整理",
+                "links": {
+                  "原资料": "m1",
+                  "整理结果": "m2"
+                }
+              },
+              "sources": [
+                {
+                  "ref": "m1",
+                  "start": 0,
+                  "end": 87
+                }
+              ]
+            },
+            "outputTokens": 53
+          }
+        ],
+        "status": "failed",
+        "error": "BUDGET_EXHAUSTED\n+ actual - expected\n\n+ 'budget-exhausted'\n- 'completed'\n"
+      }
+    }
+  ]
+}

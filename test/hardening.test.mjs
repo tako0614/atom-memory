@@ -7,7 +7,7 @@ import {
   AtomKernel,
   LocalAuthority,
   MemoryStorage,
-  AgentHarness,
+  LegacyAgentHarness as AgentHarness,
   content,
   logical,
   pin,

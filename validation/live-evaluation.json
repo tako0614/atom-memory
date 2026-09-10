@@ -1,0 +1,280 @@
+{
+  "baseline": "0c5a5aeb29b1a11195cb74d562f00c5dd6edec15",
+  "runtime": "v26.1.0",
+  "generatedAt": "2026-09-10T17:17:53.710Z",
+  "kind": "real-local-model",
+  "claims": "Synthetic fixture coverage and local resource measurements only. No semantic, ANN, distributed, or task-success guarantee.",
+  "search": [],
+  "adjacency": [],
+  "concurrentRevisions": [],
+  "comparison": [
+    {
+      "mode": "none",
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 0,
+        "maxCandidates": 0,
+        "maxBytes": 0,
+        "maxNetworkCalls": 16,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 810,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 0
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 203,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 202,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 203,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 202,
+          "requiredEvidence": false,
+          "staleInformation": false,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": {
+            "text": "找到了关于港口许可的信息",
+            "links": {
+              "港口许可申请": "m1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo is a cargo ship involved in interstellar trade",
+            "links": {
+              "Cargo Ship": "mN1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "找到了关于港口许可的信息",
+            "links": {
+              "港口许可申请": "m1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo is a cargo ship involved in interstellar trade",
+            "links": {
+              "Cargo Ship": "mN1"
+            }
+          }
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    },
+    {
+      "mode": "history",
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 4,
+        "maxCandidates": 40,
+        "maxBytes": 13131,
+        "maxNetworkCalls": 16,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 1630,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 1617
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 287,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 367,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 448,
+          "requiredEvidence": true,
+          "staleInformation": true,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 528,
+          "requiredEvidence": true,
+          "staleInformation": true,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": {
+            "text": "harbor permit is only valid after operator approval.",
+            "links": {
+              "approval": "m1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo requires officer approval.",
+            "links": {
+              "cargo-evidence": "m2",
+              "harbor permit": "m1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo cannot be loaded without a valid harbor permit.",
+            "links": {
+              "harbor permit": "m3",
+              "stellar cargo": "m2"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo requires officer approval.",
+            "links": {
+              "cargo": "m2",
+              "approval": "m2"
+            }
+          }
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    },
+    {
+      "mode": "replacement",
+      "model": "Qwen2.5-7B-Instruct-Q4_K_M",
+      "status": "completed",
+      "usage": {
+        "maxAtoms": 4,
+        "maxCandidates": 40,
+        "maxBytes": 13131,
+        "maxNetworkCalls": 16,
+        "maxModelCalls": 4,
+        "maxModelInputTokens": 1120,
+        "maxModelOutputTokens": 8000,
+        "maxContextTokens": 1617
+      },
+      "steps": [
+        {
+          "step": 1,
+          "topic": "harbor permit",
+          "inputTokens": 283,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 2,
+          "topic": "stellar cargo",
+          "inputTokens": 279,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 3,
+          "topic": "harbor permit",
+          "inputTokens": 279,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        },
+        {
+          "step": 4,
+          "topic": "stellar cargo",
+          "inputTokens": 279,
+          "requiredEvidence": true,
+          "staleInformation": false,
+          "conditionMissing": false
+        }
+      ],
+      "modelResponses": [
+        {
+          "kind": "finish",
+          "output": {
+            "text": "harbor permit is allowed only after operator approval.",
+            "links": {
+              "approval": "m1"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo requires officer approval.",
+            "links": {
+              "cargo-evidence": "m2"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "当前港口许可已被拒绝。",
+            "links": {
+              "当前港口许可": "m3",
+              "拒绝": "m3"
+            }
+          }
+        },
+        {
+          "kind": "finish",
+          "output": {
+            "text": "stellar cargo requires officer approval.",
+            "links": {
+              "cargo-evidence": "m2"
+            }
+          }
+        }
+      ],
+      "answerQuality": "Not automatically scored; inspect responses separately from input coverage."
+    }
+  ]
+}

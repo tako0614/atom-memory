@@ -175,6 +175,19 @@ export class SqliteStorage implements StorageAdapter {
   compact(): void {
     this.#db.exec('PRAGMA wal_checkpoint(TRUNCATE); VACUUM; PRAGMA wal_checkpoint(TRUNCATE);');
   }
+  blobRange(blobId: string, start: number, length: number): Uint8Array | undefined {
+    const offset = start % 3;
+    const row = this.#db
+      .prepare(
+        "SELECT substr(json_extract(value,'$.bytes'),?,?) AS part FROM am_metadata WHERE key=?",
+      )
+      .get(
+        Math.floor(start / 3) * 4 + 1,
+        Math.ceil((offset + length) / 3) * 4,
+        `blob:${blobId}`,
+      ) as { part: string } | undefined;
+    return row ? Buffer.from(row.part, 'base64').subarray(offset, offset + length) : undefined;
+  }
   close(): void {
     this.#db.close();
   }

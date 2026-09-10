@@ -15,7 +15,7 @@ export default defineConfig({
       { text: 'はじめる', link: '/guide' },
       { text: 'API', link: '/api' },
       { text: '設計仕様', link: '/specification' },
-      { text: 'v0.1.0', link: '/release' },
+      { text: 'v0.2.0', link: '/release' },
     ],
     sidebar: [
       {
@@ -23,15 +23,16 @@ export default defineConfig({
         items: [
           { text: 'はじめに', link: '/guide' },
           { text: 'Atom と関係', link: '/concepts' },
-          { text: 'read / write', link: '/api' },
+          { text: '公開API', link: '/api' },
           { text: 'Writer と共通ハーネス', link: '/runtime' },
           { text: '保存・検索アダプター', link: '/adapters' },
+          { text: 'v0.1からの移行', link: '/migration' },
         ],
       },
       {
         text: '仕様と検証',
         items: [
-          { text: '受入条件 F01–F20', link: '/acceptance' },
+          { text: '受入条件 A01–A36 / F01–F20', link: '/acceptance' },
           { text: '最終設計 v1.0', link: '/specification' },
           { text: 'TypeScript 契約', link: '/contracts' },
           { text: 'リリースと公開手順', link: '/release' },
