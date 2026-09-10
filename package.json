@@ -1,0 +1,71 @@
+{
+  "name": "atom-memory",
+  "version": "0.1.0",
+  "description": "Immutable, provenance-aware agent memory with bounded read/write operations.",
+  "type": "module",
+  "license": "MIT",
+  "author": "tako0614",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./sqlite": {
+      "types": "./dist/adapters/sqlite.d.ts",
+      "import": "./dist/adapters/sqlite.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE",
+    "spec"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tako0614/atom-memory.git"
+  },
+  "homepage": "https://atom-memory.takos.jp",
+  "bugs": {
+    "url": "https://github.com/tako0614/atom-memory/issues"
+  },
+  "keywords": [
+    "agent",
+    "memory",
+    "rag",
+    "provenance",
+    "sqlite",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm test && npm run docs:build",
+    "example": "npm run build && node examples/basic.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:deploy": "npm run docs:build && wrangler deploy",
+    "prepack": "npm run build",
+    "format:check": "prettier --check src test examples docs package.json tsconfig.json wrangler.jsonc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2",
+    "vitepress": "^2.0.0-alpha.20",
+    "wrangler": "^4.130.0"
+  },
+  "overrides": {
+    "miniflare": {
+      "sharp": "0.35.4"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+flowchart TD
+  I[会話・コミュニティ・資料] --> H[共通 Agent Harness]
+  U[質問・明示的な推論状態] --> H
+  H --> R[read: 必要なAtom・関係・出典を取得]
+  R --> H
+  H --> D[非公開の編集差分]
+  D --> W[write: 有限の変更を検証・確定]
+  R --> K[Atom Kernel: 版・参照・権限・予算]
+  W --> K
+  K --> M[単一の論理Atom集合]
+  M --> S[保存・索引Adapter: 物理配置は非公開]
+  S --> P1[保存先]
+  S --> P2[保存先]
+  S --> P3[保存先]

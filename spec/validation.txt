@@ -1,0 +1,7 @@
+Atom Memory v1.0 — contract validation
+Date: 2026-09-10
+Version 5.8.3
+
+Command: tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution node contracts.ts examples.ts
+Result: PASS
+Scope: static type check only. No runtime, LLM or distributed benchmark.

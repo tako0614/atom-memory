@@ -1,0 +1,8 @@
+node_modules/
+dist/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+.wrangler/
+*.tgz
+*.sqlite*
+.env*

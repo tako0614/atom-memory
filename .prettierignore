@@ -1,0 +1,7 @@
+spec/
+src/contracts.ts
+dist/
+node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+package-lock.json
