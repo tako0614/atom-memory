@@ -1,0 +1,148 @@
+{
+  "at": "2026-09-10T17:53:35.942907+00:00",
+  "sourceCommit": "4e986688562300d82d02c264d7fa7afcf8d0b03a",
+  "previousCommit": "ba22093134453de74e9bc8043823eab04c735cd3",
+  "scope": "Documentation, executable examples and documentation example verification",
+  "changes": [
+    "Minimal write/search/read quickstart with host initialization on a separate page",
+    "Practical API, relationship, agent, storage and architecture explanations",
+    "Legacy API mapping and historical design grouped under migration"
+  ],
+  "validation": {
+    "build": "passed",
+    "docPrograms": 7,
+    "docProgramsTypecheckedAndExecuted": true,
+    "siteBuild": "passed",
+    "format": "passed",
+    "internalPageAndAnchorLinksChecked": 381,
+    "htmlPages": 14,
+    "wranglerDryRun": "passed",
+    "basicExample": "passed",
+    "ci": {
+      "url": "https://github.com/tako0614/atom-memory/actions/runs/34510873684",
+      "conclusion": "success",
+      "nodeVersions": [
+        22,
+        24
+      ],
+      "checks": [
+        "npm run check",
+        "npm run example",
+        "npm run example:writer",
+        "npm run format:check",
+        "npm pack --dry-run"
+      ]
+    }
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "tool": "Wrangler 4.130.0 via npm run docs:deploy",
+    "versionId": "a36c3eca-b8ad-4671-8179-3cb49834ab78",
+    "previousVersionId": "b1909689-566f-4cb6-9bce-188955a2efd1",
+    "pages": [
+      {
+        "path": "/",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "ea195622909f8aedeac97263907631be282ed9f7a844e2321e7c2aaa7d73cc10"
+      },
+      {
+        "path": "/guide",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "b39f4fe721b377eb74aed03e33a15cbd64360877201974feb02676467089ab55"
+      },
+      {
+        "path": "/setup",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "0d4cf880cbcc0f865742a6c18825d180a22ed65e13b7acb871ca1ddae712194d"
+      },
+      {
+        "path": "/api",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "67215fb01f4f52343a24201ef9e4932da00b0e9a97e04f6db07e538f02fc09b2"
+      },
+      {
+        "path": "/concepts",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "5902398967d6b555d566cdafcbf3daac2480672de30867b7f3f837c6bdc4552a"
+      },
+      {
+        "path": "/runtime",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "6bccdee2a8b99cceea3f53593c05ab00dcf9f46124c790d545519cac01e93e27"
+      },
+      {
+        "path": "/adapters",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "deafca2dba6b96fcd5523e92caefc7786b10dfaaa610601be7acb87cc034cfb4"
+      },
+      {
+        "path": "/contracts",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "29b53fe0e70209c4db720c3b3df9f76f992961d87131694bd43790abf04bb17a"
+      },
+      {
+        "path": "/specification",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "9be74d17df772d9a40866ea097bc4e59909274e0c928275b600efd91b8b42204"
+      },
+      {
+        "path": "/acceptance",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "01d2de8c08405ea9359dcbcb476200b9a3597f695ac3b3811205c4691465c6a4"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "547c12c204a7749cf2be2e87e187856d1cab3943ad0ba9c8833d37adb68e0fe1"
+      },
+      {
+        "path": "/migration-architecture",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "bac24e198f4f49677b682a1eef44c1c1be2632c73b364981617ffe3cb13b7416"
+      },
+      {
+        "path": "/release",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "5a0251758a3412e23a5f9f889d2bb39937cf394047ceef5d74937505b1d796c5"
+      },
+      {
+        "path": "/release.json",
+        "status": 200,
+        "matchesBuild": true,
+        "sha256": "9a037408f3890ad4d38f227aae3906663ab4498e78f488f147ad0bf29cd68664"
+      }
+    ],
+    "workersDevGuide": "matches build",
+    "browser": {
+      "status": "passed",
+      "page": "/guide",
+      "quickstartLines": 9,
+      "hostSetupInMainExample": false,
+      "setupLinks": 2,
+      "migrationNavigationCollapsed": true,
+      "mobile": {
+        "viewportWidth": 390,
+        "documentWidth": 375,
+        "menuPresent": true
+      }
+    }
+  },
+  "package": {
+    "version": "0.2.0",
+    "publishedInThisUpdate": false
+  },
+  "liveModelRunInThisUpdate": false
+}
