@@ -4,11 +4,5 @@
   "baseline": "861995594d43ec37f01edcce1d06a328e8e2576d",
   "packageIntegrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA==",
   "packageSha256": "a9a94a9987946608449697feb99d17a2df9391380abf053438696ae53bce2e72",
-  "api": [
-    "read",
-    "search",
-    "inspect",
-    "write",
-    "edit"
-  ]
+  "api": ["read", "search", "inspect", "write", "edit"]
 }

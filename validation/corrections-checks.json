@@ -42,14 +42,20 @@
       "logSha256": "20678bfd3d516ceb8bd44917b4ab1f84cde2f2a8febc8dad8815e4f7488a57e0"
     },
     {
-      "command": "node --test test/client-corrections.test.mjs (installed tarball)",
+      "command": "node --test client-corrections.test.mjs (installed tarball)",
       "result": "58 passed, 0 failed",
-      "logSha256": "325151513271aa6f0726cf31da97eee6c9f80934c5cbe73a7e081fc4a7d7f283"
+      "logSha256": "1ac5c46dc938a39a633d573898a7953d8c62fdbd1e9f7e9f0d523a69f80d6d2f"
     },
     {
       "command": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2023 consumer.mts (installed tarball)",
       "result": "passed",
       "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "npm run docs:build",
+      "result": "passed",
+      "logSha256": "cdc731c88011a4c91dc0cdf12fe2bd2cd45e218185e0a4d455656a9a3540e0b3"
     }
-  ]
+  ],
+  "packageIntegrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA=="
 }
