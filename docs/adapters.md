@@ -88,6 +88,8 @@ const page = await memory.search('招待リンクの期限');
 
 `candidateProvider` に独自の `CandidateProvider` を渡すと、同じ取得処理を search・read・Writer で共有できます。プロバイダーには許可された資料への `CandidateAccess`、共有予算、キャンセル信号が渡されます。
 
+大量の原文をローカルDBで扱う場合は、`candidateProvider: new LexicalCandidateProvider()` を選べます。本文の語彙一致を保存層で絞ってから有限の候補を採点するため、無関係な先頭IDだけで走査予算を使い切ることを避けます。認可と読取snapshotは同じhostの`CandidateAccess.page`を通ります。本文を入口にする近似方式なので、関係先の本文だけが一致する候補まで完全に拾う保証はなく、`approximate=true`を返します。埋め込みが有効な場合は既定の完全走査方式へ戻ります。
+
 同梱の検索はローカルの完全走査を基準とする実装です。大規模な ANN やリモート索引を導入する場合は、取得品質、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。`StorageAdapter` 自体は同期ローカル保存の契約です。
 
 ## 関係が変わった説明を作り直す

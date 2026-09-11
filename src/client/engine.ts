@@ -624,8 +624,8 @@ export class Engine {
       ledger: s.ledger,
       signal: s.signal,
       access: {
-        page: (after, limit) =>
-          this.scan({ policies: [...s.trace.policies], after, limit }, s, true),
+        page: (after, limit, filter) =>
+          this.scan({ policies: [...s.trace.policies], after, limit, ...(filter ? { text: [...filter.text] } : {}) }, s, true),
         representation: (r) => {
           const text = this.representation(r, s);
           const index = this.storage.metaGet<{

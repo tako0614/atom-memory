@@ -30,7 +30,7 @@ export {
 
 export { MemoryHost, MemoryClient, createMemory } from './client/memory.js';
 export type * from './client/types.js';
-export { ExactCandidateProvider } from './core/candidates.js';
+export { ExactCandidateProvider, LexicalCandidateProvider } from './core/candidates.js';
 
 export { AgentHarness as LegacyAgentHarness } from './runtime/legacy-harness.js';
 

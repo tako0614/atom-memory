@@ -84,3 +84,21 @@ export class ExactCandidateProvider implements CandidateProvider {
     return { candidates, scanned, complete, after, pending, approximate: !complete };
   }
 }
+
+/** Body-text candidate ingress, followed by the same finite ranking and graph
+ * expansion. Storage performs matching in the authorized snapshot before the
+ * JS scan budget; unrelated early IDs cannot crowd every later match out.
+ * This is a lexical approximation: link-only/embedding-only matches may differ
+ * from the exhaustive reference provider, so it never certifies full coverage.
+ */
+export class LexicalCandidateProvider implements CandidateProvider {
+  readonly id = 'local-body-lexical-v1';
+  async retrieve(input: Parameters<CandidateProvider['retrieve']>[0]) {
+    const terms = [...new Set(input.texts.flatMap(words))];
+    if (!terms.length || input.vectors.length) return new ExactCandidateProvider().retrieve(input);
+    const result = await new ExactCandidateProvider().retrieve({ ...input, access: {
+      ...input.access, page: (after, limit) => input.access.page(after, limit, { text: terms }),
+    } });
+    return { ...result, approximate: true };
+  }
+}
