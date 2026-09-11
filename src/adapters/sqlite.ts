@@ -43,6 +43,7 @@ export class SqliteStorage implements StorageAdapter {
       );
       CREATE INDEX IF NOT EXISTS am_history ON am_revisions(atom_id, sequence DESC);
       CREATE INDEX IF NOT EXISTS am_scope ON am_revisions(policy, schema_name, atom_id);
+      CREATE INDEX IF NOT EXISTS am_scope_order ON am_revisions(policy, atom_id);
       CREATE TABLE IF NOT EXISTS am_slots (revision_id TEXT NOT NULL, target_id TEXT NOT NULL, role TEXT NOT NULL, target_revision TEXT);
       CREATE INDEX IF NOT EXISTS am_relations ON am_slots(target_id, role, revision_id);
       CREATE TABLE IF NOT EXISTS am_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -186,10 +187,21 @@ export class SqliteStorage implements StorageAdapter {
       .run(key, JSON.stringify(value));
   }
   metaEntries<T>(prefix: string): [string, T][] {
+    // A prefix is a binary key range. substr(key, ...) forces every source/index
+    // metadata row through a table scan during ordinary cache maintenance.
+    const points = [...prefix];
+    let upper: string | undefined;
+    while (points.length) {
+      const last = points.pop()!.codePointAt(0)!;
+      if (last < 0x10ffff) {
+        upper = points.join('') + String.fromCodePoint(last === 0xd7ff ? 0xe000 : last + 1);
+        break;
+      }
+    }
     return (
       this.#db
-        .prepare('SELECT key,value FROM am_metadata WHERE substr(key,1,?)=?')
-        .all(prefix.length, prefix) as { key: string; value: string }[]
+        .prepare(`SELECT key,value FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'} ORDER BY key`)
+        .all(...(upper === undefined ? [prefix] : [prefix, upper])) as { key: string; value: string }[]
     ).map((r) => [r.key, JSON.parse(r.value) as T]);
   }
   metaDelete(key: string): void {
