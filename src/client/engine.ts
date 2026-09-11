@@ -395,9 +395,10 @@ export class Engine {
     };
   }
   trimTransientMetadata(): void {
-    const traces = this.storage
-      .metaEntries<Trace>('sdk:trace:')
-      .filter(([, t]) => !this.storage.metaGet(`receipt:${t.id}`));
+    const traces = this.storage.metaUnbackedEntries
+      ? this.storage.metaUnbackedEntries<Trace>('sdk:trace:', 'receipt:')
+      : this.storage.metaEntries<Trace>('sdk:trace:')
+        .filter(([, t]) => !this.storage.metaGet(`receipt:${t.id}`));
     const max = this.options.traceMaxEntries ?? 1024;
     for (let i = 0; i < traces.length; i++) {
       const [key, t] = traces[i]!;

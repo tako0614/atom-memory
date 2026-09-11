@@ -245,6 +245,17 @@ export class SqliteStorage implements StorageAdapter {
   metaDelete(key: string): void {
     this.#db.prepare('DELETE FROM am_metadata WHERE key=?').run(key);
   }
+  metaUnbackedEntries<T>(prefix: string, backingPrefix: string): [string,T][] {
+    const upper = prefixEnd(prefix);
+    // The inner scan uses only metadata keys. Large durable trace bodies never
+    // enter JS or the outer table lookup during transient retention maintenance.
+    const args: SQLInputValue[] = upper === undefined ? [prefix] : [prefix,upper];
+    args.push(backingPrefix,[...prefix].length+1);
+    return (this.#db.prepare(`SELECT key,value FROM am_metadata WHERE key IN (
+      SELECT t.key FROM am_metadata t WHERE t.key>=?${upper === undefined ? '' : ' AND t.key<?'}
+      AND NOT EXISTS(SELECT 1 FROM am_metadata p WHERE p.key=? || substr(t.key,?))
+    ) ORDER BY key`).all(...args) as {key:string,value:string}[]).map(r=>[r.key,JSON.parse(r.value) as T]);
+  }
   metaDeletePrefix(prefix: string): void {
     const upper = prefixEnd(prefix);
     this.#db.prepare(`DELETE FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'}`)
