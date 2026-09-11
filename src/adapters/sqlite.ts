@@ -2,6 +2,15 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type { AtomRevision, Ref } from '../contracts.js';
 import type { ScanQuery, StorageAdapter } from './storage.js';
 import { uid } from '../core/util.js';
+function prefixEnd(prefix: string): string | undefined {
+  const points = [...prefix];
+  while (points.length) {
+    const last = points.pop()!.codePointAt(0)!;
+    if (last < 0x10ffff)
+      return points.join('') + String.fromCodePoint(last === 0xd7ff ? 0xe000 : last + 1);
+  }
+  return undefined;
+}
 /** Local durable adapter. SQLite coordinates concurrent processes through short write transactions. */
 export class SqliteStorage implements StorageAdapter {
   retainSnapshot(at: number, until: number): string {
@@ -46,13 +55,50 @@ export class SqliteStorage implements StorageAdapter {
       CREATE INDEX IF NOT EXISTS am_scope_order ON am_revisions(policy, atom_id);
       CREATE TABLE IF NOT EXISTS am_slots (revision_id TEXT NOT NULL, target_id TEXT NOT NULL, role TEXT NOT NULL, target_revision TEXT);
       CREATE INDEX IF NOT EXISTS am_relations ON am_slots(target_id, role, revision_id);
+      CREATE INDEX IF NOT EXISTS am_slot_revision ON am_slots(revision_id);
+      CREATE TABLE IF NOT EXISTS am_purge_edges (owner_id TEXT NOT NULL,target_id TEXT NOT NULL,PRIMARY KEY(owner_id,target_id));
+      CREATE INDEX IF NOT EXISTS am_purge_target ON am_purge_edges(target_id,owner_id);
+      CREATE TABLE IF NOT EXISTS am_receipt_inputs (receipt_id TEXT NOT NULL,target_id TEXT NOT NULL,PRIMARY KEY(receipt_id,target_id));
+      CREATE INDEX IF NOT EXISTS am_receipt_target ON am_receipt_inputs(target_id,receipt_id);
+      CREATE TABLE IF NOT EXISTS am_receipt_owners (receipt_id TEXT NOT NULL,owner_id TEXT NOT NULL,PRIMARY KEY(receipt_id,owner_id));
+      CREATE INDEX IF NOT EXISTS am_receipt_owner ON am_receipt_owners(owner_id,receipt_id);
       CREATE TABLE IF NOT EXISTS am_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS am_purged (atom_id TEXT PRIMARY KEY);
+      CREATE TRIGGER IF NOT EXISTS am_purge_revision_insert AFTER INSERT ON am_revisions BEGIN
+        INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.target.atomId') FROM json_each(new.data,'$.slots') WHERE true ON CONFLICT DO NOTHING;
+        INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.source.atomId') FROM json_each(new.data,'$.origins') WHERE true ON CONFLICT DO NOTHING;
+        INSERT INTO am_receipt_owners SELECT json_extract(new.data,'$.provenance.inputReceiptId'),new.atom_id WHERE json_extract(new.data,'$.provenance.inputReceiptId') IS NOT NULL ON CONFLICT DO NOTHING;
+      END;
+      CREATE TRIGGER IF NOT EXISTS am_purge_revision_delete AFTER DELETE ON am_revisions WHEN NOT EXISTS(SELECT 1 FROM am_revisions WHERE atom_id=old.atom_id) BEGIN
+        DELETE FROM am_purge_edges WHERE owner_id=old.atom_id OR target_id=old.atom_id;
+        DELETE FROM am_receipt_owners WHERE owner_id=old.atom_id;
+      END;
+      CREATE TRIGGER IF NOT EXISTS am_purge_receipt_insert AFTER INSERT ON am_metadata WHEN substr(new.key,1,8)='receipt:' BEGIN
+        INSERT INTO am_receipt_inputs SELECT substr(new.key,9),json_extract(value,'$.atomId') FROM json_each(new.value,'$.reads') WHERE true ON CONFLICT DO NOTHING;
+      END;
+      CREATE TRIGGER IF NOT EXISTS am_purge_receipt_update AFTER UPDATE OF value ON am_metadata WHEN substr(new.key,1,8)='receipt:' BEGIN
+        DELETE FROM am_receipt_inputs WHERE receipt_id=substr(new.key,9);
+        INSERT INTO am_receipt_inputs SELECT substr(new.key,9),json_extract(value,'$.atomId') FROM json_each(new.value,'$.reads') WHERE true ON CONFLICT DO NOTHING;
+      END;
+      CREATE TRIGGER IF NOT EXISTS am_purge_receipt_delete AFTER DELETE ON am_metadata WHEN substr(old.key,1,8)='receipt:' BEGIN
+        DELETE FROM am_receipt_inputs WHERE receipt_id=substr(old.key,9);
+      END;
     `);
     this.#db.prepare("INSERT OR IGNORE INTO am_state VALUES ('id',?)").run(uid('sqlite'));
     this.id = (
       this.#db.prepare("SELECT value FROM am_state WHERE key='id'").get() as { value: string }
     ).value;
+    if (!this.#db.prepare("SELECT 1 FROM am_state WHERE key='purge-index-v1'").get()) {
+      this.transaction(() => {
+        this.#db.exec(`
+          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(s.value,'$.target.atomId') FROM am_revisions r,json_each(r.data,'$.slots') s;
+          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(o.value,'$.source.atomId') FROM am_revisions r,json_each(r.data,'$.origins') o;
+          INSERT OR IGNORE INTO am_receipt_owners SELECT json_extract(data,'$.provenance.inputReceiptId'),atom_id FROM am_revisions WHERE json_extract(data,'$.provenance.inputReceiptId') IS NOT NULL;
+          INSERT OR IGNORE INTO am_receipt_inputs SELECT substr(m.key,9),json_extract(r.value,'$.atomId') FROM am_metadata m,json_each(m.value,'$.reads') r WHERE m.key>='receipt:' AND m.key<'receipt;';
+          INSERT INTO am_state VALUES('purge-index-v1','1');
+        `);
+      });
+    }
   }
   /**
    * NORMAL is for replayable imports. Its commits remain atomic, but callers
@@ -189,15 +235,7 @@ export class SqliteStorage implements StorageAdapter {
   metaEntries<T>(prefix: string): [string, T][] {
     // A prefix is a binary key range. substr(key, ...) forces every source/index
     // metadata row through a table scan during ordinary cache maintenance.
-    const points = [...prefix];
-    let upper: string | undefined;
-    while (points.length) {
-      const last = points.pop()!.codePointAt(0)!;
-      if (last < 0x10ffff) {
-        upper = points.join('') + String.fromCodePoint(last === 0xd7ff ? 0xe000 : last + 1);
-        break;
-      }
-    }
+    const upper = prefixEnd(prefix);
     return (
       this.#db
         .prepare(`SELECT key,value FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'} ORDER BY key`)
@@ -206,6 +244,21 @@ export class SqliteStorage implements StorageAdapter {
   }
   metaDelete(key: string): void {
     this.#db.prepare('DELETE FROM am_metadata WHERE key=?').run(key);
+  }
+  metaDeletePrefix(prefix: string): void {
+    const upper = prefixEnd(prefix);
+    this.#db.prepare(`DELETE FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'}`)
+      .run(...(upper === undefined ? [prefix] : [prefix,upper]));
+  }
+  purgePlan(atomId: string): { revisions: AtomRevision[]; receiptKeys: string[] } {
+    const closure = `WITH RECURSIVE affected(atom_id) AS (
+      SELECT ? UNION SELECT e.owner_id FROM am_purge_edges e JOIN affected a ON e.target_id=a.atom_id
+      UNION SELECT o.owner_id FROM am_receipt_inputs i JOIN affected a ON i.target_id=a.atom_id
+        JOIN am_receipt_owners o ON o.receipt_id=i.receipt_id
+    ) `;
+    const revisions = (this.#db.prepare(closure+'SELECT data FROM am_revisions WHERE atom_id IN (SELECT atom_id FROM affected)').all(atomId) as {data:string}[]).map((r) => JSON.parse(r.data) as AtomRevision);
+    const receipts = this.#db.prepare(closure+'SELECT DISTINCT i.receipt_id FROM am_receipt_inputs i JOIN affected a ON i.target_id=a.atom_id').all(atomId) as {receipt_id:string}[];
+    return { revisions, receiptKeys: receipts.map((r) => `receipt:${r.receipt_id}`) };
   }
   isPurged(atomId: string): boolean {
     return !!this.#db.prepare('SELECT 1 FROM am_purged WHERE atom_id=?').get(atomId);

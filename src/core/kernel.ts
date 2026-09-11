@@ -982,11 +982,15 @@ export class AtomKernel implements AtomMemory {
     validId(atomId);
     return this.storage.transaction(() => {
       const erased = new Set([atomId]);
-      const receipts = this.storage.metaEntries<ReceiptManifest>('receipt:');
-      const all: AtomRevision[] = [];
+      const plan = this.storage.purgePlan?.(atomId);
+      const receipts: [string, ReceiptManifest][] = plan ? plan.receiptKeys.flatMap((key) => {
+        const value = this.storage.metaGet<ReceiptManifest>(key);
+        return value ? [[key,value] as [string,ReceiptManifest]] : [];
+      }) : this.storage.metaEntries<ReceiptManifest>('receipt:');
+      const all: AtomRevision[] = plan?.revisions ?? [];
       let after: string | undefined;
       // Purge inspects every historical revision, including retired content and old blobs.
-      while (true) {
+      while (!plan) {
         const page = this.storage.history(after, 256);
         all.push(...page);
         if (page.length < 256) break;
@@ -1014,15 +1018,19 @@ export class AtomKernel implements AtomMemory {
         if (erased.has(r.atomId) && r.body.kind === 'blob')
           this.storage.metaDelete(`blob:${r.body.blobId}`);
       this.storage.erase([...erased]);
-      for (const [key] of this.storage.metaEntries('cursor:')) this.storage.metaDelete(key);
-      for (const [key] of this.storage.metaEntries('observation:')) this.storage.metaDelete(key);
+      const clear = (prefix: string) => {
+        if (this.storage.metaDeletePrefix) this.storage.metaDeletePrefix(prefix);
+        else for (const [key] of this.storage.metaEntries(prefix)) this.storage.metaDelete(key);
+      };
+      clear('cursor:');
+      clear('observation:');
       for (const [key, m] of receipts)
         if (m.reads.some((r) => erased.has(r.atomId))) this.storage.metaDelete(key);
       for (const [key, e] of this.storage.metaEntries<Embedding>('embedding:'))
         if (erased.has(e.owner.atomId)) this.storage.metaDelete(key);
-      for (const [key] of this.storage.metaEntries('sdk:cache:')) this.storage.metaDelete(key);
-      for (const [key] of this.storage.metaEntries('sdk:cursor:')) this.storage.metaDelete(key);
-      for (const [key] of this.storage.metaEntries('sdk:index:')) this.storage.metaDelete(key);
+      clear('sdk:cache:');
+      clear('sdk:cursor:');
+      clear('sdk:index:');
       this.#overlays.clear();
       return { erasedAtomIds: [...erased], physicalStorageReclaimed: false };
     });

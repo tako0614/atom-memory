@@ -25,11 +25,14 @@ export interface StorageAdapter {
   get(ref: Ref, at: number): AtomRevision | undefined;
   scan(query: ScanQuery, at: number): AtomRevision[];
   history(after: string | undefined, limit: number): AtomRevision[];
+  /** Exact transitive purge closure across historical links, origins and host-read receipts. */
+  purgePlan?(atomId: string): { revisions: AtomRevision[]; receiptKeys: string[] };
   append(revisions: readonly AtomRevision[]): void;
   metaGet<T>(key: string): T | undefined;
   metaSet(key: string, value: unknown): void;
   metaEntries<T>(prefix: string): [string, T][];
   metaDelete(key: string): void;
+  metaDeletePrefix?(prefix: string): void;
   isPurged(atomId: string): boolean;
   erase(atomIds: readonly string[]): void;
   blobRange?(blobId: string, start: number, length: number): Uint8Array | undefined;
