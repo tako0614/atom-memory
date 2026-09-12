@@ -256,7 +256,8 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
   const storage = new SqliteStorage(join(dir, 'atom.sqlite'));
   try {
     const f = setup(storage, { maxScan: 16 });
-    for (let i = 0; i < 35; i++) await f.memory.write(`unrelated stone ${i}`);
+    const unrelated = await f.memory.write('unrelated stone 0');
+    for (let i = 1; i < 35; i++) await f.memory.write(`unrelated stone ${i}`);
     const foreignAuth = f.options.authority.issue({
       subject: 'foreign',
       readPolicies: ['q'],
@@ -295,16 +296,19 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
     const sourceId = storage
       .scan({ policies: ['p'], text: ['orchard'], limit: 100 }, storage.watermark())
       .find((r) => r.body.value === 'orchard').atomId;
-    const unrelatedIndex = storage
-      .metaEntries('sdk:index:')
-      .find(([, index]) => index.vectors[0][1] === 1);
+    // Vector equality does not identify an unrelated Atom: the dependent
+    // relation has the same fixed vector and is correctly removed by purge.
+    const unrelatedKey = indexKey(storage, unrelated.ref);
+    const relationKey = indexKey(storage, relation.ref);
+    const unrelatedIndex = storage.metaGet(unrelatedKey);
     assert.ok(unrelatedIndex);
     f.host.purge(sourceId);
     assert.deepEqual(
-      storage.metaGet(unrelatedIndex[0]),
-      unrelatedIndex[1],
+      storage.metaGet(unrelatedKey),
+      unrelatedIndex,
       'purge preserves unrelated vectors and their maintenance progress',
     );
+    assert.equal(storage.metaGet(relationKey), undefined, 'purge removes the dependent relation');
     assert.ok(
       !(await f.memory.read({ context: 'fruit' }, { tokens: 16000 })).items.some(
         (item) => item.text === 'orchard',
