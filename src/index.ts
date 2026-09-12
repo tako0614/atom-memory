@@ -30,6 +30,7 @@ export {
   MemoryHarness as AgentHarness,
   type HarnessModel,
   type ModelAction,
+  type ModelMutation,
   type ModelInput,
   type HarnessResult,
   type HarnessOptions,

@@ -1,9 +1,12 @@
-import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, readdirSync } from 'node:fs';
 import { resolve, dirname, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 const root = resolve(import.meta.dirname, '..');
 const temporary = resolve(root, '.doc-examples');
 mkdirSync(temporary, { recursive: true });
+// Keep example databases out of the worktree and respect the host's TMPDIR.
+const dataDirectory = mkdtempSync(resolve(tmpdir(), 'atom-memory-examples-'));
 const programs = new Set();
 const expectedOutputs = new Map();
 let index = 0;
@@ -78,12 +81,15 @@ try {
   for (const source of examples) {
     const file = resolve(temporary, 'out', basename(source).replace(/\.ts$/, '.js'));
     const run = spawnSync(process.execPath, [file], {
-      cwd: temporary,
+      cwd: dataDirectory,
       encoding: 'utf8',
       timeout: 60000,
       env: process.env,
     });
-    if (run.status !== 0) throw Error(`${source}: ${run.stdout}${run.stderr}`);
+    if (run.status !== 0)
+      throw Error(
+        `${source}: ${run.error?.message ?? run.signal ?? run.status}\n${run.stdout}${run.stderr}`,
+      );
     const expected = expectedOutputs.get(basename(source));
     if (expected !== undefined && run.stdout.trim() !== expected)
       throw Error(
@@ -95,4 +101,5 @@ try {
   );
 } finally {
   rmSync(temporary, { recursive: true, force: true });
+  rmSync(dataDirectory, { recursive: true, force: true });
 }

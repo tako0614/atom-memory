@@ -14,6 +14,23 @@ import type {
   Usage,
 } from '../client/types.js';
 
+/** Batch-local aliases use $name and may only refer to earlier writes in that batch. */
+export type ModelMutation =
+  | {
+      kind: 'write';
+      as?: string;
+      content: Json;
+      sources?: readonly { ref: string; start?: number; end?: number }[];
+    }
+  | {
+      kind: 'revise';
+      as?: string;
+      ref: string;
+      content: Json;
+      sources?: readonly { ref: string; start?: number; end?: number }[];
+    }
+  | { kind: 'retire'; ref: string }
+  | { kind: 'supersede'; previous: string; next: string };
 export type ModelAction = (
   | { kind: 'search'; query: string; limit?: number }
   | {
@@ -26,19 +43,8 @@ export type ModelAction = (
       range?: { start?: number; bytes?: number };
     }
   | { kind: 'resume'; cursor: string; limit?: number }
-  | {
-      kind: 'write';
-      content: Json;
-      sources?: readonly { ref: string; start?: number; end?: number }[];
-    }
-  | {
-      kind: 'revise';
-      ref: string;
-      content: Json;
-      sources?: readonly { ref: string; start?: number; end?: number }[];
-    }
-  | { kind: 'retire'; ref: string }
-  | { kind: 'supersede'; previous: string; next: string }
+  | ModelMutation
+  | { kind: 'batch'; operations: readonly ModelMutation[]; output?: Json }
   | { kind: 'continue' }
   | { kind: 'finish'; output: Json }
 ) & { state?: { context?: string; thought?: string } };
@@ -77,6 +83,8 @@ export interface HarnessOptions {
   maxRecentObservations?: number;
   maxObservationBytes?: number;
   maxRefs?: number;
+  /** Maximum edits in one model response, including a batch. Default 64. */
+  maxBatchOperations?: number;
   /** Host-approved composition for successor operations in this workflow. Never model-supplied. */
   historyComposition?: import('../client/types.js').CompositionPlan;
   audit?: { maxEntries?: number; maxBytes?: number; retentionMs?: number };
@@ -120,6 +128,12 @@ const tools: readonly Json[] = [
   },
   { kind: 'retire', ref: 'issued reference name' },
   { kind: 'supersede', previous: 'issued reference name', next: 'issued reference name' },
+  {
+    kind: 'batch',
+    operations:
+      'ordered write/revise/retire/supersede actions; write/revise may set as:name; later actions can use $name; no forward references',
+    output: 'optional JSON; when present, finish and commit the entire run after this batch',
+  },
   { kind: 'continue', state: 'optional {context,thought}' },
   { kind: 'finish', output: 'JSON', state: 'optional {context,thought}' },
 ];
@@ -160,6 +174,8 @@ export class MemoryHarness {
     budget?: Partial<Budget>;
     signal?: AbortSignal;
     commit?: 'read-only' | 'edit';
+    /** Host-selected basis: historical organization persists as evidence of that period. */
+    basis?: 'current' | 'historical';
   }): Promise<HarnessResult> {
     if (typeof input.input !== 'string' || !input.input.trim()) fail('INVALID_INPUT');
     const runId = uid('run');
@@ -401,31 +417,67 @@ export class MemoryHarness {
           show(page, continuation);
         } else {
           if (!draft) fail('ACCESS_DENIED', 'This run cannot edit');
-          if (action.kind === 'write' || action.kind === 'revise') {
-            const content = decodeContent(action.content);
-            const options = {
-              sources: action.sources?.map((c) => ({ ...c, ref: reference(c.ref) })),
-              signal,
-            };
-            const view =
-              action.kind === 'write'
-                ? await draft.write(content, options)
-                : await draft.revise(reference(action.ref), content, options);
-            addObservation(expose({ operation: action.kind, status: 'staged', ...view }));
-          } else if (action.kind === 'retire')
-            addObservation(
-              expose({
+          const mutate = async (operation: ModelMutation) => {
+            if (operation.kind === 'write' || operation.kind === 'revise') {
+              const content = decodeContent(operation.content);
+              const options = {
+                sources: operation.sources?.map((c) => ({ ...c, ref: reference(c.ref) })),
+                signal,
+              };
+              const view =
+                operation.kind === 'write'
+                  ? await draft.write(content, options)
+                  : await draft.revise(reference(operation.ref), content, options);
+              return { operation: operation.kind, status: 'staged', ...view };
+            } else if (operation.kind === 'retire')
+              return {
                 operation: 'retire',
                 status: 'staged',
-                ...(await draft.retire(reference(action.ref))),
-              }),
-            );
-          else if (action.kind === 'supersede') {
-            await draft.supersede(reference(action.previous), reference(action.next), {
-              composition: this.options.historyComposition,
-            });
-            addObservation({ operation: 'supersede', status: 'staged', superseded: true });
-          } else fail('INVALID_INPUT', 'Unknown model operation');
+                ...(await draft.retire(reference(operation.ref))),
+              };
+            else if (operation.kind === 'supersede') {
+              await draft.supersede(reference(operation.previous), reference(operation.next), {
+                composition: this.options.historyComposition,
+              });
+              return { operation: 'supersede', status: 'staged', superseded: true };
+            } else fail('INVALID_INPUT', 'Unknown model operation');
+          };
+          if (action.kind === 'batch') {
+            const limit = positive(this.options.maxBatchOperations, 64, 1000);
+            if (!Array.isArray(action.operations) || !action.operations.length)
+              fail('INVALID_INPUT', 'A batch needs at least one edit');
+            if (action.operations.length > limit) fail('LIMIT_EXCEEDED', 'Too many batch edits');
+            const localNames = new Set<string>();
+            const results: unknown[] = [];
+            try {
+              for (const operation of action.operations) {
+                if (!operation || typeof operation !== 'object') fail('INVALID_INPUT');
+                const name = 'as' in operation ? operation.as : undefined;
+                if (name !== undefined) {
+                  if (
+                    !['write', 'revise'].includes(operation.kind) ||
+                    typeof name !== 'string' ||
+                    !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(name) ||
+                    localNames.has(name)
+                  )
+                    fail('INVALID_INPUT', 'Batch aliases must be unique write/revise names');
+                }
+                const result = await mutate(operation);
+                if (name !== undefined) {
+                  if (!('ref' in result)) fail('INVALID_INPUT');
+                  aliases.set(`$${name}`, result.ref);
+                  localNames.add(name);
+                }
+                results.push(expose(result));
+              }
+            } finally {
+              for (const name of localNames) aliases.delete(`$${name}`);
+            }
+            // All writes stay in the run's existing draft. A later failure rolls
+            // back this batch and every earlier staged operation in the run.
+            if ('output' in action) return action.output as Json;
+            addObservation({ operation: 'batch', status: 'staged', results });
+          } else addObservation(expose(await mutate(action)));
         }
       }
       fail('BUDGET_EXHAUSTED', 'Maximum model steps reached');
@@ -435,6 +487,7 @@ export class MemoryHarness {
       if (input.commit === 'edit') {
         const result = await memory.edit((draft) => execute(draftClients.get(draft)!, draft), {
           signal,
+          basis: input.basis,
         });
         output = result.value;
         changes = result.changes;

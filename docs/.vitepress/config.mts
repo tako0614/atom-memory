@@ -22,6 +22,7 @@ export default defineConfig({
           { text: 'Hello, Memory', link: '/guide' },
           { text: '短いコードで試す', link: '/examples' },
           { text: 'エージェントにつなぐ', link: '/runtime' },
+          { text: '長期履歴を整理する', link: '/history' },
         ],
       },
       {

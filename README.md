@@ -34,6 +34,14 @@ The [quickstart](https://atom-memory.takos.jp/guide) includes both this applicat
 
 Use `MemoryHarness` to select a fresh memory block before each model call. Notes, descriptions and relationships share the same store. Keep data in memory while trying things out, then use SQLite to save it on disk.
 
+## Organize a long history
+
+Feed bounded periods to `MemoryHarness` and let the model search, inspect and revise existing memory. A `batch` action creates or revises multiple linked Atoms in one model response, with an atomic commit. Use `basis: 'historical'` for past-source organization. The application owns scheduling, checkpoints, model selection and cost limits.
+
+After writes, `host.indexAtoms()` prioritizes new vectors and `host.updateIndex()` incrementally indexes changes and direct dependents. SQLite supports scoped hybrid vector and lexical retrieval followed by relationship expansion.
+
+See [long-history writing](https://atom-memory.takos.jp/history) and run `npm run example:history` for a deterministic, executable example that updates one topic across two periods.
+
 ## Try it
 
 - [Hello, Memory](https://atom-memory.takos.jp/guide) — your first saved memory.

@@ -35,14 +35,14 @@ export async function correctNote(memory: MemoryAPI, ref: AtomRef, text: string)
 
 ## ホストで使う型
 
-| 型                                        | 設定するもの                         |
-| ----------------------------------------- | ------------------------------------ |
-| `HostOptions` / `ClientBinding`           | 保存・認証・書き手・既定値           |
-| `Authorizer`                              | ホストの認証主体と権限の解決         |
-| `StorageAdapter`                          | ローカル保存の読取とトランザクション |
-| `EmbeddingProvider` / `CandidateProvider` | 検索表現と候補取得                   |
-| `Generator`                               | 失効した派生表現の再生成             |
-| `HarnessModel` / `ModelAction`            | モデル接続とモデルが選ぶ操作         |
-| `HarnessOptions` / `HarnessResult`        | 実行設定と結果                       |
+| 型                                               | 設定するもの                         |
+| ------------------------------------------------ | ------------------------------------ |
+| `HostOptions` / `ClientBinding`                  | 保存・認証・書き手・既定値           |
+| `Authorizer`                                     | ホストの認証主体と権限の解決         |
+| `StorageAdapter`                                 | ローカル保存の読取とトランザクション |
+| `EmbeddingProvider` / `CandidateProvider`        | 検索表現と候補取得                   |
+| `Generator`                                      | 失効した派生表現の再生成             |
+| `HarnessModel` / `ModelAction` / `ModelMutation` | モデル接続とモデルが選ぶ操作         |
+| `HarnessOptions` / `HarnessResult`               | 実行設定と結果                       |
 
 モデル接続の定義は [src/runtime/harness.ts](https://github.com/tako0614/atom-memory/blob/main/src/runtime/harness.ts)、実装例は [エージェントと Writer](/runtime)にあります。
