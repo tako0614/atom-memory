@@ -1,19 +1,15 @@
 {
-  "at": "2026-09-10T19:43:26.605Z",
-  "baseline": "861995594d43ec37f01edcce1d06a328e8e2576d",
-  "sourceCommit": "22f243f637a0f06ff18bc049243b1031bda513f4",
-  "releaseCommit": "5780868cffe16edac54f2d963c5dd0fb8c1d39c5",
-  "tag": "v0.2.1",
+  "at": "2026-09-12T10:04:19.182009+00:00",
+  "sourceCommit": "33853332253aca8ef2fd40b645f4499c8f929cce",
+  "tag": "v0.3.0",
   "npm": {
-    "version": "0.2.1",
-    "integrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA==",
-    "sha256": "a9a94a9987946608449697feb99d17a2df9391380abf053438696ae53bce2e72",
+    "version": "0.3.0",
+    "integrity": "sha512-zjt8WgCOSAPtJJ6azp0RyAtoen9eYEeHnI2iLWsgQRbel+t+kYJZV+EjLHSrFgeQLh6pbSg8c1DKdwnJvCLXAQ==",
+    "sha256": "76606260efd0079ddddfc9c7ab2e334bfeddc75abf660959d40f29349907d9cc",
     "publicationAccepted": true,
-    "registryInstall": "passed with empty npm cache in a new consumer project",
     "published": true,
-    "latest": "0.2.1",
-    "tarball": "https://registry.npmjs.org/atom-memory/-/atom-memory-0.2.1.tgz",
-    "publicAPI": "58 public API correction tests passed",
+    "registryInstall": "passed with an empty npm cache in a new consumer project",
+    "localTarballInstall": "passed in a new consumer project",
     "adapters": [
       "MemoryStorage",
       "SqliteStorage"
@@ -21,144 +17,104 @@
     "consumerTypes": "passed",
     "consumerNodeVersions": [
       "26.1.0"
-    ]
+    ],
+    "entryCount": 148,
+    "bytes": 229782,
+    "latest": "0.3.0",
+    "tarball": "https://registry.npmjs.org/atom-memory/-/atom-memory-0.3.0.tgz"
   },
   "site": {
     "url": "https://atom-memory.takos.jp",
     "published": true,
-    "tool": "Wrangler 4.130.0 local CLI: deploy --dry-run, deploy",
     "worker": "atom-memory-docs",
-    "versionId": "ff079c33-4598-4eba-9608-2064357092d6",
+    "dryRun": "passed",
+    "sourceCommit": "33853332253aca8ef2fd40b645f4499c8f929cce",
+    "versionId": "2f5061b6-139f-40bf-93d4-ead7fb84ae9b",
+    "tool": "Wrangler 4.130.0 local CLI: deploy --dry-run, deploy",
     "pages": [
       {
         "path": "/",
         "status": 200,
-        "sha256": "429cfbdb31d3a5511b5c8db531b5263f10044d54fc0a516109f4a0016e85d8ca"
+        "sha256": "baf2679ac72d41a023aba43346470c932b848cb30a7ece7f46ff24e68fed6d02"
       },
       {
         "path": "/guide",
         "status": 200,
-        "sha256": "4f8576ded4c120ee4f73d75e6beefed0fa0c6f0ec6441a9e8d701c2cb4681377"
+        "sha256": "e8b4f095e043f81d6e3f54a97470e208f26e639cbffeb0ba82fe14866a38eeac"
       },
       {
-        "path": "/api",
+        "path": "/history",
         "status": 200,
-        "sha256": "8b946320818defc8da43a8a3e311eab8e92f90b42551e56f5b28a55eb47545dc"
-      },
-      {
-        "path": "/runtime",
-        "status": 200,
-        "sha256": "05858f236db29a2f814b3bd02c97d5911df39b06da0ce0a37c4f86e629a8c66a"
-      },
-      {
-        "path": "/adapters",
-        "status": 200,
-        "sha256": "2fc7aec71f29e8a7196c82de775766d3366ef49a44f1b990d47efce9b1d28718"
-      },
-      {
-        "path": "/migration",
-        "status": 200,
-        "sha256": "1915c48588c1a108fe9b239211e90a95b31775e6fc8016c9cf9e22da80a11d45"
-      },
-      {
-        "path": "/acceptance",
-        "status": 200,
-        "sha256": "1839670d30f22175e5b727a5e414d923431b23236f3e89f6c06aa2c06836bc18"
+        "sha256": "feaf86f3340d0cc0fce72a48644204a1fd1dcbb19f1c9f6a7f693210d134be93"
       },
       {
         "path": "/release",
         "status": 200,
-        "sha256": "c2820d0dc1d86f63b371486fbc059db5ca9a5a646e0cfc35b4ad4edabbcab658"
+        "sha256": "77f021e8235bd26b69b6a6329e94c18968e6de207f99abad95cc278d515f9d62"
+      },
+      {
+        "path": "/adapters",
+        "status": 200,
+        "sha256": "ea457b81ebfaa8f93cdbabe7ef2d88ccbe6244861a226054ce71bcb6dbbe8d43"
+      },
+      {
+        "path": "/runtime",
+        "status": 200,
+        "sha256": "dfb86b77b7caef52c4eff143cdbb7f6c6cca3384a7c306e2f700f03598537b44"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "sha256": "2e217f03cfde6df5a09d313c349f09f77c40cdeebde6892c9fc96e43b51b328b"
+      },
+      {
+        "path": "/contracts",
+        "status": 200,
+        "sha256": "5f84cd56639222c23fd1c89f9a625bb143d92ec92aa244a9da6e369c5e2f1504"
+      },
+      {
+        "path": "/acceptance",
+        "status": 200,
+        "sha256": "1c923cf66303441b1f21c167bf0a25c128a23127783a5963e3fa9ceca46ba216"
       },
       {
         "path": "/release.json",
         "status": 200,
-        "sha256": "2a6348c215310ee9ec35722c52b42c224f6003ef425ef4b7bf44b0648eb9a66f"
-      },
-      {
-        "path": "/mark.svg",
-        "status": 404,
-        "sha256": "8e1926da4f36d9551bbb35288b58bbbd0deedbc7a24788d40ecd949d82818f45"
-      }
-    ],
-    "browser": [
-      {
-        "url": "https://atom-memory.takos.jp/",
-        "width": 390,
-        "scroll": 390,
-        "client": 390,
-        "brand": "#242424",
-        "logo": false,
-        "favicon": "data:,",
-        "title": "エージェントに、思い出す力を。 | Atom Memory",
-        "theme": "light"
-      },
-      {
-        "url": "https://atom-memory.takos.jp/",
-        "width": 390,
-        "scroll": 390,
-        "client": 390,
-        "brand": "#eee",
-        "logo": false,
-        "favicon": "data:,",
-        "title": "エージェントに、思い出す力を。 | Atom Memory",
-        "theme": "dark"
-      },
-      {
-        "url": "https://atom-memory.takos.jp/",
-        "width": 1440,
-        "scroll": 1425,
-        "client": 1425,
-        "brand": "#242424",
-        "logo": false,
-        "favicon": "data:,",
-        "title": "エージェントに、思い出す力を。 | Atom Memory",
-        "theme": "light"
-      },
-      {
-        "url": "https://atom-memory.takos.jp/",
-        "width": 1440,
-        "scroll": 1425,
-        "client": 1425,
-        "brand": "#eee",
-        "logo": false,
-        "favicon": "data:,",
-        "title": "エージェントに、思い出す力を。 | Atom Memory",
-        "theme": "dark"
+        "sha256": "3271a522fb8c43323a4a65176789496e07844cab38712a8289e06cbca3d41984"
       }
     ],
     "releaseManifest": "verified on custom domain and workers.dev",
-    "acceptanceUpdate": "verified: 140 tests, 1460 / 1052 real-model input tokens",
-    "sourceCommit": "eb3aaef627e11235ddf76321d0a5bfac626da16b",
-    "previousVersionId": "b4073fc5-c839-4905-9539-1524884e82ed"
+    "build": "passed"
   },
   "regression": {
-    "tests": 140,
+    "tests": 157,
     "nodeVersions": [
-      "22.23.2",
-      "24.18.0",
-      "26.1.0"
+      "22 (CI)",
+      "24 (CI)",
+      "26.1.0 (local)"
     ],
-    "additionalCases": 58,
-    "adapters": [
-      "MemoryStorage",
-      "SqliteStorage"
-    ]
+    "documentationExamples": 13,
+    "documentedOutputs": 6,
+    "format": "passed",
+    "historyExample": {
+      "periods": 2,
+      "modelCalls": 4,
+      "committedEdits": 10,
+      "reusedTopic": true
+    }
   },
   "ci": {
-    "url": "https://github.com/tako0614/atom-memory/actions/runs/34521329778",
+    "url": "https://github.com/tako0614/atom-memory/actions/runs/34687382918",
     "conclusion": "success",
     "matrix": [
       22,
       24
     ],
-    "commit": "eb3aaef627e11235ddf76321d0a5bfac626da16b"
+    "commit": "33853332253aca8ef2fd40b645f4499c8f929cce"
   },
   "realModel": {
-    "model": "Qwen2.5-7B-Instruct Q4_K_M",
-    "runtime": "llama.cpp b10809 (5266f24da)",
-    "writer": "completed 3 steps, historicalItems 3",
-    "comparison": "3 modes completed, answer quality not scored"
+    "newEvaluation": false,
+    "note": "New history scenario uses a deterministic adapter; no new paid model evaluation or full-history quality measurement in this release."
   },
-  "packageDocsNote": "Bundled docs/acceptance.md contains the earlier 0.2.0 metrics. Current 0.2.1 evidence is in validation/corrections.md and the live acceptance page."
+  "localEvaluation": "validation/local-evaluation-v0.3.0.json"
 }

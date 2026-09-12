@@ -1,8 +1,10 @@
 {
-  "version": "0.2.1",
-  "sourceCommit": "22f243f637a0f06ff18bc049243b1031bda513f4",
-  "baseline": "861995594d43ec37f01edcce1d06a328e8e2576d",
-  "packageIntegrity": "sha512-NzOgTyay2QzoCqVv/AxKdeL54A9lzgBvD+aHjcJ9u1yPqpyjM43WUDaESxhRj8KwyPw4CzOFGG2BnCSEMtD9fA==",
-  "packageSha256": "a9a94a9987946608449697feb99d17a2df9391380abf053438696ae53bce2e72",
-  "api": ["read", "search", "inspect", "write", "edit"]
+  "version": "0.3.0",
+  "sourceCommit": "33853332253aca8ef2fd40b645f4499c8f929cce",
+  "baseline": "2e0bf6b607944123fa730a558b4f91863b66c8d3",
+  "packageIntegrity": "sha512-zjt8WgCOSAPtJJ6azp0RyAtoen9eYEeHnI2iLWsgQRbel+t+kYJZV+EjLHSrFgeQLh6pbSg8c1DKdwnJvCLXAQ==",
+  "packageSha256": "76606260efd0079ddddfc9c7ab2e334bfeddc75abf660959d40f29349907d9cc",
+  "api": ["read", "search", "inspect", "write", "edit"],
+  "writer": ["batch", "historical basis"],
+  "indexing": ["prepareIndex", "indexAtoms", "updateIndex"]
 }
