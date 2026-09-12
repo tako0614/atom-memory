@@ -52,5 +52,13 @@
     "newEvaluation": false,
     "paidCalls": 0,
     "note": "Deterministic regressions do not establish Writer semantic quality or billed cost."
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "worker": "atom-memory-docs",
+    "published": false,
+    "build": "passed",
+    "dryRun": "passed",
+    "readback": "pending"
   }
 }
