@@ -46,7 +46,13 @@
     "matrix": [22, 24],
     "commit": "76c8350d884a21f9911b46c0350d133d1a9387c6",
     "packageSourceMatchesTag": true,
-    "note": "CI commit adds a test-only deterministic Atom reference fix; all packaged files match the immutable release tag."
+    "note": "CI commit adds a test-only deterministic Atom reference fix; all packaged files match the immutable release tag.",
+    "initialFailure": {
+      "url": "https://github.com/tako0614/atom-memory/actions/runs/34700114487",
+      "cause": "Test selected a dependent relation through a shared fixed vector instead of an unrelated Atom reference.",
+      "fixCommit": "76c8350d884a21f9911b46c0350d133d1a9387c6",
+      "librarySourceChanged": false
+    }
   },
   "realModel": {
     "newEvaluation": false,
@@ -56,9 +62,108 @@
   "site": {
     "url": "https://atom-memory.takos.jp",
     "worker": "atom-memory-docs",
-    "published": false,
+    "published": true,
     "build": "passed",
     "dryRun": "passed",
-    "readback": "pending"
-  }
+    "readback": "passed: 16 HTML pages and release manifest match build on custom domain and workers.dev",
+    "sourceCommit": "ff667f73b9d9ce3e7ebd26d9be1e9d35c8c46e1c",
+    "versionId": "a769fbc3-bc57-4ce6-bc40-8acc6e8a1a64",
+    "deploymentId": "f40da6bc-6b3a-4c70-a19d-73821d3c642e",
+    "deployedAt": "2026-09-12T14:50:05.042931Z",
+    "pages": [
+      {
+        "path": "/acceptance",
+        "verified": true,
+        "sha256": "b87bbc3ee9215c3e0dac168c7fa5398e1d66b02c95992825592c2d75f6b661eb"
+      },
+      {
+        "path": "/adapters",
+        "verified": true,
+        "sha256": "2edf619da4389af14ffc2fddef245891cb52b03bbdd8cb055e52e7f4873f5760"
+      },
+      {
+        "path": "/api",
+        "verified": true,
+        "sha256": "92994b9317151a3c03bc2b3c84e339f897c9df31dc7203f26132f583be8851c8"
+      },
+      {
+        "path": "/concepts",
+        "verified": true,
+        "sha256": "1512496fd8dc16f7658f4ed67db949285af9a9e1e3c86c4db66c13538fc319a0"
+      },
+      {
+        "path": "/contracts",
+        "verified": true,
+        "sha256": "e093228959670f1ad79017e37e4817b1018dd70fdafaa4839506d9f55f83ba93"
+      },
+      {
+        "path": "/examples",
+        "verified": true,
+        "sha256": "6a9efe558919c185643ece1aedb8844e1b875d8c5f81a439d71a549a46b1ee31"
+      },
+      {
+        "path": "/guide",
+        "verified": true,
+        "sha256": "91fdf7d073f16c7ac414a32cf041a803d7de69adb752ed9592cf865cb5c6fb05"
+      },
+      {
+        "path": "/history",
+        "verified": true,
+        "sha256": "58c94a2cef75185c8e52c2d33e1b656311bc0e1ab5c44eb614ec1e3342aeaf88"
+      },
+      {
+        "path": "/",
+        "verified": true,
+        "sha256": "9f5ebf612ff6fb41db66783f08d6ee2988f5ef4a2d632bc423c0094cbe3da87c"
+      },
+      {
+        "path": "/migration-architecture",
+        "verified": true,
+        "sha256": "199309fcea2d68387a1be0cf7948bbfe7ed1fd035c040b58de2c8b62ac8ebd57"
+      },
+      {
+        "path": "/migration",
+        "verified": true,
+        "sha256": "3344cdeaf7962978215531a4289adf166250756dcf216d281e9028614c384a4e"
+      },
+      {
+        "path": "/ranking",
+        "verified": true,
+        "sha256": "34626c18697587dcd34effe08e840e233d1407ac61bbc7b9e411a2fbd2bf0c91"
+      },
+      {
+        "path": "/release",
+        "verified": true,
+        "sha256": "9079cba3ffef03bbb22e80824bd63ae9549f937b09ae7fd4bbed2cb51541bf22"
+      },
+      {
+        "path": "/runtime",
+        "verified": true,
+        "sha256": "10ecefde995aea8fe4c2b7192ab5540723a2cfabb55b2c65c1e2a866b6e23b28"
+      },
+      {
+        "path": "/setup",
+        "verified": true,
+        "sha256": "1d678512f523728741d1e7079f37b416a73027653ffe86850e56e3464229ea10"
+      },
+      {
+        "path": "/specification",
+        "verified": true,
+        "sha256": "36f5e61456ecb39fcdc7f4348176ab3cb1eae67ee9f1fa76c072229a6fe90e5c"
+      },
+      {
+        "path": "/release.json",
+        "verified": true,
+        "sha256": "9afdec7723f133aaae6917b61d682c302c5ec6acf88cbdd289285b166860e551"
+      }
+    ],
+    "workersDev": {
+      "url": "https://atom-memory-docs.shoutatomiyama0614.workers.dev",
+      "pagesVerified": 17,
+      "passed": true
+    },
+    "releaseManifest": "verified: npm 0.5.0, latest tag, integrity and source commit"
+  },
+  "verifiedAt": "2026-09-12T14:51:18.578055+00:00",
+  "scope": "npm library and documentation publication; no Sakana production cutover"
 }
