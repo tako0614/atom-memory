@@ -1,5 +1,11 @@
 import type { AtomRevision, Ref } from '../contracts.js';
-import type { StorageAdapter, ScanQuery, StoredRevision, StorageCapabilities } from './storage.js';
+import type {
+  StorageAdapter,
+  ScanQuery,
+  StoredRevision,
+  StorageCapabilities,
+  ChangePosition,
+} from './storage.js';
 import { canonical, clone, uid } from '../core/util.js';
 export class MemoryStorage implements StorageAdapter {
   readonly capabilities: StorageCapabilities = {
@@ -94,6 +100,29 @@ export class MemoryStorage implements StorageAdapter {
       rows.push({ revision: clone(revision), sequence: this.#sequence });
       this.#rows.set(revision.atomId, rows);
     }
+  }
+  changes(
+    policies: readonly string[],
+    after: ChangePosition,
+    limit: number,
+    at: number,
+  ): StoredRevision[] {
+    return clone(
+      [...this.#rows.values()]
+        .flat()
+        .filter(
+          (row) =>
+            policies.includes(row.revision.policyId) &&
+            row.sequence <= at &&
+            (row.sequence > after.sequence ||
+              (row.sequence === after.sequence && row.revision.revisionId > after.revisionId)),
+        )
+        .sort(
+          (a, b) =>
+            a.sequence - b.sequence || (a.revision.revisionId < b.revision.revisionId ? -1 : 1),
+        )
+        .slice(0, limit),
+    );
   }
   metaGet<T>(key: string): T | undefined {
     return clone(this.#metadata.get(key)) as T | undefined;

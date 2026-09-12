@@ -1,3 +1,4 @@
+import { indexRevision } from './indexing.js';
 import type {
   AtomRevision,
   AuthContext,
@@ -158,6 +159,7 @@ export class Engine {
     return digest(
       canonical({
         provider: this.provider.id,
+        representationVersion: 2,
         encoder: this.embedding?.id,
         dimensions: this.embedding?.dimensions,
         tokenizer: this.tokenizer.id,
@@ -397,8 +399,9 @@ export class Engine {
   trimTransientMetadata(): void {
     const traces = this.storage.metaUnbackedEntries
       ? this.storage.metaUnbackedEntries<Trace>('sdk:trace:', 'receipt:')
-      : this.storage.metaEntries<Trace>('sdk:trace:')
-        .filter(([, t]) => !this.storage.metaGet(`receipt:${t.id}`));
+      : this.storage
+          .metaEntries<Trace>('sdk:trace:')
+          .filter(([, t]) => !this.storage.metaGet(`receipt:${t.id}`));
     const max = this.options.traceMaxEntries ?? 1024;
     for (let i = 0; i < traces.length; i++) {
       const [key, t] = traces[i]!;
@@ -556,12 +559,16 @@ export class Engine {
       digest: digest(canonical({ texts, signal: state.signal, config: this.config })),
     };
   }
-  async embed(texts: readonly string[], s: Session): Promise<readonly (readonly number[])[]> {
+  async embed(
+    texts: readonly string[],
+    s: Session,
+    purpose: 'query' | 'document' = 'query',
+  ): Promise<readonly (readonly number[])[]> {
     const e = this.embedding ?? fail('INDEX_NOT_READY');
     const output: (readonly number[])[] = [];
     for (const text of texts) {
       this.check(s);
-      const key = `sdk:cache:vector:${digest(canonical([bindingKey(s.binding.auth), s.principal.generation, s.trace.policies, e.id, e.dimensions, text]))}`;
+      const key = `sdk:cache:vector:${digest(canonical([bindingKey(s.binding.auth), s.principal.generation, s.trace.policies, e.id, e.dimensions, purpose, text]))}`;
       const cached = this.storage.metaGet<{ vector: number[]; until: number }>(key);
       if (cached && cached.until > Date.now()) {
         output.push(cached.vector);
@@ -572,7 +579,7 @@ export class Engine {
         maxNetworkCalls: e.networkCallsPerCall,
         maxModelInputTokens: e.tokenizer.count(text),
       });
-      const result = await cancellable((signal) => e.embed([text], signal), s.signal);
+      const result = await cancellable((signal) => e.embed([text], signal, purpose), s.signal);
       this.check(s);
       const vector = result[0];
       if (
@@ -625,8 +632,28 @@ export class Engine {
       ledger: s.ledger,
       signal: s.signal,
       access: {
+        ...(this.storage.vectorCandidates
+          ? {
+              vectorCandidates: (vectors: readonly (readonly number[])[], limit: number) => {
+                this.check(s);
+                return this.storage.vectorCandidates!(
+                  { policies: s.trace.policies, config: this.config, vectors, limit },
+                  s.at,
+                );
+              },
+            }
+          : {}),
         page: (after, limit, filter) =>
-          this.scan({ policies: [...s.trace.policies], after, limit, ...(filter ? { text: [...filter.text] } : {}) }, s, true),
+          this.scan(
+            {
+              policies: [...s.trace.policies],
+              after,
+              limit,
+              ...(filter ? { text: [...filter.text] } : {}),
+            },
+            s,
+            true,
+          ),
         representation: (r) => {
           const text = this.representation(r, s);
           const index = this.storage.metaGet<{
@@ -708,25 +735,7 @@ export class Engine {
       const count = Math.min(64, limit - processed);
       const page = this.scan({ policies: [...s.trace.policies], after, limit: count }, s);
       for (const r of page) {
-        this.get(pinRevision(r), s);
-        const text = this.representation(r, s);
-        const old = this.storage.metaGet<{ config: string; hash: string }>(
-          `sdk:index:${r.revisionId}`,
-        );
-        if (old?.config !== this.config || old.hash !== digest(text)) {
-          const vectors = await this.embed([text], s);
-          this.check(s);
-          this.storage.metaSet(`sdk:index:${r.revisionId}`, {
-            config: this.config,
-            hash: digest(text),
-            vectors,
-          });
-          this.storage.metaSet(
-            'sdk:index-generation',
-            (this.storage.metaGet<number>('sdk:index-generation') ?? 0) + 1,
-          );
-          indexed++;
-        }
+        indexed += await indexRevision(this, r, s);
         processed++;
         after = r.atomId;
       }

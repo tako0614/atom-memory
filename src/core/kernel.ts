@@ -43,7 +43,11 @@ export interface EmbeddingProvider {
   readonly dimensions: number;
   readonly tokenizer: Tokenizer;
   readonly networkCallsPerCall: number;
-  embed(texts: readonly string[], signal: AbortSignal): Promise<readonly (readonly number[])[]>;
+  embed(
+    texts: readonly string[],
+    signal: AbortSignal,
+    purpose?: 'query' | 'document',
+  ): Promise<readonly (readonly number[])[]>;
 }
 export interface ReceiptManifest {
   receipt: ReadReceipt;
@@ -440,6 +444,7 @@ export class AtomKernel implements AtomMemory {
   async #embed(
     texts: readonly string[],
     ledger: BudgetLedger,
+    purpose: 'query' | 'document' = 'query',
   ): Promise<readonly (readonly number[])[]> {
     const e = this.embedding ?? fail('INDEX_NOT_READY');
     const tokens = texts.reduce((n, t) => n + e.tokenizer.count(t), 0);
@@ -453,7 +458,7 @@ export class AtomKernel implements AtomMemory {
       : 30000;
     const signal = AbortSignal.timeout(Math.min(timeout, 2147483647));
     const vectors = await Promise.race([
-      e.embed(texts, signal),
+      e.embed(texts, signal, purpose),
       new Promise<never>((_, reject) =>
         signal.addEventListener('abort', () => reject(new Error('Embedding deadline exceeded')), {
           once: true,
@@ -474,7 +479,7 @@ export class AtomKernel implements AtomMemory {
     const ledger = new BudgetLedger(budget);
     const text = this.#body(r);
     ledger.charge({ maxAtoms: 1, maxCandidates: 1, maxBytes: Buffer.byteLength(text) });
-    const vectors = await this.#embed([text], ledger);
+    const vectors = await this.#embed([text], ledger, 'document');
     const current = this.#principal(auth);
     if (current.generation !== p.generation || this.storage.isPurged(ref.atomId))
       fail('ACCESS_DENIED');
@@ -983,10 +988,12 @@ export class AtomKernel implements AtomMemory {
     return this.storage.transaction(() => {
       const erased = new Set([atomId]);
       const plan = this.storage.purgePlan?.(atomId);
-      const receipts: [string, ReceiptManifest][] = plan ? plan.receiptKeys.flatMap((key) => {
-        const value = this.storage.metaGet<ReceiptManifest>(key);
-        return value ? [[key,value] as [string,ReceiptManifest]] : [];
-      }) : this.storage.metaEntries<ReceiptManifest>('receipt:');
+      const receipts: [string, ReceiptManifest][] = plan
+        ? plan.receiptKeys.flatMap((key) => {
+            const value = this.storage.metaGet<ReceiptManifest>(key);
+            return value ? [[key, value] as [string, ReceiptManifest]] : [];
+          })
+        : this.storage.metaEntries<ReceiptManifest>('receipt:');
       const all: AtomRevision[] = plan?.revisions ?? [];
       let after: string | undefined;
       // Purge inspects every historical revision, including retired content and old blobs.
@@ -1026,11 +1033,17 @@ export class AtomKernel implements AtomMemory {
       clear('observation:');
       for (const [key, m] of receipts)
         if (m.reads.some((r) => erased.has(r.atomId))) this.storage.metaDelete(key);
-      for (const [key, e] of this.storage.metaEntries<Embedding>('embedding:'))
-        if (erased.has(e.owner.atomId)) this.storage.metaDelete(key);
+      for (const r of all)
+        if (erased.has(r.atomId)) {
+          this.storage.metaDelete(`embedding:${r.revisionId}`);
+          this.storage.metaDelete(`sdk:index:${r.revisionId}`);
+        }
       clear('sdk:cache:');
       clear('sdk:cursor:');
-      clear('sdk:index:');
+      this.storage.metaSet(
+        'sdk:index-generation',
+        (this.storage.metaGet<number>('sdk:index-generation') ?? 0) + 1,
+      );
       this.#overlays.clear();
       return { erasedAtomIds: [...erased], physicalStorageReclaimed: false };
     });

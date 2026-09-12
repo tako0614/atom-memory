@@ -178,3 +178,29 @@ if (detail.cursor) {
 管理操作 `purge` は対象と依存物の閲覧を拒否し、派生 cache・索引・cursor を無効化します。snapshotは構成を事前列挙しないため、削除で関係が欠けたことを「当時の完全な構成」と誤認しないよう、この実装では **purge時に既存の保持snapshotをすべて失効**させます。無関係な履歴も `HISTORY_EXPIRED` になります。SQLite の物理ページ回収や外部ログの削除も、保存先の運用に含めてください。
 
 独自adapterは、snapshot読取とは別に `retainSnapshot(at, until)` と `retainedSnapshot(token)` で、指定した版と関係を期限まで保持する契約を実装できます。保持の確定は短い書込トランザクションに参加します。両方のメソッドがなければ、ホストは明示した構成計画に従って有限のmanifestを保存し、予算不足では後継の採用も失敗させます。
+
+## 継続して差分を索引へ反映する
+
+Atom MemoryはJavaScriptライブラリです。サーバー、常駐worker、AIモデル、外部データ取得、課金管理は起動しません。呼び出す時期と回数はアプリケーションが決めます。
+
+```js
+// 履歴の取り込みと、新しいデータの両方に同じAPIを使う。
+const source = await memory.write('資料の本文', { idempotencyKey: 'document:42:v1' });
+// 必要なら既存のWriter／自分のagentで memory.edit(...) を行う。
+
+// 今できたAtomを優先する場合。参照は同じbindingで発行したものを使う。
+await host.indexAtoms([source.ref], binding, { limit: 64 });
+
+// 既存履歴と、その後の改訂を有限量ずつ進める。進捗は保存層に残る。
+const progress = await host.updateIndex(binding, { limit: 32 });
+console.log(progress.indexed, progress.processed, progress.pending);
+// pendingなら、アプリの次のジョブで同じ呼び出しを繰り返す。
+```
+
+`updateIndex` はSQLite／MemoryStorageのコミット順の変更フィードを使います。同一コミット内の複数Atomも、再起動・エンコーダー失敗・ページ境界をまたいで進められます。変更されたAtomと、その本文を検索表現に含む直接のlogical参照元を再計算します。固定されたobserved参照や無関係なAtomを毎回再生成しません。新しいエンコーダー設定では別の進捗として履歴を準備します。purgeは対象のベクトルも消し、無関係な索引を維持します。
+
+これは意味を判断して説明を書き換えるAPIではありません。分解・再集約・説明の改訂はWriterが通常の `edit` で行い、索引はその受理済みの結果を扱います。外付けの所属が増えただけで親と全祖先を書き換えることもありません。
+
+エンコーダーは `embed(texts, signal, purpose)` の第三引数で `'document'` と `'query'` を区別できます。第三引数を使わない既存の実装も動きます。文脈・`thought`・観測はquery側、Atomの検索表現はdocument側です。空間IDにはモデルの版・前処理・次元を含めてください。
+
+SQLiteでベクトル候補も有限に絞るには `candidateProvider: new HybridCandidateProvider()` を指定します。ベクトルの近似バケットと語彙一致から候補を選び、実ベクトルで採点し、通常の関係探索を行います。非公開policyや過去版は候補の上限を適用する前に除外します。これは近似検索であり、`approximate=true`です。全世界の完全な上位候補や、百万件での応答性能を保証するものではありません。

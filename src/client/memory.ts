@@ -1,3 +1,4 @@
+import { updateIndex, indexRevision } from './indexing.js';
 import type {
   AtomContent,
   AtomRevision,
@@ -113,6 +114,28 @@ export class MemoryHost {
   }
   prepareIndex(binding: ClientBinding, options?: OperationOptions) {
     return this.engine.prepare(binding, options);
+  }
+  /** Drain committed changes and affected representations, resuming after restart. */
+  updateIndex(binding: ClientBinding, options?: OperationOptions) {
+    return updateIndex(this.engine, binding, options);
+  }
+  /** Prioritize a finite set of observed revisions, e.g. a just-committed edit. */
+  async indexAtoms(
+    refs: readonly AtomRef[],
+    binding: ClientBinding,
+    options: OperationOptions = {},
+  ) {
+    const limit = options.limit ?? 256;
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10000 || options.cursor)
+      fail('INVALID_INPUT');
+    if (refs.length > limit) fail('LIMIT_EXCEEDED');
+    const s = this.engine.session(binding, options);
+    let indexed = 0;
+    for (const ref of new Set(refs)) {
+      const r = this.engine.get(this.engine.resolve(ref, s).target, s);
+      if (r.state === 'active') indexed += await indexRevision(this.engine, r, s);
+    }
+    return { indexed };
   }
   async ingestBlob(
     bytes: Uint8Array,

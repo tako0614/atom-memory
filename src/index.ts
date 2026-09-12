@@ -17,7 +17,14 @@ export {
 export { defaultLimits, type Limits } from './core/validation.js';
 export { content, membership, logical, pin, origin, sourceCoverage } from './core/helpers.js';
 export { MemoryStorage } from './adapters/memory.js';
-export type { StorageAdapter, StorageCapabilities, ScanQuery } from './adapters/storage.js';
+export type {
+  StorageAdapter,
+  StorageCapabilities,
+  ScanQuery,
+  StoredRevision,
+  ChangePosition,
+  VectorQuery,
+} from './adapters/storage.js';
 export {
   MemoryHarness,
   MemoryHarness as AgentHarness,
@@ -30,7 +37,11 @@ export {
 
 export { MemoryHost, MemoryClient, createMemory } from './client/memory.js';
 export type * from './client/types.js';
-export { ExactCandidateProvider, LexicalCandidateProvider } from './core/candidates.js';
+export {
+  ExactCandidateProvider,
+  LexicalCandidateProvider,
+  HybridCandidateProvider,
+} from './core/candidates.js';
 
 export { AgentHarness as LegacyAgentHarness } from './runtime/legacy-harness.js';
 

@@ -223,11 +223,16 @@ export interface Candidate {
 }
 /** Local access supplied by the host; remote providers must charge every network operation. */
 export interface CandidateAccess {
-  page(after: string | undefined, limit: number, filter?: { text: readonly string[] }): AtomRevision[];
+  page(
+    after: string | undefined,
+    limit: number,
+    filter?: { text: readonly string[] },
+  ): AtomRevision[];
   representation(revision: AtomRevision): {
     text: string;
     vectors?: readonly (readonly number[])[];
   };
+  vectorCandidates?(vectors: readonly (readonly number[])[], limit: number): AtomRevision[];
 }
 export interface CandidateProvider {
   readonly id: string;

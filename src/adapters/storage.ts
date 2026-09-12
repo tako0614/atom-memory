@@ -3,6 +3,16 @@ export interface StoredRevision {
   revision: AtomRevision;
   sequence: number;
 }
+export interface ChangePosition {
+  sequence: number;
+  revisionId: string;
+}
+export interface VectorQuery {
+  policies: readonly string[];
+  config: string;
+  vectors: readonly (readonly number[])[];
+  limit: number;
+}
 export interface ScanQuery {
   policies: readonly string[];
   schema?: readonly string[];
@@ -25,6 +35,15 @@ export interface StorageAdapter {
   get(ref: Ref, at: number): AtomRevision | undefined;
   scan(query: ScanQuery, at: number): AtomRevision[];
   history(after: string | undefined, limit: number): AtomRevision[];
+  /** Stable revision feed; ties within one atomic commit use revisionId. */
+  changes?(
+    policies: readonly string[],
+    after: ChangePosition,
+    limit: number,
+    at: number,
+  ): StoredRevision[];
+  /** Approximate vector ingress; results must be authorized current heads at at. */
+  vectorCandidates?(query: VectorQuery, at: number): AtomRevision[];
   /** Exact transitive purge closure across historical links, origins and host-read receipts. */
   purgePlan?(atomId: string): { revisions: AtomRevision[]; receiptKeys: string[] };
   append(revisions: readonly AtomRevision[]): void;

@@ -1,7 +1,14 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type { AtomRevision, Ref } from '../contracts.js';
-import type { ScanQuery, StorageAdapter } from './storage.js';
+import type {
+  ScanQuery,
+  StorageAdapter,
+  StoredRevision,
+  ChangePosition,
+  VectorQuery,
+} from './storage.js';
 import { uid } from '../core/util.js';
+import { vectorBuckets } from '../core/vector-buckets.js';
 function prefixEnd(prefix: string): string | undefined {
   const points = [...prefix];
   while (points.length) {
@@ -53,6 +60,7 @@ export class SqliteStorage implements StorageAdapter {
       CREATE INDEX IF NOT EXISTS am_history ON am_revisions(atom_id, sequence DESC);
       CREATE INDEX IF NOT EXISTS am_scope ON am_revisions(policy, schema_name, atom_id);
       CREATE INDEX IF NOT EXISTS am_scope_order ON am_revisions(policy, atom_id);
+      CREATE INDEX IF NOT EXISTS am_changes ON am_revisions(policy,sequence,revision_id);
       CREATE TABLE IF NOT EXISTS am_slots (revision_id TEXT NOT NULL, target_id TEXT NOT NULL, role TEXT NOT NULL, target_revision TEXT);
       CREATE INDEX IF NOT EXISTS am_relations ON am_slots(target_id, role, revision_id);
       CREATE INDEX IF NOT EXISTS am_slot_revision ON am_slots(revision_id);
@@ -63,6 +71,14 @@ export class SqliteStorage implements StorageAdapter {
       CREATE TABLE IF NOT EXISTS am_receipt_owners (receipt_id TEXT NOT NULL,owner_id TEXT NOT NULL,PRIMARY KEY(receipt_id,owner_id));
       CREATE INDEX IF NOT EXISTS am_receipt_owner ON am_receipt_owners(owner_id,receipt_id);
       CREATE TABLE IF NOT EXISTS am_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS am_vector_buckets (config TEXT NOT NULL,policy TEXT NOT NULL,band INTEGER NOT NULL,bucket INTEGER NOT NULL,revision_id TEXT NOT NULL,PRIMARY KEY(config,policy,band,bucket,revision_id));
+      CREATE INDEX IF NOT EXISTS am_vector_revision ON am_vector_buckets(revision_id);
+      CREATE TRIGGER IF NOT EXISTS am_vector_revision_delete AFTER DELETE ON am_revisions BEGIN
+        DELETE FROM am_vector_buckets WHERE revision_id=old.revision_id;
+      END;
+      CREATE TRIGGER IF NOT EXISTS am_vector_metadata_delete AFTER DELETE ON am_metadata WHEN substr(old.key,1,10)='sdk:index:' BEGIN
+        DELETE FROM am_vector_buckets WHERE revision_id=substr(old.key,11);
+      END;
       CREATE TABLE IF NOT EXISTS am_purged (atom_id TEXT PRIMARY KEY);
       CREATE TRIGGER IF NOT EXISTS am_purge_revision_insert AFTER INSERT ON am_revisions BEGIN
         INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.target.atomId') FROM json_each(new.data,'$.slots') WHERE true ON CONFLICT DO NOTHING;
@@ -220,6 +236,51 @@ export class SqliteStorage implements StorageAdapter {
     }
     this.#db.prepare("UPDATE am_state SET value=? WHERE key='sequence'").run(String(sequence));
   }
+  changes(
+    policies: readonly string[],
+    after: ChangePosition,
+    limit: number,
+    at: number,
+  ): StoredRevision[] {
+    if (!policies.length) return [];
+    return (
+      this.#db
+        .prepare(
+          `SELECT data,sequence FROM am_revisions
+      WHERE policy IN (${policies.map(() => '?').join(',')}) AND sequence<=?
+      AND (sequence,revision_id)>(?,?) ORDER BY sequence,revision_id LIMIT ?`,
+        )
+        .all(...policies, at, after.sequence, after.revisionId, limit) as {
+        data: string;
+        sequence: number;
+      }[]
+    ).map((row) => ({ revision: JSON.parse(row.data), sequence: row.sequence }));
+  }
+  vectorCandidates(query: VectorQuery, at: number): AtomRevision[] {
+    if (!query.policies.length || !query.vectors.length || query.limit < 1) return [];
+    const probes = new Set<string>();
+    for (const vector of query.vectors)
+      for (const [band, bucket] of vectorBuckets(vector).entries()) {
+        probes.add(`${band}:${bucket}`);
+        for (let bit = 0; bit < 12; bit++) probes.add(`${band}:${bucket ^ (1 << bit)}`);
+      }
+    const values = [...probes].flatMap((value) => value.split(':').map(Number));
+    // Only bucket hits load Atom bodies. Scope and current head checks happen
+    // before LIMIT, so old revisions and private neighbors cannot crowd it out.
+    return (
+      this.#db
+        .prepare(
+          `WITH probes(band,bucket) AS (VALUES ${[...probes].map(() => '(?,?)').join(',')})
+      SELECT r.data FROM probes p JOIN am_vector_buckets b ON b.band=p.band AND b.bucket=p.bucket
+      JOIN am_revisions r ON r.revision_id=b.revision_id
+      WHERE b.config=? AND b.policy IN (${query.policies.map(() => '?').join(',')})
+      AND r.sequence<=? AND r.state='active' AND NOT EXISTS(SELECT 1 FROM am_purged x WHERE x.atom_id=r.atom_id)
+      AND r.sequence=(SELECT MAX(h.sequence) FROM am_revisions h WHERE h.atom_id=r.atom_id AND h.sequence<=?)
+      GROUP BY r.revision_id ORDER BY count(*) DESC,r.atom_id LIMIT ?`,
+        )
+        .all(...values, query.config, ...query.policies, at, at, query.limit) as { data: string }[]
+    ).map((row) => JSON.parse(row.data));
+  }
   metaGet<T>(key: string): T | undefined {
     const row = this.#db.prepare('SELECT value FROM am_metadata WHERE key=?').get(key) as
       { value: string } | undefined;
@@ -231,6 +292,19 @@ export class SqliteStorage implements StorageAdapter {
         'INSERT INTO am_metadata VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
       )
       .run(key, JSON.stringify(value));
+    if (key.startsWith('sdk:index:')) {
+      const index = value as { config: string; policyId?: string; vectors?: number[][] };
+      const revisionId = key.slice(10);
+      this.#db.prepare('DELETE FROM am_vector_buckets WHERE revision_id=?').run(revisionId);
+      if (index.policyId && index.vectors) {
+        const insert = this.#db.prepare(
+          'INSERT OR IGNORE INTO am_vector_buckets VALUES (?,?,?,?,?)',
+        );
+        for (const vector of index.vectors)
+          for (const [band, bucket] of vectorBuckets(vector).entries())
+            insert.run(index.config, index.policyId, band, bucket, revisionId);
+      }
+    }
   }
   metaEntries<T>(prefix: string): [string, T][] {
     // A prefix is a binary key range. substr(key, ...) forces every source/index
@@ -238,28 +312,40 @@ export class SqliteStorage implements StorageAdapter {
     const upper = prefixEnd(prefix);
     return (
       this.#db
-        .prepare(`SELECT key,value FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'} ORDER BY key`)
-        .all(...(upper === undefined ? [prefix] : [prefix, upper])) as { key: string; value: string }[]
+        .prepare(
+          `SELECT key,value FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'} ORDER BY key`,
+        )
+        .all(...(upper === undefined ? [prefix] : [prefix, upper])) as {
+        key: string;
+        value: string;
+      }[]
     ).map((r) => [r.key, JSON.parse(r.value) as T]);
   }
   metaDelete(key: string): void {
     this.#db.prepare('DELETE FROM am_metadata WHERE key=?').run(key);
   }
-  metaUnbackedEntries<T>(prefix: string, backingPrefix: string): [string,T][] {
+  metaUnbackedEntries<T>(prefix: string, backingPrefix: string): [string, T][] {
     const upper = prefixEnd(prefix);
     // The inner scan uses only metadata keys. Large durable trace bodies never
     // enter JS or the outer table lookup during transient retention maintenance.
-    const args: SQLInputValue[] = upper === undefined ? [prefix] : [prefix,upper];
-    args.push(backingPrefix,[...prefix].length+1);
-    return (this.#db.prepare(`SELECT key,value FROM am_metadata WHERE key IN (
+    const args: SQLInputValue[] = upper === undefined ? [prefix] : [prefix, upper];
+    args.push(backingPrefix, [...prefix].length + 1);
+    return (
+      this.#db
+        .prepare(
+          `SELECT key,value FROM am_metadata WHERE key IN (
       SELECT t.key FROM am_metadata t WHERE t.key>=?${upper === undefined ? '' : ' AND t.key<?'}
       AND NOT EXISTS(SELECT 1 FROM am_metadata p WHERE p.key=? || substr(t.key,?))
-    ) ORDER BY key`).all(...args) as {key:string,value:string}[]).map(r=>[r.key,JSON.parse(r.value) as T]);
+    ) ORDER BY key`,
+        )
+        .all(...args) as { key: string; value: string }[]
+    ).map((r) => [r.key, JSON.parse(r.value) as T]);
   }
   metaDeletePrefix(prefix: string): void {
     const upper = prefixEnd(prefix);
-    this.#db.prepare(`DELETE FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'}`)
-      .run(...(upper === undefined ? [prefix] : [prefix,upper]));
+    this.#db
+      .prepare(`DELETE FROM am_metadata WHERE key>=?${upper === undefined ? '' : ' AND key<?'}`)
+      .run(...(upper === undefined ? [prefix] : [prefix, upper]));
   }
   purgePlan(atomId: string): { revisions: AtomRevision[]; receiptKeys: string[] } {
     const closure = `WITH RECURSIVE affected(atom_id) AS (
@@ -267,8 +353,19 @@ export class SqliteStorage implements StorageAdapter {
       UNION SELECT o.owner_id FROM am_receipt_inputs i JOIN affected a ON i.target_id=a.atom_id
         JOIN am_receipt_owners o ON o.receipt_id=i.receipt_id
     ) `;
-    const revisions = (this.#db.prepare(closure+'SELECT data FROM am_revisions WHERE atom_id IN (SELECT atom_id FROM affected)').all(atomId) as {data:string}[]).map((r) => JSON.parse(r.data) as AtomRevision);
-    const receipts = this.#db.prepare(closure+'SELECT DISTINCT i.receipt_id FROM am_receipt_inputs i JOIN affected a ON i.target_id=a.atom_id').all(atomId) as {receipt_id:string}[];
+    const revisions = (
+      this.#db
+        .prepare(
+          closure + 'SELECT data FROM am_revisions WHERE atom_id IN (SELECT atom_id FROM affected)',
+        )
+        .all(atomId) as { data: string }[]
+    ).map((r) => JSON.parse(r.data) as AtomRevision);
+    const receipts = this.#db
+      .prepare(
+        closure +
+          'SELECT DISTINCT i.receipt_id FROM am_receipt_inputs i JOIN affected a ON i.target_id=a.atom_id',
+      )
+      .all(atomId) as { receipt_id: string }[];
     return { revisions, receiptKeys: receipts.map((r) => `receipt:${r.receipt_id}`) };
   }
   isPurged(atomId: string): boolean {
