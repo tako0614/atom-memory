@@ -1,3 +1,4 @@
+import { LexicalCandidateProvider } from '../dist/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryStorage, MemoryHarness, utf8Tokenizer } from '../dist/index.js';
@@ -343,7 +344,14 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: R1 incomplete reacquisition never calls the generator`, async (t) => {
     const calls = [];
-    const { memory: m, writer, host } = setup(t, { generator: generator(calls) });
+    const {
+      memory: m,
+      writer,
+      host,
+    } = setup(t, {
+      generator: generator(calls),
+      candidateProvider: new LexicalCandidateProvider(),
+    });
     const p = await m.write('P');
     await writer.edit(async (d) => {
       await d.inspect(p.ref, { depth: 2 });

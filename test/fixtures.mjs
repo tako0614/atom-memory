@@ -7,7 +7,7 @@ export function fixture(options = {}) {
     writePolicies: ['p'],
     canIngestSource: true,
   });
-  const storage = new MemoryStorage();
+  const storage = options.storage ?? new MemoryStorage();
   const host = new MemoryHost({ authority, storage, ...options });
   const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
   const memory = host.connect(binding);

@@ -81,12 +81,6 @@ export type Consistency =
   | { readonly mode: 'snapshot'; readonly snapshotToken?: Id }
   | { readonly mode: 'version-pinned'; readonly receiptId?: Id };
 
-export interface ReadContext {
-  readonly requestedPolicyIds: readonly Id[]; // Requested scope, not permission.
-  readonly consistency: Consistency;
-  readonly validAt?: string;
-  readonly overlayHandle?: Id; // Host-owned, private tentative edit state.
-}
 
 export interface Budget {
   readonly maxAtoms: number;
@@ -109,28 +103,8 @@ export type Selector =
       readonly context?: string; readonly reasoningState?: string;
       readonly schemaFilter?: readonly string[] };
 
-export interface ReadRequest {
-  readonly selector: Selector;
-  readonly context: ReadContext;
-  readonly budget: Budget;
-  readonly render: 'raw' | 'evidence' | 'mixed';
-  readonly continuation?: string; // Opaque, authenticated; may expire.
-}
 
-export interface ContextUnit {
-  readonly unitId: Id;
-  readonly owner: PinnedRef;
-  readonly kind: 'source' | 'extract' | 'summary' | 'relationship';
-  readonly text: string;
-  readonly citedOrigins: readonly Origin[];
-  readonly companionIds: readonly Id[]; // Known required conditions/attribution.
-}
 
-export interface ContextPack {
-  readonly units: readonly ContextUnit[];
-  readonly serialized: string;
-  readonly tokenCount: number; // Actual final tokenizer result, metadata included.
-}
 
 export interface ReadReceipt {
   readonly receiptId: Id; // Host-managed trace, possibly paged internally.
@@ -141,19 +115,6 @@ export interface ReadReceipt {
   // index watermarks and operator/model versions in the host-held manifest.
 }
 
-export interface ReadResult {
-  readonly atoms: readonly AtomRevision[]; // Finite page, not all memory.
-  readonly contextPack?: ContextPack;
-  readonly receipt: ReadReceipt;
-  readonly continuation?: string;
-  readonly diagnostics: {
-    readonly traversal: 'exhausted-declared-scope' | 'partial' | 'approximate';
-    readonly indexState: 'ready-for-receipt' | 'lagging' | 'unknown';
-    readonly derivedState: 'validated-for-receipt' | 'pending' | 'unused';
-    readonly stopReason: 'completed' | 'page-limit' | 'budget' | 'deadline' | 'unavailable';
-    readonly semanticCoverageCertified: false;
-  };
-}
 
 export interface ProposedRevision {
   readonly atomId: Id;
@@ -182,20 +143,8 @@ export interface WriteResult {
 }
 
 /** Central semantic API. Administration and trusted runtime setup are separate. */
-export interface AtomMemory {
-  read(request: ReadRequest, auth: AuthContext): Promise<ReadResult>;
-  write(request: WriteRequest, auth: AuthContext): Promise<WriteResult>;
-}
 
 /** Internal replaceable access representation, not an independent memory kind. */
-export interface Embedding {
-  readonly owner: PinnedRef;
-  readonly encoderConfigId: Id;
-  readonly dimensions: number;
-  readonly normalized: boolean;
-  readonly vectors: readonly (readonly number[])[];
-  readonly inputReceiptId: Id;
-}
 
 export type ErrorCode =
   | 'ACCESS_DENIED' | 'REFERENCE_UNAVAILABLE' | 'INVALID_SOURCE_SPAN'
@@ -209,17 +158,3 @@ export type ErrorCode =
   | 'CONTEXT_WINDOW_EXCEEDED' | 'STATE_INVALIDATED';
 
 /** A common host loop; Writer and answer runs differ by task and capabilities. */
-export interface Harness {
-  run(input: {
-    readonly instructionId: Id; // Host-installed, never a retrieved instruction.
-    readonly inputRefs: readonly Ref[];
-    readonly auth: AuthContext;
-    readonly readContext: ReadContext;
-    readonly budget: Budget;
-    readonly commitPolicy: 'read-only' | 'host-validated-edits';
-  }): Promise<{
-    readonly status: 'completed' | 'budget-exhausted' | 'conflict' | 'failed';
-    readonly output?: Json;
-    readonly proposedChanges?: WriteRequest;
-  }>;
-}

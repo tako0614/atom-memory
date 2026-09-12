@@ -1,10 +1,36 @@
 {
-  "version": "0.3.0",
-  "sourceCommit": "33853332253aca8ef2fd40b645f4499c8f929cce",
-  "baseline": "2e0bf6b607944123fa730a558b4f91863b66c8d3",
-  "packageIntegrity": "sha512-zjt8WgCOSAPtJJ6azp0RyAtoen9eYEeHnI2iLWsgQRbel+t+kYJZV+EjLHSrFgeQLh6pbSg8c1DKdwnJvCLXAQ==",
-  "packageSha256": "76606260efd0079ddddfc9c7ab2e334bfeddc75abf660959d40f29349907d9cc",
-  "api": ["read", "search", "inspect", "write", "edit"],
-  "writer": ["batch", "historical basis"],
-  "indexing": ["prepareIndex", "indexAtoms", "updateIndex"]
+  "at": "2026-09-12T12:12:13.667915+00:00",
+  "sourceCommit": null,
+  "tag": "v0.4.0",
+  "npm": {
+    "version": "0.4.0",
+    "published": false
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "worker": "atom-memory-docs",
+    "published": false,
+    "dryRun": "passed"
+  },
+  "regression": {
+    "tests": 136,
+    "nodeVersions": ["26.1.0 (local)"],
+    "documentationExamples": 15,
+    "documentedOutputs": 7,
+    "format": "passed"
+  },
+  "migration": {
+    "from": "published 0.3.0",
+    "to": "0.4.0",
+    "adapter": "SQLite",
+    "vectors": 3,
+    "documentsReembedded": 0,
+    "progressPreserved": true,
+    "derivedEvidencePreserved": true
+  },
+  "realModel": {
+    "newEvaluation": false,
+    "note": "OpenRouter key is absent; question-blind Ling Writer evaluation is pending. No paid corpus processing."
+  },
+  "localEvaluation": "validation/ranking-v0.4.0.json"
 }

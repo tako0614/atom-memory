@@ -1,6 +1,6 @@
 # 受入条件と検証
 
-0.3.0では157テストが合格しています。増分索引・ベクトル検索に加え、複数Atomのまとめての編集、期間をまたぐ改訂、失敗時の一括取り消し、参照と書き込み権限のテストを追加しています。今回のリリース情報は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。以下の実モデル測定は過去版の記録であり、0.3.0の新しい実モデル評価ではありません。
+v0.4では構造ランキング・ベクトル移行・有限の自動取得を検証します。試験数と公開状態は[公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。旧selector/旧ハーネス専用の試験は削除し、所属・原子性・出典・purgeの契約は現在のAPIの受入試験へ移しました。以下の実モデル測定は過去版の記録であり、0.4の新しい実モデル評価ではありません。
 
 公開API、検索、編集、ハーネスの動作を決定的なテストで確認し、実モデルの回答は別の評価として記録します。0.2.1ではNode 22・24・26で各140テストが合格しています。再生成・共有引用・履歴の追加29シナリオは、MemoryStorageとSqliteStorageの両方で実行しました。環境・コマンド・出力は [検証記録](https://github.com/tako0614/atom-memory/blob/main/validation/corrections.md)から参照できます。
 
@@ -79,4 +79,8 @@ npm run evaluate
 
 ローカルの語彙検索は10・100・1,000・10,000件で、ID順の最後に置いた正解が先頭になることを確認しました。関係数10・100・300では続きから全件を取得し、同じ版への同時改訂2・8・32件では一件だけが確定しました。[0.2.1の測定値](https://github.com/tako0614/atom-memory/blob/main/validation/corrections-local-evaluation.json)は実行環境と併せて参照してください。
 
-これらはローカル保存と取得の検証です。分散保存・ネットワーク分断・ANNの品質は対象外です。既存データの回帰条件 F01–F20 は [移行ページ](/migration#既存データと低水準-api-の回帰条件)にまとめています。
+これらはローカル保存と取得の検証です。分散保存・ネットワーク分断・ANNの品質は対象外です。現行の保存・移行条件は [移行ページ](/migration)と `test/acceptance.test.mjs`・`test/ranking.test.mjs` に対応します。
+
+## v0.4 の構造による取得
+
+`npm run evaluate:ranking` は同一本文・固定ベクトル・同じ上限で、正しい構造・構造探索なし・同数の誤った関係を比較します。[測定値](https://github.com/tako0614/atom-memory/blob/main/validation/ranking-v0.4.0.json)には取得率・順位・本文bytes・時間・モデル呼出し数を記録します。小さな決定的fixtureで構造の寄与を分離する試験です。実LLM Writerによる構造の正しさや一般的な検索品質は、この結果から主張しません。

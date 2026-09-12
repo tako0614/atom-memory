@@ -1,37 +1,7 @@
 import type { CandidateProvider } from '../client/types.js';
 import { fail } from './util.js';
-const segmenter = new Intl.Segmenter('ja', { granularity: 'word' });
-export function words(text: string): string[] {
-  return [
-    ...new Set(
-      [...segmenter.segment(text.normalize('NFKC').toLowerCase())]
-        .filter((s) => s.isWordLike)
-        .map((s) => s.segment),
-    ),
-  ];
-}
-export function lexicalScore(text: string, signals: readonly string[]): number {
-  const haystack = text.normalize('NFKC').toLowerCase();
-  return Math.max(
-    0,
-    ...signals.map((signal) => {
-      const tokens = words(signal);
-      if (!tokens.length) return 0;
-      return tokens.filter((token) => haystack.includes(token)).length / tokens.length;
-    }),
-  );
-}
-export function cosine(a: readonly number[], b: readonly number[]): number {
-  if (
-    a.length !== b.length ||
-    a.some((n) => !Number.isFinite(n)) ||
-    b.some((n) => !Number.isFinite(n))
-  )
-    fail('MODEL_SPACE_MISMATCH');
-  const norm =
-    Math.sqrt(a.reduce((n, x) => n + x * x, 0)) * Math.sqrt(b.reduce((n, x) => n + x * x, 0));
-  return norm ? Math.max(0, a.reduce((n, x, i) => n + x * b[i]!, 0) / norm) : 0;
-}
+import { words, seedScore } from './ranking.js';
+export { words, lexicalScore, cosine } from './ranking.js';
 /** Exhaustive local reference ranking within an explicit scan budget. Not ANN. */
 export class ExactCandidateProvider implements CandidateProvider {
   readonly id = 'local-exact-lexical-vector-v1';
@@ -63,13 +33,8 @@ export class ExactCandidateProvider implements CandidateProvider {
         input.ledger.charge({ maxCandidates: 1, maxBytes: bytes });
         scanned++;
         after = revision.atomId;
-        const lexical = lexicalScore(repr.text, input.texts);
         if (input.vectors.length && !repr.vectors) pending = true;
-        const semantic = Math.max(
-          0,
-          ...input.vectors.flatMap((q) => (repr.vectors ?? []).map((v) => cosine(q, v))),
-        );
-        const score = Math.max(lexical, semantic);
+        const score = scoreRepresentation(input, repr);
         if (score > 0) candidates.push({ revision, score });
       }
       if (page.length < count) {
@@ -138,11 +103,7 @@ export class HybridCandidateProvider implements CandidateProvider {
         if (!input.ledger.can({ maxCandidates: 1, maxBytes: bytes })) break;
         input.ledger.charge({ maxCandidates: 1, maxBytes: bytes });
         if (!representation.vectors) pending = true;
-        const score = Math.max(
-          lexicalScore(representation.text, input.texts),
-          0,
-          ...input.vectors.flatMap((q) => (representation.vectors ?? []).map((v) => cosine(q, v))),
-        );
+        const score = scoreRepresentation(input, representation);
         if (score > 0) candidates.push({ revision, score });
       }
     const lexical = await new LexicalCandidateProvider().retrieve({
@@ -165,4 +126,15 @@ export class HybridCandidateProvider implements CandidateProvider {
       approximate: true,
     };
   }
+}
+
+function scoreRepresentation(
+  input: Parameters<CandidateProvider['retrieve']>[0],
+  representation: { text: string; vectors?: readonly (readonly number[])[] },
+) {
+  const signals = input.signals ?? [
+    ...input.texts.map((text) => ({ kind: 'query' as const, text })),
+    ...input.vectors.map((vector) => ({ kind: 'signal' as const, vector })),
+  ];
+  return seedScore(representation.text, representation.vectors, signals, input.ranking);
 }

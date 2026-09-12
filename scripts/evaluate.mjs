@@ -1,11 +1,6 @@
+import { content } from '../dist/core/helpers.js';
 import { writeFileSync } from 'node:fs';
-import {
-  MemoryHost,
-  LocalAuthority,
-  MemoryHarness,
-  content,
-  utf8Tokenizer,
-} from '../dist/index.js';
+import { MemoryHost, LocalAuthority, MemoryHarness, utf8Tokenizer } from '../dist/index.js';
 import { llamaCppModel } from '../examples/llama-cpp.mjs';
 function fixture(options = {}) {
   const authority = new LocalAuthority();

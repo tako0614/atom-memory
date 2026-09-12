@@ -38,6 +38,7 @@ export async function correctNote(memory: MemoryAPI, ref: AtomRef, text: string)
 | 型                                               | 設定するもの                         |
 | ------------------------------------------------ | ------------------------------------ |
 | `HostOptions` / `ClientBinding`                  | 保存・認証・書き手・既定値           |
+| `RankingOptions` / `ScoreBreakdown`              | 関係・信号の重みと順位の内訳         |
 | `Authorizer`                                     | ホストの認証主体と権限の解決         |
 | `StorageAdapter`                                 | ローカル保存の読取とトランザクション |
 | `EmbeddingProvider` / `CandidateProvider`        | 検索表現と候補取得                   |

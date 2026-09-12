@@ -29,6 +29,7 @@ export default defineConfig({
         text: '使い方を広げる',
         items: [
           { text: 'Atom と関係', link: '/concepts' },
+          { text: '関係とベクトルの順位', link: '/ranking' },
           { text: 'ホストの設定', link: '/setup' },
           { text: '保存と検索の設定', link: '/adapters' },
         ],
@@ -58,7 +59,7 @@ export default defineConfig({
         text: '移行',
         collapsed: true,
         items: [
-          { text: 'v0.1 からの移行', link: '/migration' },
+          { text: 'v0.4 への移行', link: '/migration' },
           { text: '歴史資料：設計 v1.0', link: '/migration-architecture' },
         ],
       },

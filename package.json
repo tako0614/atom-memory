@@ -1,6 +1,6 @@
 {
   "name": "atom-memory",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Contextual Atom memory with automatic recall, content search, observed references and private edits.",
   "type": "module",
   "license": "MIT",
@@ -48,9 +48,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "check": "npm test && npm run docs:examples && npm run docs:build",
+    "check": "npm test && node scripts/evaluate-ranking.mjs && npm run docs:examples && npm run docs:build",
     "example": "npm run build && node examples/basic.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -63,7 +63,8 @@
     "example:live": "npm run build && node examples/live.mjs",
     "evaluate": "npm run build && node scripts/evaluate.mjs",
     "evaluate:live": "npm run build && node scripts/evaluate.mjs --live",
-    "example:history": "npm run build && node examples/history-writer.mjs"
+    "example:history": "npm run build && node examples/history-writer.mjs",
+    "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

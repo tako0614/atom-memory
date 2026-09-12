@@ -1,10 +1,18 @@
-export type * from './contracts.js';
-export {
-  AtomKernel,
-  type KernelOptions,
-  type ReceiptManifest,
-  type EmbeddingProvider,
-} from './core/kernel.js';
+export type {
+  Id,
+  Json,
+  Ref,
+  PinnedRef,
+  AtomContent,
+  AtomRevision,
+  Slot,
+  Origin,
+  AuthContext,
+  Budget,
+  ErrorCode,
+  ProposedRevision,
+} from './contracts.js';
+export type { EmbeddingProvider } from './core/store.js';
 export { LocalAuthority, type Authorizer, type Principal } from './core/authority.js';
 export { AtomMemoryError } from './core/util.js';
 export {
@@ -15,7 +23,7 @@ export {
   type Resource,
 } from './core/budget.js';
 export { defaultLimits, type Limits } from './core/validation.js';
-export { content, membership, logical, pin, origin, sourceCoverage } from './core/helpers.js';
+export { logical, pin, origin, sourceCoverage } from './core/helpers.js';
 export { MemoryStorage } from './adapters/memory.js';
 export type {
   StorageAdapter,
@@ -27,7 +35,6 @@ export type {
 } from './adapters/storage.js';
 export {
   MemoryHarness,
-  MemoryHarness as AgentHarness,
   type HarnessModel,
   type ModelAction,
   type ModelMutation,
@@ -43,7 +50,5 @@ export {
   LexicalCandidateProvider,
   HybridCandidateProvider,
 } from './core/candidates.js';
-
-export { AgentHarness as LegacyAgentHarness } from './runtime/legacy-harness.js';
 
 export { RetryableCommitError } from './client/engine.js';

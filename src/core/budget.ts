@@ -15,7 +15,10 @@ export type Resource = Exclude<keyof Budget, 'deadline' | 'maxHops'>;
 export class BudgetLedger {
   readonly limits: Budget;
   #used: Record<Resource, number>;
-  constructor(limits: Budget) {
+  constructor(
+    limits: Budget,
+    private readonly parent?: BudgetLedger,
+  ) {
     for (const key of Object.keys(defaultBudget) as (keyof Budget)[]) {
       const v = limits[key];
       if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 0)
@@ -34,7 +37,7 @@ export class BudgetLedger {
     return this.limits.deadline !== undefined && Date.now() >= Date.parse(this.limits.deadline);
   }
   remaining(key: Resource): number {
-    return this.limits[key] - this.#used[key];
+    return Math.min(this.limits[key] - this.#used[key], this.parent?.remaining(key) ?? Infinity);
   }
   can(cost: Partial<Record<Resource, number>>): boolean {
     return (
@@ -46,7 +49,12 @@ export class BudgetLedger {
   }
   charge(cost: Partial<Record<Resource, number>>): void {
     if (!this.can(cost)) fail('BUDGET_EXHAUSTED');
+    this.parent?.charge(cost);
     for (const [k, n] of Object.entries(cost)) this.#used[k as Resource] += n!;
+  }
+  /** Limit a phase while charging actual usage to the shared operation ledger. */
+  window(limits: Partial<Record<Resource, number>>): BudgetLedger {
+    return new BudgetLedger({ ...this.limits, ...limits }, this);
   }
   /** Reservation is charged once to the parent; a child cannot spend sibling funds. */
   reserve(limits: Budget): BudgetLedger {

@@ -56,8 +56,6 @@ export function validateContent(
     fail('ACCESS_DENIED', 'Only trusted ingestion may label source data');
   if (['extraction', 'derived'].includes(c.provenance.kind) && !c.provenance.inputReceiptId)
     fail('INVALID_SCHEMA', 'Derived content requires a host read receipt');
-  if (c.schema === 'summary' && c.provenance.kind !== 'derived') fail('INVALID_SCHEMA');
-  if (c.schema === 'extract' && c.provenance.kind !== 'extraction') fail('INVALID_SCHEMA');
   if (!c.body || !['inline', 'blob'].includes(c.body.kind)) fail('INVALID_SCHEMA');
   if (c.body.kind === 'inline') canonical(c.body.value);
   else {
@@ -77,12 +75,6 @@ export function validateContent(
     if (slot.mode === 'include' && slot.target.kind !== 'pinned') fail('PINNED_INCLUDE_REQUIRED');
     if (slot.orderKey !== undefined) validId(slot.orderKey);
   }
-  if (
-    c.schema === 'membership' &&
-    (c.slots.filter((s) => s.role === 'group').length !== 1 ||
-      c.slots.filter((s) => s.role === 'member').length !== 1)
-  )
-    fail('INVALID_SCHEMA', 'Membership needs one group and one member');
   if (c.validTime) {
     if (!['known', 'partial', 'unknown'].includes(c.validTime.status)) fail('INVALID_SCHEMA');
     for (const time of [c.validTime.from, c.validTime.until])

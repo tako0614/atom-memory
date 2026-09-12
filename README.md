@@ -1,5 +1,7 @@
 # Atom Memory
 
+0.4.0: query/context/thoughtの類似度と、役割・方向の重み付きグラフ伝播で検索順位を決めます。Atomは再帰的・多重所属できる対等な形式です。LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.3からの移行](https://atom-memory.takos.jp/migration)を参照してください。
+
 Give your agent something to remember.
 
 Atom Memory is a TypeScript library for saving notes, finding relevant information, and bringing it back into an agent's context. Start with a sentence. Connect related notes. Update them when things change.

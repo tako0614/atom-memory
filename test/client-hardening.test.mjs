@@ -1,3 +1,5 @@
+import { AtomicStore } from '../dist/core/store.js';
+import { content, membership } from '../dist/core/helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -6,10 +8,7 @@ import { join } from 'node:path';
 import { fixture } from './fixtures.mjs';
 import {
   MemoryHost,
-  AtomKernel,
   LocalAuthority,
-  content,
-  membership,
   pin,
   logical,
   RetryableCommitError,
@@ -55,7 +54,7 @@ test('A35 legacy SQLite data and memberships keep exact IDs/revisions/origins ac
   });
   const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
   let storage = new SqliteStorage(path);
-  const kernel = new AtomKernel({ storage, authority });
+  const kernel = new AtomicStore({ storage, authority });
   await kernel.write(
     {
       idempotencyKey: 'old-fixture',
@@ -84,7 +83,7 @@ test('A35 legacy SQLite data and memberships keep exact IDs/revisions/origins ac
     auth,
   );
   const before = storage.history(undefined, 100);
-  let host = new MemoryHost({ kernel });
+  let host = new MemoryHost({ storage, authority });
   let memory = host.connect(binding);
   const ref = host.reference(pin('old-parent', 'parent-1'), binding);
   assert.ok((await memory.search('authentication')).items.length);
@@ -153,7 +152,7 @@ test('A08/A32 index preparation advances and index changes expire search cursors
   await assert.rejects(m.search('search term', { cursor: old.cursor }), error('CURSOR_EXPIRED'));
 });
 
-test('A07/A20/A32 scan-limited search and read continuations make progress through all candidates', async () => {
+test('A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking', async () => {
   const { memory: m } = fixture({ maxScan: 5 });
   for (let i = 0; i < 14; i++) await m.write(`candidate ${i}`);
   let page = await m.search('candidate', { limit: 2 });
@@ -164,7 +163,8 @@ test('A07/A20/A32 scan-limited search and read continuations make progress throu
     page = await m.search('candidate', { limit: 2, cursor: page.cursor });
     page.items.forEach((i) => seen.add(i.ref));
   }
-  assert.equal(seen.size, 14);
+  assert.equal(seen.size, 5);
+  assert.equal(page.diagnostics.approximate, true);
   let read = await m.read({ query: 'candidate' }, { limit: 2, tokens: 4000 });
   const readSeen = new Set(read.refs);
   steps = 0;
@@ -173,7 +173,7 @@ test('A07/A20/A32 scan-limited search and read continuations make progress throu
     read = await m.read({ query: 'candidate' }, { limit: 2, tokens: 4000, cursor: read.cursor });
     read.refs.forEach((r) => readSeen.add(r));
   }
-  assert.equal(readSeen.size, 14);
+  assert.equal(readSeen.size, 5);
 });
 
 test('A31 vector cache is partitioned by authorization and cancellation reaches the embedding call', async () => {

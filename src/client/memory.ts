@@ -1,3 +1,4 @@
+import { collectRanking, finishRanking, startRanking } from './ranking.js';
 import { updateIndex, indexRevision } from './indexing.js';
 import type {
   AtomContent,
@@ -199,28 +200,8 @@ export class MemoryClient implements MemoryAPI {
     );
     if (saved) {
       s.trace = { ...clone(saved.trace), id: uid('trace') };
-      if (saved.offset < saved.candidates.length || saved.graph || saved.complete)
-        return { s, state: saved };
+      return { s, state: saved };
     }
-    const found = await this.engine.candidates(state, s, saved?.scanAfter);
-    if (!found.complete && found.scanned === 0 && found.after === saved?.scanAfter)
-      fail('BUDGET_EXHAUSTED', 'Candidate cannot advance: increase byte or candidate budget');
-    const candidates: Candidate[] = [];
-    const seen = new Map<string, Candidate>();
-    for (const candidate of found.candidates) {
-      let r = candidate.revision;
-      if (!options.historical) {
-        const successor = this.engine.successor(pinRevision(r), s);
-        if (successor.revisionId !== r.revisionId) r = this.engine.get(successor, s);
-      }
-      const prior = seen.get(r.revisionId);
-      if (!prior || prior.score < candidate.score)
-        seen.set(r.revisionId, { revision: r, score: candidate.score });
-    }
-    candidates.push(...seen.values());
-    candidates.sort(
-      (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
-    );
     const q: QueryState = {
       id: uid('query'),
       kind,
@@ -232,29 +213,89 @@ export class MemoryClient implements MemoryAPI {
       config: this.engine.config,
       expires: Date.now() + 300000,
       overlay: this.overlay?.id,
-      candidates,
+      candidates: [],
       offset: 0,
-      complete: found.complete,
-      scanned: (saved?.scanned ?? 0) + found.scanned,
-      pending: found.pending,
-      approximate: found.approximate,
+      complete: false,
+      scanned: 0,
+      pending: false,
+      approximate: false,
       trace: s.trace,
-      scanAfter: found.after,
     };
+    const maximum = this.engine.options.maxScan ?? 10000;
+    // Leave resources for relation acquisition and returning memory in this call.
+    // A finite acquisition is frozen before pagination; it never scans the full
+    // corpus by repeatedly returning empty pages to an automatic caller.
+    const ledger = s.ledger;
+    s.ledger = ledger.window({
+      maxCandidates: Math.max(1, Math.floor(ledger.remaining('maxCandidates') / 2)),
+      maxBytes: Math.floor(ledger.remaining('maxBytes') / 2),
+    });
+    let found;
+    try {
+      found = await this.engine.candidates(state, s, undefined, maximum);
+    } finally {
+      s.ledger = ledger;
+    }
+    if (!found.complete && found.scanned === 0 && found.after === undefined)
+      fail('BUDGET_EXHAUSTED', 'Candidate cannot advance: increase byte or candidate budget');
+    const seen = new Map<string, Candidate>();
+    for (const candidate of found.candidates) {
+      let r = candidate.revision;
+      if (!options.historical) {
+        const successor = this.engine.successor(pinRevision(r), s);
+        if (successor.revisionId !== r.revisionId) r = this.engine.get(successor, s);
+      }
+      const prior = seen.get(r.revisionId);
+      if (!prior || prior.score < candidate.score)
+        seen.set(r.revisionId, { ...candidate, revision: r });
+    }
+    const seeds = [...seen.values()].sort(
+      (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
+    );
+    const maxSeeds = this.engine.options.ranking!.maxSeeds!;
+    q.approximate ||= seeds.length > maxSeeds || found.approximate;
+    q.scanned = found.scanned;
+    q.pending ||= found.pending;
+    q.approximate ||= !found.complete;
+    const ranking = startRanking(
+      seeds.slice(0, maxSeeds),
+      options.depth ?? this.engine.options.ranking!.depth!,
+      this.engine.options.ranking,
+    );
+    s.ledger = ledger.window({
+      maxCandidates: Math.floor(ledger.remaining('maxCandidates') / 2),
+      maxBytes: Math.floor(ledger.remaining('maxBytes') / 2),
+    });
+    try {
+      if (!collectRanking(this.engine, s, ranking)) ranking.truncated = true;
+    } finally {
+      s.ledger = ledger;
+    }
+    q.candidates = finishRanking(this.engine, s, ranking).filter((candidate) => {
+      if (options.historical) return true;
+      const successor = this.engine.storage.metaGet<SuccessorRecord>(
+        `sdk:successor:${candidate.revision.atomId}`,
+      );
+      return !successor || successor.sequence > s.at;
+    });
+    q.approximate ||= ranking.truncated || ranking.depth > 0;
+    q.complete = true;
     return { s, state: q };
   }
   async search(query: string, options: SearchOptions = {}): Promise<MemoryPage> {
     if (typeof query !== 'string' || !query.trim())
       fail('INVALID_INPUT', 'Search query must not be empty');
     const limit = positive(options.limit, 10);
-    const key = this.key('search', query, { historical: options.historical ?? false });
+    const depth = options.depth ?? this.engine.options.ranking!.depth!;
+    if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
+    const key = this.key('search', query, { historical: options.historical ?? false, depth });
     const { s, state } = await this.retrieve('search', { query }, options, key);
     s.trace.plans ??= [];
     if (!options.cursor)
       s.trace.plans.push({
         kind: 'search',
         state: { query },
-        depth: 0,
+        depth,
         historical: options.historical ?? false,
       });
     const initialOffset = state.offset;
@@ -270,14 +311,14 @@ export class MemoryClient implements MemoryAPI {
           state.candidates.splice(
             state.offset,
             1,
-            ...material.revisions.map((revision) => ({ revision, score: candidate.score })),
+            ...material.revisions.map((revision) => ({ ...candidate, revision })),
           );
           continue;
         }
         if (!s.ledger.can({ maxAtoms: 1 })) break;
         const view = this.engine.view(candidate.revision, s, true);
         s.ledger.charge({ maxAtoms: 1 });
-        items.push({ ...view, score: candidate.score });
+        items.push({ ...view, score: candidate.score, scoreBreakdown: candidate.scoreBreakdown });
         state.offset++;
       } catch (error) {
         if (error instanceof AtomMemoryError && error.code === 'BUDGET_EXHAUSTED') break;
@@ -307,7 +348,7 @@ export class MemoryClient implements MemoryAPI {
     if (!input || typeof input !== 'object') fail('INVALID_INPUT');
     const limit = positive(options.limit, 24);
     const tokens = positive(options.tokens, 4096, 1000000);
-    const depth = options.depth ?? 1;
+    const depth = options.depth ?? this.engine.options.ranking!.depth!;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
     const key = this.key('read', input, { historical: options.historical ?? false, depth });
     const { s, state } = await this.retrieve(
@@ -325,45 +366,20 @@ export class MemoryClient implements MemoryAPI {
         depth,
         historical: options.historical ?? false,
       });
-    let candidates = seeds;
-    let graphs = state.graph ? [state.graph] : [];
-    if (depth > 0 && !state.graph) {
-      const result = await expand(
-        this.engine,
-        s,
-        seeds,
-        depth,
-        Math.min(this.engine.options.maxScan ?? 10000, Math.max(limit * 4, limit)),
-      );
-      candidates = result.candidates;
-      graphs = result.graphs;
-    }
-    if (state.graph) {
-      const more = graphPage(this.engine, s, state.graph, Math.max(limit * 4, limit));
-      candidates = [
-        ...seeds,
-        ...more.revisions.map((revision) => ({
-          revision,
-          score: state.graph?.scores?.[revision.revisionId] ?? 0.5,
-        })),
-      ];
-      graphs = more.complete ? [] : [state.graph];
-    }
     const packed = await pack(
       this.engine,
       s,
-      candidates,
+      seeds,
       Math.min(tokens, s.ledger.remaining('maxContextTokens')),
       limit,
     );
     const receipt = this.finish(s);
-    const more = packed.deferred.length > 0 || graphs.length > 0 || !state.complete;
+    const more = packed.deferred.length > 0 || !state.complete;
     const cursor = more
       ? this.engine.saveCursor({
           ...state,
           candidates: packed.deferred,
           offset: 0,
-          graph: graphs[0],
           trace: s.trace,
         })
       : undefined;
@@ -782,7 +798,7 @@ export class MemoryClient implements MemoryAPI {
             result.committed[0]!,
             this.engine.storage.watermark(),
           )!;
-          const manifest = this.engine.storage.metaGet<import('../core/kernel.js').ReceiptManifest>(
+          const manifest = this.engine.storage.metaGet<import('../core/store.js').ReceiptManifest>(
             `receipt:${combined.id}`,
           )!;
           manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
@@ -955,7 +971,7 @@ export class MemoryClient implements MemoryAPI {
           committed: (result) => {
             const committedSession = { ...s, at: this.engine.storage.watermark() };
             const manifest = this.engine.storage.metaGet<
-              import('../core/kernel.js').ReceiptManifest
+              import('../core/store.js').ReceiptManifest
             >(`receipt:${combined.id}`)!;
             manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
             manifest.currentReads = [

@@ -1,4 +1,6 @@
-import { indexRevision } from './indexing.js';
+import { rankingOptions } from '../core/ranking.js';
+import type { RetrievalSignal } from './types.js';
+import { indexRevision, migrateIndex } from './indexing.js';
 import type {
   AtomRevision,
   AuthContext,
@@ -9,7 +11,7 @@ import type {
   WriteRequest,
   WriteResult,
 } from '../contracts.js';
-import { AtomKernel, type ReceiptManifest } from '../core/kernel.js';
+import { AtomicStore, type ReceiptManifest } from '../core/store.js';
 import type { Principal } from '../core/authority.js';
 import { BudgetLedger, utf8Tokenizer } from '../core/budget.js';
 import { ExactCandidateProvider } from '../core/candidates.js';
@@ -86,7 +88,6 @@ export interface QueryState {
   trace: Trace;
   scanAfter?: string;
   graph?: GraphState;
-  graphs?: GraphState[];
   root?: PinnedRef;
   blobOffset?: number;
   historyId?: string;
@@ -98,13 +99,11 @@ export interface GraphTask {
   phase: 'emit' | 'forward' | 'reverse';
   slot: number;
   after?: string;
-  score?: number;
 }
 export interface GraphState {
   tasks: GraphTask[];
   seen: string[];
   maxDepth: number;
-  scores?: Record<string, number>;
 }
 export interface HistoryManifest {
   id: string;
@@ -127,23 +126,21 @@ export interface SuccessorRecord {
 }
 export class RetryableCommitError extends Error {}
 export class Engine {
-  readonly kernel: AtomKernel;
+  readonly kernel: AtomicStore;
   readonly options: HostOptions;
   readonly provider: NonNullable<HostOptions['candidateProvider']>;
   readonly overlays = new Map<string, OverlayState>();
   readonly signals = new WeakSet<object>();
   constructor(options: HostOptions) {
-    this.options = options;
-    if (!options.kernel && !options.authority)
-      fail('INVALID_INPUT', 'A trusted authorizer is required');
-    this.kernel =
-      options.kernel ??
-      new AtomKernel({
-        authority: options.authority!,
-        storage: options.storage,
-        embedding: options.embedding,
-        tokenizer: options.tokenizer,
-      });
+    this.options = { ...options, ranking: rankingOptions(options.ranking) };
+    if (!options.authority) fail('INVALID_INPUT', 'A trusted authorizer is required');
+    this.kernel = new AtomicStore({
+      authority: options.authority!,
+      storage: options.storage,
+      limits: options.limits,
+      embedding: options.embedding,
+      tokenizer: options.tokenizer,
+    });
     this.provider = options.candidateProvider ?? new ExactCandidateProvider();
   }
   get storage() {
@@ -155,7 +152,7 @@ export class Engine {
   get embedding() {
     return this.options.embedding ?? this.kernel.embedding;
   }
-  get config() {
+  get legacyConfig() {
     return digest(
       canonical({
         provider: this.provider.id,
@@ -164,6 +161,27 @@ export class Engine {
         dimensions: this.embedding?.dimensions,
         tokenizer: this.tokenizer.id,
         generator: this.options.generator?.id,
+      }),
+    );
+  }
+  get indexConfig() {
+    return digest(
+      canonical({
+        representationVersion: 2,
+        encoder: this.embedding?.id,
+        dimensions: this.embedding?.dimensions,
+      }),
+    );
+  }
+  get config() {
+    return digest(
+      canonical({
+        index: this.indexConfig,
+        provider: this.provider.id,
+        tokenizer: this.tokenizer.id,
+        generator: this.options.generator?.id,
+        ranking: this.options.ranking,
+        version: 4,
       }),
     );
   }
@@ -530,10 +548,21 @@ export class Engine {
   async signalsFor(
     state: MemoryState,
     s: Session,
-  ): Promise<{ texts: string[]; vectors: readonly (readonly number[])[]; digest: string }> {
-    const texts = [state.query, state.context, state.thought, ...(state.observations ?? [])].filter(
-      (v): v is string => typeof v === 'string' && v.trim().length > 0,
-    );
+  ): Promise<{
+    texts: string[];
+    vectors: readonly (readonly number[])[];
+    signals: RetrievalSignal[];
+    digest: string;
+  }> {
+    const signals: RetrievalSignal[] = [
+      ...(['query', 'context', 'thought'] as const).flatMap((kind) =>
+        state[kind]?.trim() ? [{ kind, text: state[kind] }] : [],
+      ),
+      ...[...new Set(state.observations ?? [])]
+        .filter((text) => text.trim())
+        .map((text) => ({ kind: 'observations' as const, text })),
+    ];
+    const texts = signals.map((signal) => signal.text!);
     if (!texts.length && !state.signal)
       fail('INVALID_INPUT', 'read needs context, query, observations or a compatible host signal');
     if (Buffer.byteLength(canonical(texts)) > this.kernel.limits.maxWriteBytes)
@@ -552,10 +581,16 @@ export class Engine {
         fail('MODEL_SPACE_MISMATCH');
       vectors.push(state.signal.values);
     }
-    if (this.embedding && texts.length) vectors.push(...(await this.embed(texts, s)));
+    if (this.embedding && texts.length) {
+      const encoded = await this.embed(texts, s);
+      for (let i = 0; i < signals.length; i++) signals[i] = { ...signals[i]!, vector: encoded[i]! };
+      vectors.push(...encoded);
+    }
+    if (state.signal) signals.push({ kind: 'signal', vector: state.signal.values });
     return {
       texts,
       vectors,
+      signals,
       digest: digest(canonical({ texts, signal: state.signal, config: this.config })),
     };
   }
@@ -566,34 +601,55 @@ export class Engine {
   ): Promise<readonly (readonly number[])[]> {
     const e = this.embedding ?? fail('INDEX_NOT_READY');
     const output: (readonly number[])[] = [];
-    for (const text of texts) {
+    const missing = new Map<string, { text: string; positions: number[] }>();
+    for (const [position, text] of texts.entries()) {
       this.check(s);
       const key = `sdk:cache:vector:${digest(canonical([bindingKey(s.binding.auth), s.principal.generation, s.trace.policies, e.id, e.dimensions, purpose, text]))}`;
       const cached = this.storage.metaGet<{ vector: number[]; until: number }>(key);
-      if (cached && cached.until > Date.now()) {
-        output.push(cached.vector);
-        continue;
+      if (cached && cached.until > Date.now()) output[position] = cached.vector;
+      else {
+        const entry = missing.get(key) ?? { text, positions: [] };
+        entry.positions.push(position);
+        missing.set(key, entry);
       }
+    }
+    if (missing.size) {
+      const entries = [...missing.entries()];
       s.ledger.charge({
         maxModelCalls: 1,
         maxNetworkCalls: e.networkCallsPerCall,
-        maxModelInputTokens: e.tokenizer.count(text),
+        maxModelInputTokens: entries.reduce(
+          (sum, [, entry]) => sum + e.tokenizer.count(entry.text),
+          0,
+        ),
       });
-      const result = await cancellable((signal) => e.embed([text], signal, purpose), s.signal);
+      const result = await cancellable(
+        (signal) =>
+          e.embed(
+            entries.map(([, entry]) => entry.text),
+            signal,
+            purpose,
+          ),
+        s.signal,
+      );
       this.check(s);
-      const vector = result[0];
       if (
-        result.length !== 1 ||
-        !vector ||
-        vector.length !== e.dimensions ||
-        vector.some((n) => !Number.isFinite(n))
+        result.length !== entries.length ||
+        result.some(
+          (vector) => vector.length !== e.dimensions || vector.some((n) => !Number.isFinite(n)),
+        )
       )
         fail('MODEL_SPACE_MISMATCH');
-      this.storage.metaSet(key, {
-        vector,
-        until: Date.now() + (this.options.cacheTtlMs ?? 300000),
+      entries.forEach(([key, entry], i) => {
+        const vector = result[i]!;
+        entry.positions.forEach((position) => {
+          output[position] = vector;
+        });
+        this.storage.metaSet(key, {
+          vector,
+          until: Date.now() + (this.options.cacheTtlMs ?? 300000),
+        });
       });
-      output.push(vector);
     }
     this.trimCaches();
     return output;
@@ -613,6 +669,7 @@ export class Engine {
     state: MemoryState,
     s: Session,
     after?: string,
+    maxScan = this.options.maxScan ?? 10000,
   ): Promise<{
     candidates: Candidate[];
     scanned: number;
@@ -627,7 +684,9 @@ export class Engine {
     const result = await this.provider.retrieve({
       texts: signals.texts,
       vectors: signals.vectors,
-      maxScan: this.options.maxScan ?? 10000,
+      signals: signals.signals,
+      ranking: this.options.ranking,
+      maxScan,
       after,
       ledger: s.ledger,
       signal: s.signal,
@@ -637,7 +696,7 @@ export class Engine {
               vectorCandidates: (vectors: readonly (readonly number[])[], limit: number) => {
                 this.check(s);
                 return this.storage.vectorCandidates!(
-                  { policies: s.trace.policies, config: this.config, vectors, limit },
+                  { policies: s.trace.policies, config: this.indexConfig, vectors, limit },
                   s.at,
                 );
               },
@@ -663,7 +722,7 @@ export class Engine {
           }>(`sdk:index:${r.revisionId}`);
           return {
             text,
-            ...(index?.config === this.config && index.hash === digest(text)
+            ...(index?.config === this.indexConfig && index.hash === digest(text)
               ? { vectors: index.vectors }
               : {}),
           };
@@ -725,6 +784,28 @@ export class Engine {
       ? this.cursor(options.cursor, binding, 'index', this.config)
       : undefined;
     const s = this.session(binding, options, shared, undefined, saved?.at, this.config);
+    const migration = migrateIndex(this, s, options.limit ?? 64);
+    if (migration.pending)
+      return {
+        indexed: 0,
+        pending: true,
+        cursor: this.saveCursor({
+          kind: 'index',
+          binding: bindingKey(binding.auth),
+          generation: s.principal.generation,
+          at: s.at,
+          signalDigest: this.config,
+          index: this.storage.metaGet<number>('sdk:index-generation') ?? 0,
+          config: this.config,
+          candidates: [],
+          offset: 0,
+          complete: false,
+          scanned: migration.processed,
+          pending: true,
+          approximate: false,
+          trace: s.trace,
+        }),
+      };
     let after = saved?.scanAfter;
     let indexed = 0;
     let processed = 0;

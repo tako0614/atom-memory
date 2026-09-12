@@ -1,5 +1,6 @@
+import { collectRanking, finishRanking, startRanking } from './ranking.js';
 import type { AtomRevision, Origin, PinnedRef } from '../contracts.js';
-import type { ReceiptManifest } from '../core/kernel.js';
+import type { ReceiptManifest } from '../core/store.js';
 import { sourceCoverage } from '../core/helpers.js';
 import { AtomMemoryError, canonical, clone, digest, fail } from '../core/util.js';
 import type {
@@ -36,11 +37,10 @@ export function graphPage(
       seen.add(r.revisionId);
       state.tasks.shift();
       revisions.push(r);
-      (state.scores ??= {})[r.revisionId] = task.score ?? 1;
       if (task.depth < state.maxDepth)
         state.tasks.push(
-          { ref: task.ref, depth: task.depth, phase: 'forward', slot: 0, score: task.score },
-          { ref: task.ref, depth: task.depth, phase: 'reverse', slot: 0, score: task.score },
+          { ref: task.ref, depth: task.depth, phase: 'forward', slot: 0 },
+          { ref: task.ref, depth: task.depth, phase: 'reverse', slot: 0 },
         );
     } else if (task.phase === 'forward') {
       const r = engine.get(task.ref, s);
@@ -57,7 +57,6 @@ export function graphPage(
           depth: task.depth + 1,
           phase: 'emit',
           slot: 0,
-          score: (task.score ?? 1) / 2,
         });
       if (task.slot >= r.slots.length) state.tasks.shift();
     } else {
@@ -80,7 +79,6 @@ export function graphPage(
         depth: task.depth + 1,
         phase: 'emit' as const,
         slot: 0,
-        score: (task.score ?? 1) / 2,
       }));
       if (page.length < count) {
         state.tasks.shift();
@@ -103,28 +101,15 @@ export async function expand(
   seeds: readonly Candidate[],
   depth: number,
   limit: number,
-): Promise<{ candidates: Candidate[]; complete: boolean; graphs: GraphState[] }> {
-  const state: GraphState = {
-    tasks: seeds.map((seed) => ({
-      ref: pinRevision(seed.revision),
-      depth: 0,
-      phase: 'emit',
-      slot: 0,
-      score: seed.score,
-    })),
-    seen: [],
-    maxDepth: depth,
-    scores: {},
-  };
-  const page = graphPage(engine, s, state, limit);
+): Promise<{ candidates: Candidate[]; complete: boolean }> {
+  const state = startRanking(seeds, depth, {
+    ...engine.options.ranking,
+    maxNodes: Math.min(10000, limit),
+  });
+  const complete = collectRanking(engine, s, state);
   return {
-    candidates: page.revisions
-      .map((revision) => ({ revision, score: state.scores?.[revision.revisionId] ?? 0 }))
-      .sort(
-        (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
-      ),
-    complete: page.complete,
-    graphs: page.complete ? [] : [state],
+    candidates: complete ? finishRanking(engine, s, state) : [],
+    complete: complete && !state.truncated,
   };
 }
 
@@ -147,7 +132,7 @@ function compatible(
   if (m.policies.some((p) => !s.trace.policies.includes(p))) fail('ACCESS_DENIED');
   const trace = engine.storage.metaGet<Trace>(`sdk:trace:${receiptId}`);
   const frozen = historical || m.historicalInputs;
-  if (!frozen && trace && trace.config !== engine.config) return false;
+  // Ranking configuration is not evidence. Validate the actual observed inputs below.
   for (const ref of frozen ? [] : (m.currentReads ?? m.reads)) {
     const current = engine.get({ kind: 'logical', atomId: ref.atomId }, s, true);
     if (current.revisionId !== ref.revisionId) return false;
@@ -424,7 +409,7 @@ export async function pack(
   tokens: number,
   limit: number,
 ): Promise<Packed> {
-  const items: AtomView[] = [];
+  const items: import('./types.js').MemoryPage['items'][number][] = [];
   const selected = new Set<string>();
   const quotes = new Map<AtomView['ref'], Origin>();
   const citations: Origin[] = [];
@@ -450,7 +435,12 @@ export async function pack(
           shared.add(key(a));
       }
     return canonical({
-      memory: views.map((view) => {
+      memory: views.map((item) => {
+        const {
+          score: _score,
+          scoreBreakdown: _breakdown,
+          ...view
+        } = item as AtomView & { score?: number; scoreBreakdown?: unknown };
         const span = spans.get(view.ref);
         if (!span || !shared.has(key(span))) return view;
         const { text: _text, ...metadata } = view;
@@ -515,7 +505,14 @@ export async function pack(
       for (const r of all.values()) {
         if (selected.has(r.revisionId)) continue;
         const span = quote(engine, r, s);
-        const view = engine.view(r, s, true);
+        const scored = candidates.find(
+          (candidate) => candidate.revision.revisionId === r.revisionId,
+        );
+        const view = {
+          ...engine.view(r, s, true),
+          score: scored?.score ?? 0,
+          scoreBreakdown: scored?.scoreBreakdown ?? { direct: 0, structural: 0 },
+        };
         if (span) {
           const source = engine.get(span.source, s);
           const sourceRef = engine.issue(source, s);

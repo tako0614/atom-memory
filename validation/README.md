@@ -1,6 +1,6 @@
 # 検証記録
 
-0.3.0のバッチWriter・増分索引・ハイブリッド検索の検証と公開情報は[最新の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。実行例は `npm run example:history`、全体の確認は `npm run check` です。
+0.4.0の構造ランキング・ベクトル移行・旧API整理の検証と公開情報は[最新の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。実行例は `npm run example:history`、全体の確認は `npm run check` です。
 
 # v0.2 API再設計の検証記録
 

@@ -1,7 +1,8 @@
+import { content } from '../dist/core/helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture } from './fixtures.mjs';
-import { content, pin, utf8Tokenizer, MemoryHarness, BudgetLedger } from '../dist/index.js';
+import { pin, utf8Tokenizer, MemoryHarness, BudgetLedger } from '../dist/index.js';
 const error = (code) => (e) => e.code === code;
 const opts = { tokens: 30000, budget: { maxContextTokens: 30000 } };
 const mock = (respond, extra = {}) => ({

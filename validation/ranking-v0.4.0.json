@@ -1,0 +1,53 @@
+{
+  "at": "2026-09-12T12:01:54.575Z",
+  "node": "v26.1.0",
+  "kind": "deterministic structural retrieval; not LLM quality",
+  "model": "fixed 2D encoder, no answer model or Writer",
+  "tokens": "UTF-8 bytes; not billed tokens",
+  "budgets": {
+    "maxCandidates": 4000,
+    "maxBytes": 4000000,
+    "tokens": 20000
+  },
+  "runs": [
+    {
+      "variant": "correct",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": true,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 1,
+      "reciprocalRank": 1,
+      "memoryBytes": 1011,
+      "latencyMs": 6.2046649999999985,
+      "heapDeltaBytes": 1264040
+    },
+    {
+      "variant": "none",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": false,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 0,
+      "reciprocalRank": 0,
+      "memoryBytes": 754,
+      "latencyMs": 1.2096630000000062,
+      "heapDeltaBytes": -1263344
+    },
+    {
+      "variant": "damaged",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": true,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 0,
+      "reciprocalRank": 0,
+      "memoryBytes": 1001,
+      "latencyMs": 1.2608360000000047,
+      "heapDeltaBytes": 987672
+    }
+  ]
+}

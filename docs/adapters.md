@@ -204,3 +204,9 @@ console.log(progress.indexed, progress.processed, progress.pending);
 エンコーダーは `embed(texts, signal, purpose)` の第三引数で `'document'` と `'query'` を区別できます。第三引数を使わない既存の実装も動きます。文脈・`thought`・観測はquery側、Atomの検索表現はdocument側です。空間IDにはモデルの版・前処理・次元を含めてください。
 
 SQLiteでベクトル候補も有限に絞るには `candidateProvider: new HybridCandidateProvider()` を指定します。ベクトルの近似バケットと語彙一致から候補を選び、実ベクトルで採点し、通常の関係探索を行います。非公開policyや過去版は候補の上限を適用する前に除外します。これは近似検索であり、`approximate=true`です。全世界の完全な上位候補や、百万件での応答性能を保証するものではありません。
+
+## v0.4 の候補とベクトル
+
+候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。組み込みproviderは入力種類の重み付き類似度でseedを採点します。`maxScan` と操作予算で候補取得を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。独自providerは `signals`・`ranking` を受け取れます。
+
+ベクトルの設定は順位の設定から独立しています。0.3のベクトル再利用とStorageAdapterの `indexEntries` は[移行](/migration)を参照してください。

@@ -1,5 +1,7 @@
 # アーキテクチャ
 
+v0.4の検索は共通の[構造ランキング](/ranking)を使います。公開操作はMemoryHost/MemoryClientとMemoryHarnessに集約し、旧Kernelのread/index/overlayと旧ハーネスは削除しました。不変版・CAS・原子コミット・出典・purgeは内部のAtomicStoreが持ちます。
+
 Atom Memory は、アプリが扱う内容と関係を、高水準クライアントから一つの Atom ストアへ保存します。検索、モデルへの記憶供給、Writer の整理は同じ取得処理を使います。
 
 ```text

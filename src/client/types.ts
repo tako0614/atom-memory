@@ -1,6 +1,6 @@
 import type { AuthContext, AtomRevision, Budget, Json, Origin, PinnedRef } from '../contracts.js';
 import type { Authorizer } from '../core/authority.js';
-import type { EmbeddingProvider, AtomKernel } from '../core/kernel.js';
+import type { EmbeddingProvider } from '../core/store.js';
 import type { BudgetLedger, Resource, Tokenizer } from '../core/budget.js';
 import type { StorageAdapter } from '../adapters/storage.js';
 
@@ -47,6 +47,7 @@ export interface OperationOptions {
 }
 export interface SearchOptions extends OperationOptions {
   readonly historical?: boolean;
+  readonly depth?: number;
 }
 export interface ReadOptions extends SearchOptions {
   readonly tokens?: number;
@@ -106,7 +107,10 @@ export interface MemoryReceipt {
   readonly signalDigest: string;
 }
 export interface MemoryPage {
-  readonly items: readonly (AtomView & { readonly score?: number })[];
+  readonly items: readonly (AtomView & {
+    readonly score?: number;
+    readonly scoreBreakdown?: ScoreBreakdown;
+  })[];
   readonly receipt: MemoryReceipt;
   readonly cursor?: string;
   readonly diagnostics: Diagnostics;
@@ -199,13 +203,14 @@ export interface Generator {
   ): Promise<string>;
 }
 export interface HostOptions {
-  readonly kernel?: AtomKernel;
   readonly storage?: StorageAdapter;
+  readonly limits?: Partial<import('../core/validation.js').Limits>;
   readonly authority?: Authorizer;
   readonly tokenizer?: Tokenizer;
   readonly embedding?: EmbeddingProvider;
   readonly generator?: Generator;
   readonly candidateProvider?: CandidateProvider;
+  readonly ranking?: RankingOptions;
   readonly defaults?: Partial<Budget>;
   readonly maxScan?: number;
   readonly cursorTtlMs?: number;
@@ -220,6 +225,32 @@ export interface HostOptions {
 export interface Candidate {
   readonly revision: AtomRevision;
   readonly score: number;
+  readonly scoreBreakdown?: ScoreBreakdown;
+}
+export interface ScoreBreakdown {
+  readonly direct: number;
+  readonly structural: number;
+}
+export type SignalKind = 'query' | 'context' | 'thought' | 'observations' | 'signal';
+export interface RankingOptions {
+  readonly signals?: Partial<Record<SignalKind, number>>;
+  readonly semantic?: number;
+  readonly lexical?: number;
+  readonly propagation?: number;
+  readonly relations?: Readonly<
+    Record<string, { readonly forward?: number; readonly reverse?: number }>
+  >;
+  readonly maxSeeds?: number;
+  readonly maxNodes?: number;
+  readonly maxEdges?: number;
+  readonly maxIterations?: number;
+  readonly tolerance?: number;
+  readonly depth?: number;
+}
+export interface RetrievalSignal {
+  readonly kind: SignalKind;
+  readonly text?: string;
+  readonly vector?: readonly number[];
 }
 /** Local access supplied by the host; remote providers must charge every network operation. */
 export interface CandidateAccess {
@@ -239,6 +270,8 @@ export interface CandidateProvider {
   retrieve(input: {
     readonly texts: readonly string[];
     readonly vectors: readonly (readonly number[])[];
+    readonly signals?: readonly RetrievalSignal[];
+    readonly ranking?: RankingOptions;
     readonly maxScan: number;
     readonly after?: string;
     readonly access: CandidateAccess;
