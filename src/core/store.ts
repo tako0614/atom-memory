@@ -19,7 +19,6 @@ import {
   validateBatchDag,
   validateContent,
   validateOrigin,
-  validateRef,
   type Limits,
 } from './validation.js';
 
@@ -56,9 +55,6 @@ export interface ReceiptManifest {
   }[];
   expiresAt: number;
   tokenizerId: string;
-  encoderConfigId?: string;
-  indexWatermark?: number;
-  overlayHandle?: string;
 }
 interface Overlay {
   authBinding: string;
@@ -316,7 +312,6 @@ export class AtomicStore {
         operationId: uid('op'),
         committed: committed.map(pinned),
         repeatedInput: false,
-        indexState: 'ready',
       };
       this.storage.metaSet(key, {
         fingerprint,

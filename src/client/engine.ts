@@ -1,10 +1,10 @@
+import type { Trace } from './internal.js';
 import { rankingOptions } from '../core/ranking.js';
 import type { RetrievalSignal } from './types.js';
-import { indexRevision, migrateIndex } from './indexing.js';
+import { indexRevision } from './indexing.js';
 import type {
   AtomRevision,
   AuthContext,
-  Origin,
   PinnedRef,
   ProposedRevision,
   Ref,
@@ -14,8 +14,8 @@ import type {
 import { AtomicStore, type ReceiptManifest } from '../core/store.js';
 import type { Principal } from '../core/authority.js';
 import { BudgetLedger, utf8Tokenizer } from '../core/budget.js';
-import { ExactCandidateProvider } from '../core/candidates.js';
-import { AtomMemoryError, canonical, clone, digest, fail, textOf, uid } from '../core/util.js';
+import { HybridCandidateProvider, LexicalCandidateProvider } from '../core/candidates.js';
+import { canonical, clone, digest, fail, textOf, uid } from '../core/util.js';
 import type { ScanQuery } from '../adapters/storage.js';
 import type {
   AtomRef,
@@ -27,9 +27,6 @@ import type {
   MemoryReceipt,
   MemoryState,
   OperationOptions,
-  SearchSignal,
-  Trace,
-  CompositionPlan,
 } from './types.js';
 import { cancellable, cancellation, operationBudget } from './control.js';
 export const pinRevision = (r: AtomRevision): PinnedRef => ({
@@ -67,6 +64,8 @@ export interface Session {
   derived: Diagnostics['derived'];
   derivedReason?: Diagnostics['derivedReason'];
   pendingDerived?: boolean;
+  stale: Set<AtomRef>;
+  validated: Map<string, boolean>;
 }
 export interface QueryState {
   id: string;
@@ -90,8 +89,6 @@ export interface QueryState {
   graph?: GraphState;
   root?: PinnedRef;
   blobOffset?: number;
-  historyId?: string;
-  composition?: import('./composition.js').CompositionState;
 }
 export interface GraphTask {
   ref: PinnedRef;
@@ -105,25 +102,6 @@ export interface GraphState {
   seen: string[];
   maxDepth: number;
 }
-export interface HistoryManifest {
-  id: string;
-  root: PinnedRef;
-  at: number;
-  until: number;
-  policy: string;
-  pages: string[];
-  count: number;
-  composition?: CompositionPlan;
-  snapshot?: string;
-}
-export interface SuccessorRecord {
-  from: PinnedRef;
-  to: PinnedRef;
-  historyId: string;
-  policy: string;
-  operationId: string;
-  sequence: number;
-}
 export class RetryableCommitError extends Error {}
 export class Engine {
   readonly kernel: AtomicStore;
@@ -132,6 +110,8 @@ export class Engine {
   readonly overlays = new Map<string, OverlayState>();
   readonly signals = new WeakSet<object>();
   constructor(options: HostOptions) {
+    if (['generator', 'historyRetentionMs', 'historyMaxAtoms'].some((key) => key in options))
+      fail('INVALID_INPUT', 'Generation and history retention belong to the host application');
     this.options = { ...options, ranking: rankingOptions(options.ranking) };
     if (!options.authority) fail('INVALID_INPUT', 'A trusted authorizer is required');
     this.kernel = new AtomicStore({
@@ -141,7 +121,9 @@ export class Engine {
       embedding: options.embedding,
       tokenizer: options.tokenizer,
     });
-    this.provider = options.candidateProvider ?? new ExactCandidateProvider();
+    this.provider =
+      options.candidateProvider ??
+      (options.embedding ? new HybridCandidateProvider() : new LexicalCandidateProvider());
   }
   get storage() {
     return this.kernel.storage;
@@ -155,16 +137,25 @@ export class Engine {
   get legacyConfig() {
     return digest(
       canonical({
-        provider: this.provider.id,
+        provider: 'local-exact-lexical-vector-v1',
         representationVersion: 2,
         encoder: this.embedding?.id,
         dimensions: this.embedding?.dimensions,
         tokenizer: this.tokenizer.id,
-        generator: this.options.generator?.id,
       }),
     );
   }
   get indexConfig() {
+    return digest(
+      canonical({
+        representationVersion: 3,
+        encoder: this.embedding?.id,
+        dimensions: this.embedding?.dimensions,
+      }),
+    );
+  }
+  /** Published 0.4 used neighbor-expanded text with this index identity. */
+  get previousIndexConfig() {
     return digest(
       canonical({
         representationVersion: 2,
@@ -179,9 +170,8 @@ export class Engine {
         index: this.indexConfig,
         provider: this.provider.id,
         tokenizer: this.tokenizer.id,
-        generator: this.options.generator?.id,
         ranking: this.options.ranking,
-        version: 4,
+        version: 5,
       }),
     );
   }
@@ -216,6 +206,8 @@ export class Engine {
       signal: cancellation(ledger, options.signal),
       charged: new Set(),
       derived: 'unused',
+      stale: new Set(),
+      validated: new Map(),
       trace: {
         id: uid('trace'),
         at: state,
@@ -392,14 +384,26 @@ export class Engine {
   text(r: AtomRevision): string {
     return r.body.kind === 'inline' ? textOf(r.body.value) : '';
   }
-  representation(r: AtomRevision, s: Session): string {
-    return [
-      this.text(r),
-      ...r.slots.map((slot, index) => {
-        const target = this.get(slot.target, s, false, false);
-        return `${index + 1}. ${slot.role}: ${this.text(target)}`;
-      }),
-    ].join('\n');
+  private indexedBody(r: AtomRevision): {
+    text: string;
+    vectors?: readonly (readonly number[])[];
+  } {
+    const text = this.text(r);
+    const index = this.storage.metaGet<{
+      config: string;
+      hash: string;
+      policyId: string;
+      vectors?: readonly (readonly number[])[];
+    }>(`sdk:index:${r.revisionId}`);
+    return {
+      text,
+      ...(index?.config === this.indexConfig &&
+      index.hash === digest(text) &&
+      index.policyId === r.policyId &&
+      index.vectors?.length
+        ? { vectors: index.vectors }
+        : {}),
+    };
   }
 
   trace(s: Session): MemoryReceipt {
@@ -499,7 +503,6 @@ export class Engine {
           })),
       expiresAt: Date.now() + 3600000,
       tokenizerId: this.tokenizer.id,
-      encoderConfigId: this.config,
     };
   }
   bridge(trace: Trace, binding: ClientBinding, historical = false): string {
@@ -527,11 +530,6 @@ export class Engine {
       reads: [...reads.values()],
       current: [...current.values()],
       queries: traces.flatMap((t) => t.queries),
-      plans: [
-        ...new Map(
-          traces.flatMap((t) => t.plans ?? []).map((p) => [canonical(p), clone(p)]),
-        ).values(),
-      ],
       createdAt: Date.now(),
       config: this.config,
       signalDigest: digest(canonical(traces.map((t) => t.signalDigest))),
@@ -713,20 +711,7 @@ export class Engine {
             s,
             true,
           ),
-        representation: (r) => {
-          const text = this.representation(r, s);
-          const index = this.storage.metaGet<{
-            config: string;
-            hash: string;
-            vectors: readonly (readonly number[])[];
-          }>(`sdk:index:${r.revisionId}`);
-          return {
-            text,
-            ...(index?.config === this.indexConfig && index.hash === digest(text)
-              ? { vectors: index.vectors }
-              : {}),
-          };
-        },
+        representation: (r) => this.indexedBody(r),
       },
     });
     this.check(s);
@@ -735,10 +720,7 @@ export class Engine {
       signalDigest: signals.digest,
       pending:
         result.pending ||
-        (!!this.embedding &&
-          result.candidates.some(
-            (c) => !this.storage.metaGet(`sdk:index:${c.revision.revisionId}`),
-          )),
+        (!!this.embedding && result.candidates.some((c) => !this.indexedBody(c.revision).vectors)),
     };
   }
   saveCursor(state: Omit<QueryState, 'id' | 'expires'>): string {
@@ -784,28 +766,6 @@ export class Engine {
       ? this.cursor(options.cursor, binding, 'index', this.config)
       : undefined;
     const s = this.session(binding, options, shared, undefined, saved?.at, this.config);
-    const migration = migrateIndex(this, s, options.limit ?? 64);
-    if (migration.pending)
-      return {
-        indexed: 0,
-        pending: true,
-        cursor: this.saveCursor({
-          kind: 'index',
-          binding: bindingKey(binding.auth),
-          generation: s.principal.generation,
-          at: s.at,
-          signalDigest: this.config,
-          index: this.storage.metaGet<number>('sdk:index-generation') ?? 0,
-          config: this.config,
-          candidates: [],
-          offset: 0,
-          complete: false,
-          scanned: migration.processed,
-          pending: true,
-          approximate: false,
-          trace: s.trace,
-        }),
-      };
     let after = saved?.scanAfter;
     let indexed = 0;
     let processed = 0;
@@ -845,19 +805,6 @@ export class Engine {
           scanAfter: after,
         });
     return { indexed, pending: !complete, ...(cursor ? { cursor } : {}) };
-  }
-  successor(ref: PinnedRef, s: Session): PinnedRef {
-    const seen = new Set<string>();
-    let current = ref;
-    while (true) {
-      if (seen.has(current.atomId)) fail('SUCCESSOR_CYCLE');
-      seen.add(current.atomId);
-      s.ledger.charge({ maxCandidates: 1 });
-      const next = this.storage.metaGet<SuccessorRecord>(`sdk:successor:${current.atomId}`);
-      if (!next || next.sequence > s.at) return current;
-      if (!s.principal.readPolicies.includes(next.policy)) fail('ACCESS_DENIED');
-      current = pinRevision(this.get({ kind: 'logical', atomId: next.to.atomId }, s));
-    }
   }
   diagnostics(scanned = 0, complete = true, pending = false): Diagnostics {
     return {

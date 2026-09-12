@@ -1,43 +1,50 @@
-# 移行
+# v0.5への移行
 
-## v0.3 から v0.4
+0.5はモデル実行と履歴運用をアプリへ分離し、検索表現をAtom自身の本文へ切り替える破壊的変更です。Atomの本文・ID・revision・出典・receipt・linksは保持します。ベクトルは再生成可能なv3索引投影であり、0.4の全ベクトルや進捗をそのまま現行として扱いません。
 
-5操作 (`write`・`search`・`inspect`・`read`・`edit`) と `MemoryHarness` を使うコードは、同じ保存先へ接続して更新できます。AtomのID・不変版・出典をコピーし直す必要はありません。
+## 公開APIの変更
 
-### 検索
+| 0.4まで                                                           | 0.5での扱い                                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `MemoryHarness`、HarnessModel、ModelAction、ModelMutation         | 削除。アプリの既存Agentループから `read` / `search` / `inspect` / `edit` を呼ぶ |
+| `HostOptions.generator`、read時の再取得計画と一時生成cache        | 削除。`stale` を受けたアプリが入力を選び、モデルを呼び、明示的に改訂する        |
+| `Draft.supersede`、`InspectOptions.successor/history/composition` | 削除。通常のリンク・revise・retireとアプリの採用・保持方針で表す                |
+| `SearchOptions.historical` / `ReadOptions.historical`             | 削除。旧版を調べる操作は観測参照の `inspect`                                    |
+| `historyRetentionMs` / `historyMaxAtoms`                          | 削除。保存の保持期間はホストが指定する                                          |
+| `Budget.maxModelOutputTokens` / `maxHops`                         | 削除。生成出力の予算はアプリ、探索深さはranking/readのdepth                     |
+| `Trace` / `AcquisitionPlan` のroot export                         | 削除。入力記録は内部の保存・監査データ                                          |
+| `derived: regenerated`、`read.text` の `temporary`                | 削除。永続化したAtomと原資料を返す                                              |
 
-- `search`・`read`・自動readは[共通の構造ランキング](/ranking)を使います。`search` も関係でつながった情報を返します。旧来の内容だけの探索は `depth: 0` で指定できます。
-- `read` の既定深さは1から2へ変わります。ホストの `ranking.depth` で既定を変更できます。
-- `score` の尺度が変わり、`scoreBreakdown` を追加しました。旧版の数値を閾値として引き継がないでください。
-- 候補取得・関係取得・本文返却で予算を配分します。順位は結果返却前に固定し、cursorはその有限結果を返します。`maxScan` をページごとの全履歴走査に使う処理は、直接 `inspect` やホスト側の入力処理へ移してください。
-- `inspect` は指定した版と関係の直接読取のままです。必須の証拠・条件、削除、権限の規則も検索順位とは別に適用します。
+五つの操作は継続し、戻り値のMemoryPageに `stale: AtomRef[]` を追加しました。独自のMemoryAPI adapterやテスト用実装もこのフィールドを返してください。廃止設定・inspectオプションは無視せず `INVALID_INPUT` で通知します。
 
-### ベクトルと進捗
+## 古い生成物と保存データ
 
-埋め込みの設定識別子を検索順位の設定から分離しました。重みや候補取得方式を変えるだけでは、保存ベクトルを再計算しません。既存の派生物の根拠も、順位設定だけでは失効しません。
+旧receiptは鮮度・認可・削除の監査に引き続き使います。旧取得計画と生成cacheは再実行せず、現在の原資料を確認したWriterが新しい版を確定します。元の生成文は観測参照のinspectで調査できます。
 
-0.3と同じエンコーダーID・次元数・表現形式を使い、旧設定を解決できる場合、`prepareIndex` / `updateIndex` が既存の索引metadataと進捗を有限ページで移します。本文hashと権限を確認できるベクトルは再利用します。migrationの続きも永続化します。旧版の候補provider・tokenizer・generatorを同時に変更すると、旧設定の識別子を復元できず再索引になる場合があります。まず従来の設定で移行を完了し、その後に設定を変更してください。
+古い生成候補は `search` / `read` の `items` と `text` から省き、`stale` に参照だけを返します。古い候補のsourceを現在版へ差し替えて、古いscore・順位・ページ位置を借用することはありません。現在版が結果へ入るには、通常の本文候補取得または構造展開で独立に見つかる必要があります。
 
-独自StorageAdapterが旧ベクトルを移すには、`indexEntries` の有限・スコープ付き列挙を実装します。標準Memory/SQLite adapterは対応済みです。エンコーダーや検索表現が変わった場合は再索引が必要です。新しいAtomや改訂は従来どおり `indexAtoms` / `updateIndex` で反映します。
+旧 `supersede` を使ったアプリでは、更新前に採用状態をアプリの関係へ移し、検索から外したい旧Atomを明示的にretireしてください。0.5は `sdk:successor:*` / `sdk:history:*` を読んで採用・保持を実行しません。旧Atomがactiveなら、新版では通常の検索候補になり得ます。旧版の厳密な構成閲覧が必要なら、そのmanifestやsnapshotをアプリ側で扱う必要があります。Sakanaの既存経路は旧supersedeを使っていません。
 
-移行前にDBをバックアップし、旧プロセスと新プロセスから同時に書き込まないでください。0.3へ戻す場合、索引metadataが新しい設定になっているため旧版側で再索引が必要です。Atomの本文や原資料を作り直す必要はありません。
+旧版と新版のプロセスで同時に書き込まず、移行前に保存データをバックアップしてください。0.4のcursorは設定世代の変更で失効します。旧観測参照・不変版・receiptは継続しますが、旧ベクトルはv3の意味検索準備が完了するまで現行索引の証拠になりません。
 
-### 廃止した公開API
+## Sakana
 
-| 廃止した経路                                 | 移行先                                        |
-| -------------------------------------------- | --------------------------------------------- |
-| `AtomKernel` / `HostOptions.kernel`          | `MemoryHost({ storage, authority, limits? })` |
-| Kernelのselector型read                       | `search` / `inspect` / `read`                 |
-| `AgentHarness` の別名 / `LegacyAgentHarness` | `MemoryHarness`                               |
-| `content()` / `membership()` helper          | `write({ text, links })` / `edit`             |
-| 旧read/index/overlay型                       | [現在の公開型](/contracts)                    |
+Sakanaの `runAgent` を唯一のモデル実行ループとして使い、`stale` から既存のMemory Writerキューへ再処理を要求します。入力の取得、モデルの選択、費用上限、再試行、完了の記録はSakana側です。同じ入力でも再整理要求は新しい仕事として識別し、同じ古いバッチからの要求は重複させません。
 
-旧低水準実装を併用する互換レイヤーはありません。トランザクション・不変版・監査・物理purgeは内部の保存処理として残しています。
+## 0.3以前から
 
-既知の旧 `PinnedRef` は、信頼されたホストで `host.reference(pinnedRef, binding)` を使って新しい `AtomRef` へ解決できます。通常の関係はlogical、特定の根拠版を固定する関係は `{ ref, at: 'observed' }` を指定します。
+0.4で導入した構造ランキングは維持しますが、候補表現は `representationVersion: 3` としてAtom自身の本文だけを使います。`indexConfig` はencoder ID・dimensionsとv3を含み、旧設定の識別子と一致しません。
 
-## 以前の版
+既知のv2設定は、公開された0.3のExact provider固定IDと、別の0.4 IDとして認識します。新しい既定がHybridになっても、これらのlegacy IDは変わりません。一つのrevisionの旧行をv3へ再利用できるのは、(a) 旧設定がその既知ID、(b) encoderとdimensionsが一致、(c) policyが一致、(d) 旧hashが新しいown-body hashと一致、(e) vectorsが存在する場合だけです。リンク先本文を混ぜた旧行は通常hashが一致せず、再埋め込みします。「0.4のベクトルを全部再利用する」「旧行をconfigだけ書き換える」移行はしません。実装の `legacyConfig` getter がこの0.3固定IDを表します。
 
-0.3で導入したバッチWriterと増分索引は[長期Writer](/history)を参照してください。0.2.1の出典共有・構成宣言・再生成計画は現在も必要です。根拠を確認せず古い派生物へ取得計画を後付けせず、新しい版をWriterで確定します。
+v3の `prepareIndex` はcursorでcurrent headをscopeごとに走査します。`updateIndex` だけが変更フィードのsequence 0からscopeごとに進みます。旧checkpointをコピーせず、旧cursorは受け付けません。再起動や `limit: 1` でも同じv3 checkpointから続けます。提供する全policy scopeを `pending: false` までdrainし、各scopeの終端を確認して初めて意味検索の準備完了を宣言します。旧索引メタデータが互換しない候補を調べた場合、その操作は `pending` を報告します。一つの呼出し、channel、候補providerの `complete` は全体readinessやコーパス網羅性を示しません。
 
-v0.1の設計と型は[当時のソース](https://github.com/tako0614/atom-memory/tree/0c5a5aeb29b1a11195cb74d562f00c5dd6edec15/spec)に保存しています。[元の設計文書](/migration-architecture)は歴史資料です。現在のAPIは [API](/api) と [公開型](/contracts)を参照してください。
+`StorageAdapter.indexEntries` や旧 `sdk:index:*` 行を外部adapterの永続契約として新規実装することは、0.5の現行動作では要求しません。旧行や古いvector bucketは、クエリが正確なv3 configを要求する限り互換投影として無視できます。削除に伴う外部adapter型の破壊は、利用者が明示的に移行する境界です。
+
+## 低水準契約の整理
+
+0.5では実装されていない `SearchSignal.inputKind: 'mapped-state'` を受け付けず、検索入力は `text` 系へ限定します。`WriteResult.indexState` は削除しましたが、receipt契約は削除していません。削除したのは未使用だった `ReceiptManifest.encoderConfigId` / `indexWatermark` / `overlayHandle` です。呼出し元は公開 `WriteOutcome.indexing` と `MemoryReceipt` を使います。`MemoryHost.engine` はTypeScript上privateです。索引準備は `host.indexAtoms()` / `host.prepareIndex()` / `host.updateIndex()`、複数操作のreceipt・budget共有は `MemoryClient.forExecution(...)` を使ってください。
+
+`basis: 'historical'` による編集、通常のstorage history、adapterが明示する任意の `retainSnapshot` / `retainedSnapshot` は継続します。これらを削除するには別の公開API・保存データ移行として判断します。
+
+旧Kernelのreadと旧Harnessの互換実装はありません。既知のPinnedRefは、信頼されたホストから `host.reference(pinnedRef, binding)` で解決します。保存契約に残るincludeやvalidTime等の旧フィールドを、新しい公開操作の機能と混同しないでください。過去の設計は[歴史資料](/migration-architecture)、現在の責務は[アーキテクチャ](/specification)を参照してください。

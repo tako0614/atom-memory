@@ -1,7 +1,7 @@
 {
   "name": "atom-memory",
-  "version": "0.4.0",
-  "description": "Contextual Atom memory with automatic recall, content search, observed references and private edits.",
+  "version": "0.5.0",
+  "description": "Atom graph storage, revisioned edits and context-aware structural retrieval for host-owned agents.",
   "type": "module",
   "license": "MIT",
   "author": "tako0614",
@@ -23,10 +23,7 @@
     "src",
     "README.md",
     "LICENSE",
-    "spec",
-    "examples",
-    "docs/*.md",
-    "validation/README.md"
+    "examples"
   ],
   "repository": {
     "type": "git",
@@ -60,9 +57,6 @@
     "format:check": "prettier --check src test examples scripts docs README.md package.json tsconfig.json wrangler.jsonc",
     "docs:examples": "node scripts/check-doc-examples.mjs",
     "example:writer": "npm run build && node examples/writer.mjs",
-    "example:live": "npm run build && node examples/live.mjs",
-    "evaluate": "npm run build && node scripts/evaluate.mjs",
-    "evaluate:live": "npm run build && node scripts/evaluate.mjs --live",
     "example:history": "npm run build && node examples/history-writer.mjs",
     "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs"
   },

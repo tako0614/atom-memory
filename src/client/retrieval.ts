@@ -1,19 +1,9 @@
-import { collectRanking, finishRanking, startRanking } from './ranking.js';
+import type { AtomView, Candidate, SourceCitation } from './types.js';
 import type { AtomRevision, Origin, PinnedRef } from '../contracts.js';
 import type { ReceiptManifest } from '../core/store.js';
 import { sourceCoverage } from '../core/helpers.js';
-import { AtomMemoryError, canonical, clone, digest, fail } from '../core/util.js';
-import type {
-  AcquisitionPlan,
-  AtomView,
-  Candidate,
-  MemoryReceipt,
-  SourceCitation,
-  Trace,
-} from './types.js';
+import { AtomMemoryError, canonical, digest, fail } from '../core/util.js';
 import { Engine, pinRevision, type GraphState, type Session } from './engine.js';
-import { cancellable } from './control.js';
-import { composition, compositionPage } from './composition.js';
 
 /** A schema-independent, resumable traversal. Both outgoing slots and inverse postings participate. */
 export function graphPage(
@@ -95,24 +85,6 @@ export function graphPage(
 export function graph(root: PinnedRef, depth: number): GraphState {
   return { tasks: [{ ref: root, depth: 0, phase: 'emit', slot: 0 }], seen: [], maxDepth: depth };
 }
-export async function expand(
-  engine: Engine,
-  s: Session,
-  seeds: readonly Candidate[],
-  depth: number,
-  limit: number,
-): Promise<{ candidates: Candidate[]; complete: boolean }> {
-  const state = startRanking(seeds, depth, {
-    ...engine.options.ranking,
-    maxNodes: Math.min(10000, limit),
-  });
-  const complete = collectRanking(engine, s, state);
-  return {
-    candidates: complete ? finishRanking(engine, s, state) : [],
-    complete: complete && !state.truncated,
-  };
-}
-
 function compatible(
   engine: Engine,
   r: AtomRevision,
@@ -130,7 +102,6 @@ function compatible(
   if (!m) return false;
   s.ledger.charge({ maxBytes: Buffer.byteLength(canonical(m)) });
   if (m.policies.some((p) => !s.trace.policies.includes(p))) fail('ACCESS_DENIED');
-  const trace = engine.storage.metaGet<Trace>(`sdk:trace:${receiptId}`);
   const frozen = historical || m.historicalInputs;
   // Ranking configuration is not evidence. Validate the actual observed inputs below.
   for (const ref of frozen ? [] : (m.currentReads ?? m.reads)) {
@@ -146,207 +117,35 @@ function compatible(
       return false;
   }
   for (const ref of m.reads)
-    if (ref.revisionId !== r.revisionId && !m.ownedRevisionIds?.includes(ref.revisionId)) {
+    // An edit observes its prior revision for CAS and audit. Requiring that old
+    // interpretation to stay fresh would make an explicit correction impossible.
+    // It remains in the receipt for provenance and transitive purge.
+    if (ref.atomId !== r.atomId && !m.ownedRevisionIds?.includes(ref.revisionId)) {
       const input = engine.get(ref, s);
       if (!compatible(engine, input, s, new Set(visiting), frozen)) return false;
     }
   return true;
 }
-export interface Materialized {
-  revisions: AtomRevision[];
-  temporary?: { text: string; sources: PinnedRef[]; receipt: MemoryReceipt };
-}
-/** Re-evaluate host-recorded conditions at one snapshot. A cursor is never an acquisition plan. */
-async function acquire(engine: Engine, s: Session, plans: readonly AcquisitionPlan[]) {
-  const revisions = new Map<string, AtomRevision>();
-  let complete = true;
-  const max = Math.min(engine.options.maxScan ?? 10000, engine.kernel.limits.maxReadCandidates);
-  for (const plan of plans) {
-    engine.check(s);
-    let page: { revisions: AtomRevision[]; complete: boolean };
-    if (plan.kind === 'search') {
-      const state = clone(plan.state);
-      // Only persisted SDK plans may restore an already host-validated signal.
-      if (state.signal) engine.signals.add(state.signal);
-      const found = await engine.candidates(state, s);
-      const seeds = found.candidates.map((c) => ({
-        ...c,
-        revision: plan.historical
-          ? c.revision
-          : engine.get(engine.successor(pinRevision(c.revision), s), s),
-      }));
-      const expanded = await expand(engine, s, seeds, plan.depth, max + 1);
-      page = {
-        revisions: expanded.candidates.map((c) => c.revision),
-        complete: found.complete && expanded.complete,
-      };
-    } else {
-      const root = engine.get(plan.target, s, plan.target.kind === 'logical');
-      page =
-        root.state === 'retired'
-          ? { revisions: [], complete: true }
-          : plan.kind === 'inspect' && plan.composition
-            ? compositionPage(engine, s, composition(pinRevision(root), plan.composition), max + 1)
-            : graphPage(
-                engine,
-                s,
-                graph(pinRevision(root), plan.kind === 'inspect' ? plan.depth : 0),
-                max + 1,
-              );
-    }
-    for (const r of page.revisions)
-      if (r.state === 'active') {
-        engine.record(r, s, plan.kind === 'search');
-        revisions.set(r.revisionId, r);
-      }
-    complete &&= page.complete;
-    if (revisions.size > max) return { revisions: [], complete: false };
-  }
-  return { revisions: [...revisions.values()], complete };
-}
-function validateGenerationState(engine: Engine, s: Session): void {
-  engine.check(s);
-  const at = engine.storage.watermark();
-  if (at === s.at) return;
-  for (const ref of s.trace.current) {
-    s.ledger.charge({ maxCandidates: 1 });
-    if (
-      engine.storage.get({ kind: 'logical', atomId: ref.atomId }, at)?.revisionId !== ref.revisionId
-    )
-      fail('STATE_INVALIDATED', 'Regeneration inputs changed while the generator was running');
-  }
-  for (const observation of s.trace.queries) {
-    s.ledger.charge({ maxCandidates: observation.query.limit });
-    const rows = engine.storage.scan(observation.query, at);
-    s.ledger.charge({ maxBytes: Buffer.byteLength(canonical(rows)) });
-    if (canonical(rows.map((v) => v.revisionId)) !== canonical(observation.revisions))
-      fail('STATE_INVALIDATED', 'Regeneration selection changed while the generator was running');
-  }
-}
-/** Validate transitive inputs; regenerate only after complete declarative reacquisition. */
-export async function materialize(
-  engine: Engine,
-  r: AtomRevision,
-  s: Session,
-  regenerate = true,
-  visiting = new Set<string>(),
-): Promise<Materialized> {
-  const pending = (revisions: AtomRevision[], reason?: Session['derivedReason']): Materialized => {
-    s.pendingDerived = true;
-    if (reason) s.derivedReason = reason;
-    return { revisions };
-  };
-  if (compatible(engine, r, s)) {
-    if (r.provenance.inputReceiptId && s.derived === 'unused') s.derived = 'ready';
-    return { revisions: [r] };
-  }
+function markStale(engine: Engine, r: AtomRevision, s: Session): void {
   s.derived = 'pending';
-  if (visiting.has(r.revisionId)) {
-    return pending([], 'dependency-stale');
+  s.pendingDerived = true;
+  s.derivedReason = 'dependency-stale';
+  s.stale.add(engine.issue(r, s));
+}
+/** Validate the candidate's evidence without substituting a different Atom.
+ * A host may inspect stale references and explicitly decide how to repair them. */
+export function validateMemory(engine: Engine, r: AtomRevision, s: Session): boolean {
+  engine.check(s);
+  const known = s.validated.get(r.revisionId);
+  if (known !== undefined) return known;
+  const valid = compatible(engine, r, s);
+  s.validated.set(r.revisionId, valid);
+  if (valid) {
+    if (r.provenance.inputReceiptId && s.derived === 'unused') s.derived = 'ready';
+    return true;
   }
-  visiting = new Set(visiting).add(r.revisionId);
-  const old = engine.storage.metaGet<Trace>(`sdk:trace:${r.provenance.inputReceiptId}`);
-  const recorded = old?.plans ?? [];
-  // Explicit citations are audit provenance when a retrieval plan exists, not extra current members.
-  const retrieval = recorded.filter((p) => p.kind !== 'source');
-  const plans = retrieval.length ? retrieval : recorded;
-  const fresh = engine.session(
-    s.binding,
-    { signal: s.signal },
-    s.ledger,
-    s.overlay,
-    s.at,
-    digest(canonical(plans)),
-  );
-  fresh.trace.plans = clone(plans);
-  if (!plans.length) {
-    // Old receipts cannot recover selection intent. Only explicitly cited source material is a fallback.
-    const revisions = r.origins
-      .map((o) => engine.get(o.source, s))
-      .filter((v) => v.provenance.kind === 'source' && v.state === 'active');
-    return pending(revisions, 'missing-plan');
-  }
-  const selected = await acquire(engine, fresh, plans);
-  const originals = new Map<string, AtomRevision>();
-  let complete = selected.complete;
-  let unsupported = false;
-  const nodes = [
-    ...selected.revisions,
-    ...r.slots
-      .filter((slot) => slot.mode === 'include' || slot.required)
-      .map((slot) => engine.get(slot.target, fresh, slot.target.kind === 'logical')),
-  ];
-  for (const node of nodes) {
-    if (node.revisionId === r.revisionId) continue;
-    const unit = bundle(engine, node, fresh);
-    if (!unit) {
-      complete = false;
-      const fallback = await materialize(engine, node, fresh, false, visiting);
-      for (const v of fallback.revisions) originals.set(v.revisionId, v);
-      continue;
-    }
-    for (const value of unit) {
-      if (value.body.kind === 'blob') unsupported = true;
-      originals.set(value.revisionId, value);
-      for (const origin of value.origins) {
-        const source = engine.get(origin.source, fresh);
-        if (source.body.kind === 'blob') unsupported = true;
-        if (source.state === 'active') originals.set(source.revisionId, source);
-      }
-    }
-  }
-  const revisions = [...originals.values()];
-  const atoms = revisions.map((v) => engine.view(v, fresh, false));
-  // Dependency checks and model inputs belong to the caller's audit too, even when no generator runs.
-  s.trace = engine.merge([s.trace, fresh.trace], s.binding, s.at);
-  if (!complete || unsupported) {
-    return pending(
-      revisions,
-      unsupported
-        ? 'unsupported-input'
-        : selected.complete
-          ? 'dependency-stale'
-          : 'acquisition-incomplete',
-    );
-  }
-  const generator = regenerate ? engine.options.generator : undefined;
-  if (!generator) return pending(revisions);
-  const receipt = engine.trace(fresh);
-  const content = {
-    previous: engine.text(r),
-    sources: revisions.map((v) => ({ ref: pinRevision(v), text: engine.text(v) })),
-    atoms,
-  };
-  const input = { ...content, receipt };
-  const key = `sdk:cache:derived:${digest(canonical([s.trace.authBinding, s.principal.generation, s.trace.policies, engine.config, r.revisionId, content]))}`;
-  const cached = engine.storage.metaGet<{ text: string; until: number }>(key);
-  let text: string;
-  if (cached && cached.until > Date.now()) text = cached.text;
-  else {
-    const cost = {
-      maxModelCalls: 1,
-      maxNetworkCalls: generator.networkCallsPerCall,
-      maxModelInputTokens: generator.tokenizer.count(canonical(input)),
-      maxModelOutputTokens: generator.maxOutputTokens,
-    };
-    if (!s.ledger.can(cost)) {
-      return pending(revisions, 'budget');
-    }
-    s.ledger.charge(cost);
-    text = await cancellable((signal) => generator.generate(input, signal), s.signal);
-    engine.check(s);
-    validateGenerationState(engine, fresh);
-    if (typeof text !== 'string' || generator.tokenizer.count(text) > generator.maxOutputTokens)
-      fail('BUDGET_EXHAUSTED');
-    engine.storage.metaSet(key, {
-      text,
-      input: clone(fresh.trace),
-      until: Date.now() + (engine.options.cacheTtlMs ?? 300000),
-    });
-    engine.trimCaches();
-  }
-  s.derived = 'regenerated';
-  return { revisions, temporary: { text, sources: revisions.map(pinRevision), receipt } };
+  markStale(engine, r, s);
+  return false;
 }
 function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] | undefined {
   const output: AtomRevision[] = [];
@@ -358,8 +157,8 @@ function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] 
     seen.add(r.revisionId);
     engine.get(pinRevision(r), s);
     if (r.state === 'retired' || !compatible(engine, r, s)) {
-      s.derived = 'pending';
-      s.pendingDerived = true;
+      markStale(engine, root, s);
+      markStale(engine, r, s);
       return;
     }
     output.push(r);
@@ -413,13 +212,12 @@ export async function pack(
   const selected = new Set<string>();
   const quotes = new Map<AtomView['ref'], Origin>();
   const citations: Origin[] = [];
-  const temporaries: { text: string; sources: SourceCitation[]; origin: 'generated-cache' }[] = [];
   const deferred: Candidate[] = [];
   let text = '';
   let tokenCount = 0;
   let minimumTokens: number | undefined;
   let used = 0;
-  const serialize = (views: AtomView[], spans: typeof quotes, temporary: typeof temporaries) => {
+  const serialize = (views: AtomView[], spans: typeof quotes) => {
     const selected = views.flatMap((v) => (spans.has(v.ref) ? [spans.get(v.ref)!] : []));
     const key = (o: Origin) => canonical(o.source);
     const shared = new Set<string>();
@@ -467,7 +265,6 @@ export async function pack(
           })),
         };
       }),
-      temporary,
     });
   };
   const ranked = [...candidates].sort(
@@ -486,19 +283,10 @@ export async function pack(
         deferred.push(candidate);
         continue;
       }
-      let material: Materialized;
-      material = await materialize(engine, candidate.revision, s);
-      const all = new Map<string, AtomRevision>();
-      let missingCompanion = false;
-      for (const r of material.revisions) {
-        const unit = bundle(engine, r, s);
-        if (!unit) {
-          missingCompanion = true;
-          break;
-        }
-        for (const dep of unit) all.set(dep.revisionId, dep);
-      }
-      if (missingCompanion) continue;
+      if (!validateMemory(engine, candidate.revision, s)) continue;
+      const unit = bundle(engine, candidate.revision, s);
+      if (!unit) continue;
+      const all = new Map(unit.map((r) => [r.revisionId, r]));
       const views: AtomView[] = [];
       const nextQuotes = new Map(quotes);
       const nextCitations = [...citations];
@@ -527,21 +315,8 @@ export async function pack(
           nextCitations.push(...r.origins);
         }
       }
-      const temporary = material.temporary
-        ? {
-            text: material.temporary.text,
-            receipt: material.temporary.receipt,
-            sources: material.temporary.sources.map((ref) => ({
-              ref: engine.issue(engine.get(ref, s), s),
-            })),
-            origin: 'generated-cache' as const,
-          }
-        : undefined;
-      if (!views.length && !temporary) continue;
-      const nextText = serialize([...items, ...views], nextQuotes, [
-        ...temporaries,
-        ...(temporary ? [temporary] : []),
-      ]);
+      if (!views.length) continue;
+      const nextText = serialize([...items, ...views], nextQuotes);
       const count = engine.tokenizer.count(nextText);
       if (!Number.isSafeInteger(count) || count < 0)
         fail('INVALID_INPUT', 'Tokenizer returned an invalid count');
@@ -552,7 +327,7 @@ export async function pack(
       ) {
         minimumTokens = Math.min(
           minimumTokens ?? Infinity,
-          engine.tokenizer.count(serialize(views, nextQuotes, temporary ? [temporary] : [])),
+          engine.tokenizer.count(serialize(views, nextQuotes)),
         );
         deferred.push(candidate);
         continue;
@@ -562,7 +337,6 @@ export async function pack(
       all.forEach((r) => selected.add(r.revisionId));
       for (const [ref, span] of nextQuotes) quotes.set(ref, span);
       citations.splice(0, citations.length, ...nextCitations);
-      if (temporary) temporaries.push(temporary);
       text = nextText;
       tokenCount = count;
       used++;

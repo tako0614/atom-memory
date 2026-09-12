@@ -12,7 +12,20 @@ import {
 } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
 import { propagate, seedScore, rankingOptions } from '../dist/core/ranking.js';
+import { collectRanking, startRanking } from '../dist/client/ranking.js';
 const budget = { maxCandidates: 4000, maxBytes: 4000000, maxAtoms: 100, maxContextTokens: 40000 };
+
+function collectFrom(f, ref, options = {}, operationBudget = budget) {
+  const session = f.host.engine.session(f.binding, { budget: operationBudget });
+  const root = f.host.engine.get(f.host.engine.resolve(ref, session).target, session);
+  const state = startRanking(
+    [{ revision: root, score: 1 }],
+    options.depth ?? 2,
+    f.host.engine.options.ranking,
+  );
+  const complete = collectRanking(f.host.engine, session, state);
+  return { complete, session, state };
+}
 
 test('signal kinds keep their weights; repeated observations cannot drown out context', () => {
   const signals = [
@@ -64,6 +77,85 @@ for (const adapter of ['memory', 'sqlite']) {
     });
     return fixture({ storage, ...options });
   };
+  test(`${adapter}: an exact node cap still collects every edge among admitted nodes`, async (t) => {
+    const f = setup(t, { ranking: { maxNodes: 3, maxSeeds: 1 } });
+    const c = await f.memory.write('C');
+    const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
+    const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+    const { complete, state } = collectFrom(f, a.ref);
+    assert.equal(complete, true);
+    assert.equal(state.nodes.length, 3);
+    assert.equal(state.edges.length, 3);
+    assert.equal(state.truncated, false);
+  });
+  test(`${adapter}: rejected nodes do not stop edges between already admitted nodes`, async (t) => {
+    const f = setup(t, { ranking: { maxNodes: 2, maxSeeds: 1 } });
+    const a = await f.memory.write('A');
+    const c = await f.memory.write('C');
+    const b = await f.memory.write({
+      text: 'B',
+      links: { first: a.ref, reject: c.ref, second: a.ref },
+    });
+    const { complete, state } = collectFrom(f, b.ref);
+    assert.equal(complete, true);
+    assert.equal(state.nodes.length, 2);
+    assert.equal(state.edges.length, 2);
+    assert.equal(state.truncated, true);
+    const cAtomId = f.storage.metaGet(`sdk:ref:${c.ref}`).target.atomId;
+    assert.equal(
+      state.nodes.some((node) => node.revision.atomId === cAtomId),
+      false,
+    );
+    assert.deepEqual(state.edges.map((edge) => edge.role).sort(), ['first', 'second']);
+  });
+  test(`${adapter}: a stale seed cannot lend rank to its current neighbor`, async (t) => {
+    const f = setup(t);
+    const evidence = await f.memory.write('old evidence');
+    const neighbor = await f.memory.write('unrelated current neighbor');
+    const stale = await f.writer.write(
+      { text: 'stale seed trigger', links: { related: neighbor.ref } },
+      { sources: [{ ref: evidence.ref }] },
+    );
+    await f.memory.edit((draft) => draft.revise(evidence.ref, 'new evidence'));
+    const page = await f.memory.search('stale seed trigger', { depth: 2, budget });
+    assert.equal(
+      page.items.some((item) => item.ref === stale.ref),
+      false,
+    );
+    assert.equal(
+      page.items.some((item) => item.ref === neighbor.ref),
+      false,
+    );
+    assert.ok(page.stale.includes(stale.ref));
+  });
+  test(`${adapter}: traversal stops at a stale bridge and reports it`, async (t) => {
+    const f = setup(t);
+    const evidence = await f.memory.write('bridge old evidence');
+    const neighbor = await f.memory.write('bridge current neighbor');
+    const bridge = await f.writer.write(
+      { text: 'stale bridge', links: { related: neighbor.ref } },
+      { sources: [{ ref: evidence.ref }] },
+    );
+    const root = await f.memory.write({
+      text: 'valid root trigger',
+      links: { related: bridge.ref },
+    });
+    await f.memory.edit((draft) => draft.revise(evidence.ref, 'bridge new evidence'));
+    const result = await f.memory.read(
+      { query: 'valid root trigger' },
+      { depth: 2, tokens: 20000, budget },
+    );
+    assert.ok(result.items.some((item) => item.ref === root.ref));
+    assert.equal(
+      result.items.some((item) => item.ref === bridge.ref),
+      false,
+    );
+    assert.equal(
+      result.items.some((item) => item.ref === neighbor.ref),
+      false,
+    );
+    assert.ok(result.stale.includes(bridge.ref));
+  });
   test(`${adapter}: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks`, async (t) => {
     const f = setup(t, { ranking: { relations: { condition: { forward: 2, reverse: 0 } } } });
     const condition = await f.memory.write('Only after an administrator signs.');
@@ -178,6 +270,48 @@ for (const adapter of ['memory', 'sqlite']) {
     );
   });
 }
+
+test('edge budget bounds graph collection after the node cap is reached', async (t) => {
+  const f = fixture({ ranking: { maxNodes: 3, maxSeeds: 1, maxEdges: 2 } });
+  t.after(() => f.storage.close());
+  const c = await f.memory.write('C');
+  const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
+  const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+  const { complete, state } = collectFrom(f, a.ref);
+  assert.equal(complete, true);
+  assert.equal(state.nodes.length, 3);
+  assert.equal(state.edges.length, 2);
+  assert.equal(state.truncated, true);
+});
+
+test('candidate budget exhaustion leaves ranking tasks resumable', async (t) => {
+  const f = fixture({ ranking: { maxNodes: 3, maxSeeds: 1 } });
+  t.after(() => f.storage.close());
+  const c = await f.memory.write('C');
+  const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
+  const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+  const first = collectFrom(
+    f,
+    a.ref,
+    {},
+    {
+      maxCandidates: 2,
+      maxBytes: 4000000,
+      maxAtoms: 100,
+      maxContextTokens: 40000,
+    },
+  );
+  assert.equal(first.complete, false);
+  assert.ok(first.state.tasks.length > 0);
+  const resumed = collectRanking(
+    f.host.engine,
+    f.host.engine.session(f.binding, { budget }),
+    first.state,
+  );
+  assert.equal(resumed, true);
+  assert.equal(first.state.nodes.length, 3);
+  assert.equal(first.state.edges.length, 3);
+});
 
 test('automatic recall returns useful memory from a large corpus within the default budget', async () => {
   const f = fixture();

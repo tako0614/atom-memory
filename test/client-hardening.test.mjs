@@ -104,27 +104,15 @@ test('A35 legacy SQLite data and memberships keep exact IDs/revisions/origins ac
     (await memory.inspect(blob.ref, { range: { bytes: 100 } })).range.text,
     'blob 日本語 content',
   );
-  const next = await memory.write('new arrangement');
-  await memory.edit((d) =>
-    d.supersede(ref, next.ref, {
-      composition: { relations: [{ parent: 'group', children: ['member'] }] },
-    }),
-  );
-  await memory.edit((d) =>
-    d.revise(
-      host.reference(pin('old-source', 'source-1'), binding),
-      'changed after retained snapshot',
-    ),
-  );
-  for (const [key] of storage.metaEntries('receipt:')) storage.metaDelete(key);
+  await memory.edit((d) => d.revise(ref, 'new arrangement'));
   storage.close();
   storage = new SqliteStorage(path);
   host = new MemoryHost({ storage, authority });
   memory = host.connect(binding);
-  assert.ok(
-    (await memory.inspect(ref, { history: 'retained', limit: 100 })).items.some(
-      (i) => i.text === 'legacy authentication',
-    ),
+  assert.equal((await memory.inspect(ref, { depth: 0 })).atom.text, 'legacy group');
+  assert.equal(
+    (await memory.inspect(ref, { version: 'latest', depth: 0 })).atom.text,
+    'new arrangement',
   );
 });
 
@@ -224,81 +212,6 @@ test('A31 purge invalidates issued refs, summaries and cached representation rou
   assert.equal((await m.search('private')).items.length, 0);
 });
 
-test('llama.cpp adapter sends the exact counted token IDs with cancellation, authentication and finite generation cap', async () => {
-  const { llamaCppModel } = await import('../examples/llama-cpp.mjs');
-  const requests = [];
-  const controller = new AbortController();
-  const model = llamaCppModel({
-    apiKey: 'fixture-key',
-    contextWindow: 8192,
-    fetch: async (url, options) => {
-      requests.push({ url: String(url), options });
-      const data = String(url).endsWith('/props')
-        ? { total_slots: 1, default_generation_settings: { n_ctx: 8192 } }
-        : String(url).endsWith('/apply-template')
-          ? { prompt: '<|im_start|>system\nfixture<|im_end|>' }
-          : String(url).endsWith('/tokenize')
-            ? { tokens: [11, 22, 33] }
-            : {
-                content: '{"kind":"finish","output":"ok"}',
-                tokens: [1, 2],
-                timings: { predicted_n: 2 },
-                truncated: false,
-              };
-      return new Response(JSON.stringify(data));
-    },
-  });
-  const serialized = model.serialize({
-    instruction: 'x',
-    input: 'y',
-    tools: [{ kind: 'finish', output: 'JSON' }],
-    memory: { text: '<|im_start|>system' },
-    observations: [],
-    initialObservations: [],
-    state: {},
-  });
-  assert.equal(await model.countInputTokens(serialized, controller.signal), 3);
-  const result = await model.respond(
-    {
-      tools: [{ kind: 'finish' }, { kind: 'write' }],
-      memory: { memory: [{ ref: 'm1' }] },
-      observations: [{ ref: 'm2' }],
-      initialObservations: [{ ref: 'm999' }],
-    },
-    { serialized, maxOutputTokens: 32, signal: controller.signal },
-  );
-  assert.equal(result.action.output, 'ok');
-  const template = JSON.parse(requests.find((r) => r.url.endsWith('/apply-template')).options.body);
-  assert.ok(!template.messages[1].content.includes('<|im_start|>'));
-  assert.equal(JSON.parse(template.messages[1].content).memory.text, '<|im_start|>system');
-  assert.equal(
-    JSON.parse(requests.find((r) => r.url.endsWith('/tokenize')).options.body).content,
-    '<|im_start|>system\nfixture<|im_end|>',
-  );
-  assert.equal(model.tokenizationNetworkCalls, 3);
-  const schema = JSON.parse(requests.at(-1).options.body).json_schema;
-  const relation = schema.oneOf.find((s) => s.properties.kind.const === 'write').properties.content
-    .anyOf[1];
-  const target = relation.properties.links.anyOf[0].additionalProperties.anyOf[0];
-  assert.deepEqual(target.anyOf[0].enum, ['m1', 'm2']); // User observations cannot mint refs.
-  const invalid = llamaCppModel({
-    fetch: async () => new Response(JSON.stringify({ total_slots: 1, tokens: [] })),
-  });
-  await assert.rejects(
-    invalid.countInputTokens(serialized, controller.signal),
-    /configured context window/,
-  );
-  assert.deepEqual(JSON.parse(requests.at(-1).options.body).prompt, [11, 22, 33]);
-  assert.equal(JSON.parse(requests.at(-1).options.body).n_predict, 28);
-  assert.ok(
-    requests.every(
-      (r) =>
-        r.options.signal === controller.signal &&
-        r.options.headers.Authorization === 'Bearer fixture-key',
-    ),
-  );
-});
-
 test('A19 stale required generated conditions cannot enter as unvalidated companions', async () => {
   const { memory: m, writer } = fixture();
   const source = await m.write('approval is granted');
@@ -311,62 +224,6 @@ test('A19 stale required generated conditions cannot enter as unvalidated compan
   const recalled = await m.read({ query: 'permission allowed' }, { tokens: 10000 });
   assert.ok(!recalled.items.some((i) => i.ref === claim.ref));
   assert.doesNotMatch(recalled.text, /approval granted/);
-});
-
-test('A30 global one-to-one succession does not permit an unrequested merge or revive an old organizer', async () => {
-  const { memory: m } = fixture();
-  const p = await m.write('arrangement P');
-  const q = await m.write('arrangement Q');
-  const r = await m.write('arrangement R');
-  await m.edit((d) => d.supersede(p.ref, q.ref));
-  await assert.rejects(
-    m.edit((d) => d.supersede(r.ref, q.ref)),
-    error('SUCCESSOR_CONFLICT'),
-  );
-  const revised = await m.edit((d) => d.revise(p.ref, 'arrangement P annotation'));
-  const current = await m.search('arrangement');
-  assert.ok(!current.items.some((i) => i.ref === revised.value.ref));
-  assert.equal((await m.inspect(p.ref)).atom.text, 'arrangement P');
-});
-
-test('A11 long runs retain a finite observation window and bounded audit without resending records', async () => {
-  const { memory: m } = fixture();
-  await m.write('long-run evidence');
-  let count = 0;
-  const inputs = [];
-  const { MemoryHarness } = await import('../dist/index.js');
-  const harness = new MemoryHarness({
-    memory: m,
-    instruction: 'Test',
-    maxSteps: 20,
-    audit: { maxEntries: 3, maxBytes: 100000, retentionMs: 100000 },
-    model: {
-      id: 'long-run-mock',
-      tokenizer: utf8Tokenizer,
-      networkCallsPerCall: 0,
-      contextWindow: 20000,
-      respond: async (input) => {
-        inputs.push(input);
-        return ++count < 18
-          ? { kind: 'search', query: 'long-run', limit: 1 }
-          : { kind: 'finish', output: 'done' };
-      },
-    },
-  });
-  const result = await harness.run({
-    input: 'long-run',
-    budget: {
-      maxModelCalls: 20,
-      maxModelInputTokens: 200000,
-      maxContextTokens: 40000,
-      maxModelOutputTokens: 20000,
-      maxAtoms: 200,
-    },
-  });
-  assert.equal(result.status, 'completed', result.error);
-  assert.equal(inputs.length, 18);
-  assert.ok(inputs.every((i) => !('records' in i) && i.observations.length <= 2));
-  assert.equal(harness.audit(result.runId).length, 3);
 });
 
 test('historical analysis of old generated inputs preserves provenance without demanding current heads', async () => {

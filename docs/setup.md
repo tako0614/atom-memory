@@ -26,7 +26,9 @@ await memory.write('招待リンクの有効期限は24時間です。');
 
 ファイルに残すなら [SQLite](/adapters#sqlite-に保存する)を設定します。入力アダプターから投入する資料は `actor: { type: 'input-adapter' }`、モデルが作る説明は `actor: { type: 'agent', generatedOrigin: 'organization' }` を使います。
 
-同じホストから複数のクライアントを発行できるので、入力アダプターと Writer は同じ記憶を扱えます。[Writer の例](/runtime#writer-に整理を任せる)を参照してください。
+同じホストから複数のクライアントを発行できるので、入力アダプターと Writer は同じ記憶を扱えます。[Writer の例](/runtime#writerに整理を任せる)を参照してください。
+
+embeddingを指定しないhostの候補providerは `LexicalCandidateProvider`、指定したhostは `HybridCandidateProvider` です。`ExactCandidateProvider` は小規模な有限走査の基準として必要な箇所で明示します。providerの候補取得は本文だけを入口にし、リンクは構造ランキングで扱います。
 
 ## アプリの認証につなぐ
 
@@ -37,3 +39,5 @@ await memory.write('招待リンクの有効期限は24時間です。');
 ## 検索順位と保存上限
 
 `MemoryHost` の `ranking` で入力・関係・方向の重みを設定します。[構造ランキング](/ranking)を参照してください。保存処理の上限は `limits` で指定します。低水準Kernelを注入する設定はありません。
+
+embeddingを使う本番hostは、`prepareIndex` / `updateIndex` を提供する全policy scopeでdrainし、各scopeのcheckpointを確認してから意味検索をreadyと扱います。一つのchannelや一回の呼出しの `pending: false` は全体の準備完了ではありません。

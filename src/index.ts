@@ -33,16 +33,6 @@ export type {
   ChangePosition,
   VectorQuery,
 } from './adapters/storage.js';
-export {
-  MemoryHarness,
-  type HarnessModel,
-  type ModelAction,
-  type ModelMutation,
-  type ModelInput,
-  type HarnessResult,
-  type HarnessOptions,
-} from './runtime/harness.js';
-
 export { MemoryHost, MemoryClient, createMemory } from './client/memory.js';
 export type * from './client/types.js';
 export {

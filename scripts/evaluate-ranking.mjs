@@ -79,7 +79,7 @@ const record = {
 };
 if (process.argv.includes('--record'))
   writeFileSync(
-    new URL('../validation/ranking-v0.4.0.json', import.meta.url),
+    new URL('../validation/ranking-v0.5.0.json', import.meta.url),
     JSON.stringify(record, null, 2) + '\n',
   );
 console.log(JSON.stringify(record, null, 2));

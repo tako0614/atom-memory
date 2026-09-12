@@ -53,8 +53,8 @@ export class ExactCandidateProvider implements CandidateProvider {
 /** Body-text candidate ingress, followed by the same finite ranking and graph
  * expansion. Storage performs matching in the authorized snapshot before the
  * JS scan budget; unrelated early IDs cannot crowd every later match out.
- * This is a lexical approximation: link-only/embedding-only matches may differ
- * from the exhaustive reference provider, so it never certifies full coverage.
+ * Embedding-only matches require the hybrid provider. Candidate limits and
+ * later graph bounds mean this provider never certifies full coverage.
  */
 export class LexicalCandidateProvider implements CandidateProvider {
   readonly id = 'local-body-lexical-v1';

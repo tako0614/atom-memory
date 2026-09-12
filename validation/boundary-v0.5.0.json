@@ -1,0 +1,58 @@
+{
+  "version": "0.5.0",
+  "status": "working-tree implementation; not published or deployed",
+  "sourceBase": "ee5b8754f2d971e295df6c458a36847b0a5490b4",
+  "sourceSha256": "c4564d56abe6240b3d708683c4e334d801721b131f4aff3a0e9aa45dd76d678c",
+  "sourceLines": 4888,
+  "checks": {
+    "libraryCheck": "passed: tests, structural comparison, documentation examples and build",
+    "tests": {
+      "cases": 77,
+      "failed": 0,
+      "node": [
+        "22.23.2",
+        "24.18.0",
+        "26.1.0"
+      ]
+    },
+    "documentation": {
+      "examples": 15,
+      "verifiedOutputs": 7,
+      "build": "passed"
+    },
+    "sakanaCheck": "passed, including refresh queue and shared agent runtime",
+    "refresh": [
+      "stale exclusion",
+      "atomic queue and deduplication",
+      "failed queue retry",
+      "one request per stale batch",
+      "unchanged-source reorganization",
+      "guild isolation",
+      "in-flight invalidation",
+      "per-step context and thought"
+    ],
+    "publishedV04Storage": {
+      "from": "published 0.4.0",
+      "to": "working tree 0.5.0",
+      "unchangedRevisions": 2,
+      "extraDocumentCallsAtReopen": 0,
+      "observedRefsRetained": true,
+      "oldReceiptStaleness": true,
+      "explicitWriterCorrection": true,
+      "node": "v26.1.0"
+    },
+    "packageConsumer": "passed: ESM, SQLite, stale memory, strict TypeScript, removed exports, tarball integrity",
+    "formatAndDiff": "passed"
+  },
+  "package": {
+    "filename": "atom-memory-0.5.0.tgz",
+    "size": 132555,
+    "unpackedSize": 616138,
+    "integrity": "sha512-hPCpSYVcqPjEs2L0pSTn1OQ8lftl7/VU5qq0xCcLAxUDKrX40bUEVzVkBXxa/qw99bVvxGg2VzXnvmrsfrfCSQ=="
+  },
+  "limits": [
+    "No live paid model request in this validation",
+    "No npm publication, site deployment or production bot cutover",
+    "Conservative transitive purge and shared input dependencies remain"
+  ]
+}

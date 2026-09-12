@@ -10,7 +10,6 @@ export const clientBudget: Budget = {
   maxContextTokens: 4096,
   maxModelInputTokens: 32768,
   maxModelCalls: 16,
-  maxModelOutputTokens: 4096,
 };
 export function operationBudget(
   defaults: Partial<Budget>,

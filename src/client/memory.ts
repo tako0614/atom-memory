@@ -1,18 +1,17 @@
+import type { Trace } from './internal.js';
 import { collectRanking, finishRanking, startRanking } from './ranking.js';
 import { updateIndex, indexRevision } from './indexing.js';
 import type {
   AtomContent,
   AtomRevision,
-  Budget,
   Origin,
   PinnedRef,
   ProposedRevision,
   Slot,
-  WriteRequest,
 } from '../contracts.js';
 import { BudgetLedger } from '../core/budget.js';
 import { canonical, clone, digest, fail, uid, AtomMemoryError } from '../core/util.js';
-import { validateContent, validateOrigin } from '../core/validation.js';
+import { validateContent } from '../core/validation.js';
 import type {
   AtomRef,
   AtomView,
@@ -34,9 +33,6 @@ import type {
   RecallResult,
   SearchOptions,
   SearchSignal,
-  SourceCitation,
-  SupersedeOptions,
-  Trace,
   WriteOptions,
   WriteOutcome,
   Candidate,
@@ -45,14 +41,11 @@ import {
   Engine,
   bindingKey,
   pinRevision,
-  type HistoryManifest,
   type OverlayState,
   type QueryState,
   type Session,
-  type SuccessorRecord,
 } from './engine.js';
-import { expand, graph, graphPage, materialize, pack } from './retrieval.js';
-import { composition, compositionPage, validateComposition } from './composition.js';
+import { graph, graphPage, validateMemory, pack } from './retrieval.js';
 import { positive, cancellable } from './control.js';
 interface Retrieval {
   s: Session;
@@ -60,20 +53,10 @@ interface Retrieval {
 }
 export interface ExecutionScope {
   ledger: BudgetLedger;
-  traces: Trace[];
+  traces?: Trace[];
 }
-interface Succession {
-  old: PinnedRef;
-  next: PinnedRef;
-  manifest: HistoryManifest;
-  revisions: PinnedRef[];
-  relation: ProposedRevision;
-  trace: Trace;
-  retainSnapshot: boolean;
-}
-export const draftClients = new WeakMap<Draft, MemoryClient>();
 export class MemoryHost {
-  readonly engine: Engine;
+  private readonly engine: Engine;
   constructor(options: HostOptions) {
     this.engine = new Engine(options);
   }
@@ -106,10 +89,7 @@ export class MemoryHost {
       signal.inputKind !== 'text' ||
       signal.transformId !== 'identity'
     )
-      fail(
-        'MODEL_SPACE_MISMATCH',
-        'Only this encoder or a host-validated mapping output is accepted',
-      );
+      fail('MODEL_SPACE_MISMATCH', 'Signal must use this text encoder and the identity transform');
     this.engine.signals.add(signal);
     return Object.freeze(signal);
   }
@@ -161,7 +141,7 @@ export class MemoryClient implements MemoryAPI {
     private readonly execution?: ExecutionScope,
     private readonly overlay?: OverlayState,
   ) {}
-  /** Host-only run binding; model tools receive the five methods through a validated dispatcher. */
+  /** Share a host-owned memory budget and observed inputs across operations. No model loop runs here. */
   forExecution(scope: ExecutionScope): MemoryClient {
     return new MemoryClient(this.engine, this.binding, scope, this.overlay);
   }
@@ -175,7 +155,7 @@ export class MemoryClient implements MemoryAPI {
   }
   private finish(s: Session): MemoryReceipt {
     const receipt = this.engine.trace(s);
-    if (this.execution) this.execution.traces.push(clone(s.trace));
+    this.execution?.traces?.push(clone(s.trace));
     return receipt;
   }
   private key(kind: string, value: unknown, options: Record<string, unknown> = {}): string {
@@ -187,6 +167,8 @@ export class MemoryClient implements MemoryAPI {
     options: SearchOptions,
     key: string,
   ): Promise<Retrieval> {
+    if ('historical' in options)
+      fail('INVALID_INPUT', 'Inspect an observed revision for historical content');
     let saved: QueryState | undefined;
     if (options.cursor)
       saved = this.engine.cursor(options.cursor, this.binding, kind, key, this.overlay);
@@ -241,10 +223,6 @@ export class MemoryClient implements MemoryAPI {
     const seen = new Map<string, Candidate>();
     for (const candidate of found.candidates) {
       let r = candidate.revision;
-      if (!options.historical) {
-        const successor = this.engine.successor(pinRevision(r), s);
-        if (successor.revisionId !== r.revisionId) r = this.engine.get(successor, s);
-      }
       const prior = seen.get(r.revisionId);
       if (!prior || prior.score < candidate.score)
         seen.set(r.revisionId, { ...candidate, revision: r });
@@ -257,27 +235,39 @@ export class MemoryClient implements MemoryAPI {
     q.scanned = found.scanned;
     q.pending ||= found.pending;
     q.approximate ||= !found.complete;
-    const ranking = startRanking(
-      seeds.slice(0, maxSeeds),
-      options.depth ?? this.engine.options.ranking!.depth!,
-      this.engine.options.ranking,
-    );
+    let ranking: ReturnType<typeof startRanking>;
     s.ledger = ledger.window({
       maxCandidates: Math.floor(ledger.remaining('maxCandidates') / 2),
       maxBytes: Math.floor(ledger.remaining('maxBytes') / 2),
     });
     try {
+      const eligible: Candidate[] = [];
+      let exhausted = false;
+      // Invalid memories cannot lend relevance to otherwise current neighbors.
+      // Rejected candidates do not consume seed slots. Evidence checks remain
+      // bounded by the finite candidate pool and graph acquisition budget.
+      for (const candidate of seeds) {
+        if (eligible.length >= maxSeeds) break;
+        try {
+          if (validateMemory(this.engine, candidate.revision, s)) eligible.push(candidate);
+        } catch (error) {
+          if (!(error instanceof AtomMemoryError && error.code === 'BUDGET_EXHAUSTED')) throw error;
+          if (!eligible.length) throw error;
+          exhausted = true;
+          break;
+        }
+      }
+      ranking = startRanking(
+        eligible,
+        options.depth ?? this.engine.options.ranking!.depth!,
+        this.engine.options.ranking,
+      );
+      ranking.truncated ||= exhausted;
       if (!collectRanking(this.engine, s, ranking)) ranking.truncated = true;
     } finally {
       s.ledger = ledger;
     }
-    q.candidates = finishRanking(this.engine, s, ranking).filter((candidate) => {
-      if (options.historical) return true;
-      const successor = this.engine.storage.metaGet<SuccessorRecord>(
-        `sdk:successor:${candidate.revision.atomId}`,
-      );
-      return !successor || successor.sequence > s.at;
-    });
+    q.candidates = finishRanking(this.engine, s, ranking);
     q.approximate ||= ranking.truncated || ranking.depth > 0;
     q.complete = true;
     return { s, state: q };
@@ -288,31 +278,15 @@ export class MemoryClient implements MemoryAPI {
     const limit = positive(options.limit, 10);
     const depth = options.depth ?? this.engine.options.ranking!.depth!;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
-    const key = this.key('search', query, { historical: options.historical ?? false, depth });
+    const key = this.key('search', query, { depth });
     const { s, state } = await this.retrieve('search', { query }, options, key);
-    s.trace.plans ??= [];
-    if (!options.cursor)
-      s.trace.plans.push({
-        kind: 'search',
-        state: { query },
-        depth,
-        historical: options.historical ?? false,
-      });
     const initialOffset = state.offset;
     const items: MemoryPage['items'][number][] = [];
     while (state.offset < state.candidates.length && items.length < limit) {
       const candidate = state.candidates[state.offset]!;
       try {
-        const material = await materialize(this.engine, candidate.revision, s, false);
-        if (
-          material.revisions.length !== 1 ||
-          material.revisions[0]!.revisionId !== candidate.revision.revisionId
-        ) {
-          state.candidates.splice(
-            state.offset,
-            1,
-            ...material.revisions.map((revision) => ({ ...candidate, revision })),
-          );
+        if (!validateMemory(this.engine, candidate.revision, s)) {
+          state.offset++;
           continue;
         }
         if (!s.ledger.can({ maxAtoms: 1 })) break;
@@ -332,6 +306,7 @@ export class MemoryClient implements MemoryAPI {
     const cursor = more ? this.engine.saveCursor({ ...state, trace: s.trace }) : undefined;
     return {
       items,
+      stale: [...s.stale],
       receipt,
       ...(cursor ? { cursor } : {}),
       diagnostics: {
@@ -350,7 +325,7 @@ export class MemoryClient implements MemoryAPI {
     const tokens = positive(options.tokens, 4096, 1000000);
     const depth = options.depth ?? this.engine.options.ranking!.depth!;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
-    const key = this.key('read', input, { historical: options.historical ?? false, depth });
+    const key = this.key('read', input, { depth });
     const { s, state } = await this.retrieve(
       'read',
       input,
@@ -358,14 +333,6 @@ export class MemoryClient implements MemoryAPI {
       key,
     );
     const seeds = state.candidates.slice(state.offset);
-    s.trace.plans ??= [];
-    if (!options.cursor)
-      s.trace.plans.push({
-        kind: 'search',
-        state: clone(input),
-        depth,
-        historical: options.historical ?? false,
-      });
     const packed = await pack(
       this.engine,
       s,
@@ -385,6 +352,7 @@ export class MemoryClient implements MemoryAPI {
       : undefined;
     return {
       items: packed.items,
+      stale: [...s.stale],
       text: packed.text,
       refs: packed.items.map((i) => i.ref),
       sources: packed.sources,
@@ -403,16 +371,15 @@ export class MemoryClient implements MemoryAPI {
     };
   }
   async inspect(ref: AtomRef, options: InspectOptions = {}): Promise<Inspection> {
+    if (['history', 'successor', 'composition'].some((key) => key in options))
+      fail('INVALID_INPUT', 'Use revisions and ordinary links; history policy belongs to the host');
     const limit = positive(options.limit, 20);
     const depth = options.depth ?? 1;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
     const key = this.key('inspect', ref, {
       depth,
       version: options.version ?? 'observed',
-      successor: options.successor ?? false,
-      history: options.history,
       rangeStart: options.range?.start,
-      composition: options.composition,
     });
     const saved = options.cursor
       ? this.engine.cursor(options.cursor, this.binding, 'inspect', key, this.overlay)
@@ -429,80 +396,13 @@ export class MemoryClient implements MemoryAPI {
     let root = entry.target;
     if (options.version === 'latest')
       root = pinRevision(this.engine.get({ kind: 'logical', atomId: root.atomId }, s, true));
-    if (options.successor) root = this.engine.successor(root, s);
-    const historyId =
-      saved?.historyId ??
-      this.engine.storage.metaGet<string>(`sdk:history-root:${root.atomId}:${root.revisionId}`);
-    const history = historyId
-      ? this.engine.storage.metaGet<HistoryManifest>(`sdk:history:${historyId}`)
-      : undefined;
-    if (
-      (options.history === 'retained' || history) &&
-      !options.successor &&
-      options.version !== 'latest'
-    ) {
-      if (!history || history.until < Date.now()) fail('HISTORY_EXPIRED');
-      if (!s.principal.readPolicies.includes(history.policy)) fail('ACCESS_DENIED');
-      if (history.snapshot) {
-        const retained = this.engine.storage.retainedSnapshot?.(history.snapshot);
-        if (!retained || retained.at !== history.at || retained.until < history.until)
-          fail('HISTORY_EXPIRED');
-      }
-      s = this.engine.session(
-        this.binding,
-        options,
-        this.execution?.ledger,
-        this.overlay,
-        history.at,
-        key,
-      );
-    }
     if (saved) s.trace = { ...clone(saved.trace), id: uid('trace') };
-    if (!history && !saved) {
-      (s.trace.plans ??= []).push({
-        kind: 'inspect',
-        target: options.version === 'latest' ? { kind: 'logical', atomId: root.atomId } : root,
-        depth,
-        ...(options.composition ? { composition: validateComposition(options.composition) } : {}),
-      });
-    }
     const r = this.engine.get(root, s, options.version === 'latest');
     const atom = this.engine.view(r, s, options.version === 'latest');
     if (r.body.kind === 'blob' || options.range)
       return this.blobInspection(r, atom, s, options, key, saved);
-    let revisions: AtomRevision[];
-    let complete: boolean;
-    let graphState = saved?.graph;
-    let compositionState = saved?.composition;
-    let offset = saved?.offset ?? 0;
-    let candidates = saved?.candidates ?? [];
-    if (history?.snapshot && options.version !== 'latest' && !options.successor) {
-      compositionState ??= composition(root, history.composition ?? fail('HISTORY_EXPIRED'));
-      const page = compositionPage(this.engine, s, compositionState, limit);
-      revisions = page.revisions;
-      complete = page.complete;
-    } else if (history && options.version !== 'latest' && !options.successor) {
-      revisions = [];
-      while (offset < history.count && revisions.length < limit) {
-        const page =
-          this.engine.storage.metaGet<PinnedRef[]>(history.pages[Math.floor(offset / 64)]!) ??
-          fail('HISTORY_EXPIRED');
-        s.ledger.charge({ maxBytes: Buffer.byteLength(canonical(page)) });
-        for (let i = offset % 64; i < page.length && revisions.length < limit; i++, offset++)
-          revisions.push(this.engine.get(page[i]!, s));
-      }
-      complete = offset >= history.count;
-    } else if (options.composition) {
-      compositionState ??= composition(root, options.composition);
-      const page = compositionPage(this.engine, s, compositionState, limit);
-      revisions = page.revisions;
-      complete = page.complete;
-    } else {
-      graphState ??= graph(root, depth);
-      const page = graphPage(this.engine, s, graphState, limit);
-      revisions = page.revisions;
-      complete = page.complete;
-    }
+    const graphState = saved?.graph ?? graph(root, depth);
+    const { revisions, complete } = graphPage(this.engine, s, graphState, limit);
     if (!complete && !revisions.length)
       fail('BUDGET_EXHAUSTED', 'Adjacency cannot advance with this budget');
     s.ledger.charge({ maxAtoms: revisions.length });
@@ -518,8 +418,8 @@ export class MemoryClient implements MemoryAPI {
           index: this.engine.storage.metaGet<number>('sdk:index-generation') ?? 0,
           config: this.engine.config,
           overlay: this.overlay?.id,
-          candidates,
-          offset,
+          candidates: [],
+          offset: 0,
           complete,
           scanned: s.ledger.usage().maxCandidates,
           pending: false,
@@ -527,18 +427,14 @@ export class MemoryClient implements MemoryAPI {
           trace: s.trace,
           graph: graphState,
           root,
-          historyId: history?.id,
-          composition: compositionState,
         })
       : undefined;
     return {
       atom,
       items,
+      stale: [...s.stale],
       receipt,
       ...(cursor ? { cursor } : {}),
-      ...(history
-        ? { history: { retainedUntil: new Date(history.until).toISOString(), ref: atom.ref } }
-        : {}),
       diagnostics: {
         ...this.engine.diagnostics(s.ledger.usage().maxCandidates, complete),
         stop: complete ? 'completed' : 'page-limit',
@@ -611,6 +507,7 @@ export class MemoryClient implements MemoryAPI {
     return {
       atom: { ...atom, text: text ?? '' },
       items: [{ ...atom, text: text ?? '' }],
+      stale: [],
       range: {
         start,
         end,
@@ -674,10 +571,6 @@ export class MemoryClient implements MemoryAPI {
     for (const citation of options.sources ?? []) {
       const entry = this.engine.resolve(citation.ref, s);
       const source = this.engine.get(entry.target, s, this.binding.actor.type === 'agent');
-      (s.trace.plans ??= []).push({
-        kind: 'source',
-        target: { kind: 'logical', atomId: source.atomId },
-      });
       const start = citation.start ?? 0;
       const end =
         citation.end ??
@@ -889,9 +782,8 @@ export class MemoryClient implements MemoryAPI {
       traces: [],
     };
     this.engine.overlays.set(overlay.id, overlay);
-    const scope: ExecutionScope = { ledger: s.ledger, traces: [...(this.execution?.traces ?? [])] };
+    const scope = { ledger: s.ledger, traces: [...(this.execution?.traces ?? [])] };
     const client = new MemoryClient(this.engine, this.binding, scope, overlay);
-    const successions: Succession[] = [];
     const draft: Draft = {
       write: (value, opts) => client.stageWrite(value, opts),
       revise: (ref, value, opts) => client.stageWrite(value, opts, undefined, ref),
@@ -928,11 +820,7 @@ export class MemoryClient implements MemoryAPI {
       },
       search: (query, opts) => client.search(query, opts),
       inspect: (ref, opts) => client.inspect(ref, opts),
-      supersede: async (oldRef, newRef, opts) => {
-        successions.push(await client.captureSuccession(oldRef, newRef, opts));
-      },
     };
-    draftClients.set(draft, client);
     try {
       const value = await cancellable(() => Promise.resolve(callback(draft)), s.signal);
       this.engine.check(s);
@@ -942,15 +830,13 @@ export class MemoryClient implements MemoryAPI {
       combined.current = combined.current.filter((r) => !overlay.revisions.has(r.atomId));
       this.engine.storage.metaSet(`sdk:trace:${combined.id}`, combined);
       this.engine.bridge(combined, this.binding, options.basis === 'historical');
-      const proposals = [...overlay.revisions.values(), ...successions.map((x) => x.relation)].map(
-        (p) => ({
-          ...p,
-          content: {
-            ...p.content,
-            provenance: { ...p.content.provenance, inputReceiptId: combined.id },
-          },
-        }),
-      );
+      const proposals = [...overlay.revisions.values()].map((p) => ({
+        ...p,
+        content: {
+          ...p.content,
+          provenance: { ...p.content.provenance, inputReceiptId: combined.id },
+        },
+      }));
       if (!proposals.length)
         return { value, changes: [], operationId: uid('empty-edit'), resolve: (ref) => ref };
       const mapping = new Map<AtomRef, AtomRef>();
@@ -966,7 +852,6 @@ export class MemoryClient implements MemoryAPI {
         {
           validate: () => {
             this.engine.check(s);
-            this.validateSuccessionBatch(successions, s, overlay);
           },
           committed: (result) => {
             const committedSession = { ...s, at: this.engine.storage.watermark() };
@@ -1003,47 +888,6 @@ export class MemoryClient implements MemoryAPI {
                   committedSession,
                 ),
               );
-            for (const succession of successions) {
-              if (succession.retainSnapshot) {
-                const token = this.engine.storage.retainSnapshot!(
-                  succession.manifest.at,
-                  succession.manifest.until,
-                );
-                const retained = this.engine.storage.retainedSnapshot!(token);
-                if (
-                  !retained ||
-                  retained.at !== succession.manifest.at ||
-                  retained.until < succession.manifest.until
-                )
-                  fail('HISTORY_INCOMPLETE', 'Backend did not retain the requested read state');
-                succession.manifest.snapshot = token;
-              }
-              for (let i = 0; i < succession.manifest.pages.length; i++)
-                this.engine.storage.metaSet(
-                  succession.manifest.pages[i]!,
-                  succession.revisions.slice(i * 64, (i + 1) * 64),
-                );
-              this.engine.storage.metaSet(
-                `sdk:history:${succession.manifest.id}`,
-                succession.manifest,
-              );
-              this.engine.storage.metaSet(
-                `sdk:history-root:${succession.old.atomId}:${succession.old.revisionId}`,
-                succession.manifest.id,
-              );
-              this.engine.storage.metaSet(
-                `sdk:predecessor:${succession.next.atomId}`,
-                succession.old,
-              );
-              this.engine.storage.metaSet(`sdk:successor:${succession.old.atomId}`, {
-                from: succession.old,
-                to: succession.next,
-                historyId: succession.manifest.id,
-                policy: succession.manifest.policy,
-                operationId: result.operationId,
-                sequence: this.engine.storage.watermark(),
-              } satisfies SuccessorRecord);
-            }
           },
         },
       );
@@ -1062,7 +906,6 @@ export class MemoryClient implements MemoryAPI {
         resolve: (ref) => mapping.get(ref) ?? ref,
       };
     } finally {
-      draftClients.delete(draft);
       overlay.active = false;
       for (const ref of overlay.refs) {
         const entry = this.engine.storage.metaGet<import('./engine.js').RefEntry>(`sdk:ref:${ref}`);
@@ -1073,178 +916,6 @@ export class MemoryClient implements MemoryAPI {
         this.engine.storage.metaDelete(`sdk:ref:${ref}`);
       }
       this.engine.overlays.delete(overlay.id);
-    }
-  }
-  private async captureSuccession(
-    oldRef: AtomRef,
-    newRef: AtomRef,
-    options: SupersedeOptions = {},
-  ): Promise<Succession> {
-    const s = this.engine.session(this.binding, {}, this.execution?.ledger, this.overlay);
-    const old = this.engine.resolve(oldRef, s).target;
-    const next = this.engine.resolve(newRef, s).target;
-    const oldRevision = this.engine.get(old, s, true);
-    const newRevision = this.engine.get(next, s, true);
-    if (oldRevision.policyId !== newRevision.policyId) fail('ACCESS_DENIED');
-    if (
-      this.engine.storage.metaGet(`sdk:successor:${old.atomId}`) ||
-      this.engine.storage.metaGet(`sdk:predecessor:${next.atomId}`)
-    )
-      fail('SUCCESSOR_CONFLICT');
-    const capture = { ...s, overlay: undefined };
-    const recorded =
-      this.overlay?.traces
-        .flatMap((t) => t.plans ?? [])
-        .flatMap((p) =>
-          p.kind === 'inspect' && p.target.atomId === old.atomId && p.composition
-            ? [p.composition]
-            : [],
-        ) ?? [];
-    const unique = [...new Map(recorded.map((p) => [canonical(p), p])).values()];
-    let plan = options.composition ?? (unique.length === 1 ? unique[0] : undefined);
-    if (!plan) {
-      const incoming = this.engine.scan(
-        { policies: s.trace.policies, relation: { target: old }, limit: 1 },
-        capture,
-        true,
-      );
-      s.ledger.charge({ maxCandidates: 1, maxBytes: Buffer.byteLength(canonical(incoming)) });
-      if (
-        unique.length > 1 ||
-        incoming.length ||
-        oldRevision.slots.some((slot) => slot.mode === 'refer')
-      )
-        fail(
-          'HISTORY_PLAN_REQUIRED',
-          'Declare which roles form this composition; neighbourhoods are not compositions',
-        );
-      plan = { relations: [] };
-    }
-    plan = validateComposition(plan);
-    const retainSnapshot = !!(
-      this.engine.storage.retainSnapshot && this.engine.storage.retainedSnapshot
-    );
-    const max = this.engine.options.historyMaxAtoms ?? 256;
-    let page = { revisions: [] as AtomRevision[], complete: true };
-    try {
-      if (!retainSnapshot)
-        page = compositionPage(this.engine, capture, composition(old, plan), max + 1);
-    } catch (e) {
-      if (e instanceof AtomMemoryError && e.code === 'BUDGET_EXHAUSTED') fail('HISTORY_INCOMPLETE');
-      throw e;
-    }
-    if (!page.complete || page.revisions.length > max)
-      fail('HISTORY_INCOMPLETE', 'Exact arrangement exceeded the history capture budget');
-    this.finish(capture);
-    const retain = options.retainForMs ?? this.engine.options.historyRetentionMs ?? 30 * 86400000;
-    if (!Number.isSafeInteger(retain) || retain <= 0) fail('INVALID_INPUT');
-    const id = uid('history');
-    const revisions = page.revisions.map(pinRevision);
-    const pages = Array.from(
-      { length: Math.ceil(revisions.length / 64) },
-      (_, i) => `sdk:history-page:${id}:${i}`,
-    );
-    const manifest: HistoryManifest = {
-      id,
-      root: old,
-      at: s.at,
-      until: Date.now() + retain,
-      policy: oldRevision.policyId,
-      pages,
-      count: revisions.length,
-      composition: plan,
-    };
-    const relationContent = this.content(
-      {
-        text: 'An authorized successor was adopted',
-        links: {
-          previous: { ref: oldRef, at: 'observed' },
-          successor: { ref: newRef, at: 'observed' },
-        },
-      },
-      s,
-    );
-    return {
-      old,
-      next,
-      manifest,
-      revisions,
-      trace: clone(capture.trace),
-      retainSnapshot,
-      relation: {
-        atomId: uid('atom'),
-        revisionId: uid('revision'),
-        expectedHead: null,
-        content: relationContent,
-      },
-    };
-  }
-  private validateSuccessionBatch(items: Succession[], s: Session, overlay: OverlayState): void {
-    const next = new Map<string, string>();
-    const targets = new Set<string>();
-    for (const item of items) {
-      if (next.has(item.old.atomId) || targets.has(item.next.atomId))
-        fail('SUCCESSOR_CONFLICT', 'Only one-to-one successor adoption is supported');
-      next.set(item.old.atomId, item.next.atomId);
-      targets.add(item.next.atomId);
-      this.validateSuccession(item, s, overlay);
-    }
-    for (const old of next.keys()) {
-      const seen = new Set<string>();
-      let current: string | undefined = old;
-      while (current) {
-        s.ledger.charge({ maxCandidates: 1 });
-        if (seen.has(current)) fail('SUCCESSOR_CYCLE');
-        seen.add(current);
-        current =
-          next.get(current) ??
-          this.engine.storage.metaGet<SuccessorRecord>(`sdk:successor:${current}`)?.to.atomId;
-      }
-    }
-  }
-  private validateSuccession(item: Succession, s: Session, overlay: OverlayState): void {
-    if (
-      this.engine.storage.metaGet(`sdk:successor:${item.old.atomId}`) ||
-      this.engine.storage.metaGet(`sdk:predecessor:${item.next.atomId}`)
-    )
-      fail('SUCCESSOR_CONFLICT');
-    for (const observation of item.trace.queries) {
-      s.ledger.charge({ maxCandidates: observation.revisions.length + 1 });
-      const current = this.engine.storage.scan(observation.query, this.engine.storage.watermark());
-      if (canonical(current.map((r) => r.revisionId)) !== canonical(observation.revisions))
-        fail('REVISION_CONFLICT', 'Historical capture range changed');
-    }
-    for (const ref of item.trace.reads) {
-      if (overlay.revisions.has(ref.atomId)) continue;
-      s.ledger.charge({ maxCandidates: 1 });
-      const before = this.engine.storage.get({ kind: 'logical', atomId: ref.atomId }, s.at);
-      const now = this.engine.storage.get(
-        { kind: 'logical', atomId: ref.atomId },
-        this.engine.storage.watermark(),
-      );
-      if (before?.revisionId !== now?.revisionId)
-        fail('REVISION_CONFLICT', 'Historical capture input changed');
-    }
-    if (item.old.atomId === item.next.atomId) fail('SUCCESSOR_CYCLE');
-    for (const ref of [item.old, item.next]) {
-      const staged = overlay.revisions.get(ref.atomId);
-      const current = staged
-        ? staged.revisionId
-        : this.engine.storage.get(
-            { kind: 'logical', atomId: ref.atomId },
-            this.engine.storage.watermark(),
-          )?.revisionId;
-      if (current !== ref.revisionId) fail('REVISION_CONFLICT');
-    }
-    const visited = new Set<string>([item.old.atomId]);
-    let id = item.next.atomId;
-    while (true) {
-      s.ledger.charge({ maxCandidates: 1 });
-      if (visited.has(id)) fail('SUCCESSOR_CYCLE');
-      visited.add(id);
-      const successor = this.engine.storage.metaGet<SuccessorRecord>(`sdk:successor:${id}`);
-      if (!successor) break;
-      id = successor.to.atomId;
     }
   }
 }

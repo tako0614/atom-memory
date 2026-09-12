@@ -1,5 +1,5 @@
 /**
- * Atom Memory v1.0 — public contracts, not a kernel implementation.
+ * Atom Memory storage contracts. Public memory operations are defined in client/types.ts.
  * All bounds, IDs, trust labels, policies and graph/transaction invariants
  * require runtime enforcement. A readonly type is not a security boundary.
  */
@@ -89,9 +89,7 @@ export interface Budget {
   readonly maxNetworkCalls: number;
   readonly maxModelCalls: number;
   readonly maxModelInputTokens: number;
-  readonly maxModelOutputTokens: number;
   readonly maxContextTokens: number;
-  readonly maxHops: number;
   readonly deadline?: string;
 }
 
@@ -139,12 +137,7 @@ export interface WriteResult {
   readonly operationId: Id;
   readonly committed: readonly PinnedRef[];
   readonly repeatedInput: boolean;
-  readonly indexState: 'ready' | 'pending'; // Commit success is not index readiness.
 }
-
-/** Central semantic API. Administration and trusted runtime setup are separate. */
-
-/** Internal replaceable access representation, not an independent memory kind. */
 
 export type ErrorCode =
   | 'ACCESS_DENIED' | 'REFERENCE_UNAVAILABLE' | 'INVALID_SOURCE_SPAN'
@@ -153,8 +146,5 @@ export type ErrorCode =
   | 'ATOMICITY_UNAVAILABLE' | 'CONSISTENCY_UNAVAILABLE'
   | 'GUARD_VALIDATION_UNAVAILABLE' | 'INDEX_NOT_READY'
   | 'CURSOR_EXPIRED' | 'MODEL_SPACE_MISMATCH' | 'BUDGET_EXHAUSTED'
-  | 'INVALID_INPUT' | 'INVALID_REF' | 'ABORTED' | 'HISTORY_INCOMPLETE' | 'HISTORY_PLAN_REQUIRED'
-  | 'HISTORY_EXPIRED' | 'SUCCESSOR_CONFLICT' | 'SUCCESSOR_CYCLE'
+  | 'INVALID_INPUT' | 'INVALID_REF' | 'ABORTED'
   | 'CONTEXT_WINDOW_EXCEEDED' | 'STATE_INVALIDATED';
-
-/** A common host loop; Writer and answer runs differ by task and capabilities. */

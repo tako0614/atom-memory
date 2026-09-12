@@ -1,6 +1,7 @@
 import type { AtomRevision, PinnedRef } from '../contracts.js';
 import type { Candidate, RankingOptions } from './types.js';
 import { type Engine, type Session, pinRevision } from './engine.js';
+import { validateMemory } from './retrieval.js';
 import { AtomMemoryError, canonical } from '../core/util.js';
 import { propagate, rankingOptions } from '../core/ranking.js';
 
@@ -53,6 +54,7 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
       state.truncated = true;
       return false;
     }
+    if (!validateMemory(engine, r, s)) return false;
     nodes.add(r.revisionId);
     state.nodes.push({ revision: r, score: 0 });
     if (depth < state.depth)
@@ -131,7 +133,7 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
         }
         task.after = incoming.atomId;
       }
-      if (state.edges.length >= config.maxEdges || state.nodes.length >= config.maxNodes) {
+      if (state.edges.length >= config.maxEdges) {
         state.truncated ||= state.tasks.length > 0;
         state.tasks = [];
       }

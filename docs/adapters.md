@@ -8,11 +8,10 @@
 | ローカルのファイルに残す     | `SqliteStorage`        |
 | ベクトルによる候補も取得する | `embedding`            |
 | 候補取得の方式を実装する     | `candidateProvider`    |
-| 失効した生成表現を作り直す   | `generator`            |
 
 ## SQLite に保存する
 
-`atom-memory/sqlite` の `SqliteStorage` にファイルパスを渡します。本文、関係、不変版、出典、履歴の構成を同じデータベースに保存します。
+`atom-memory/sqlite` の `SqliteStorage` にファイルパスを渡します。本文、関係、不変版、出典を同じデータベースに保存します。
 
 ```ts runnable
 import { MemoryHost, LocalAuthority } from 'atom-memory';
@@ -80,39 +79,25 @@ if (prepared.cursor) {
 const page = await memory.search('招待リンクの期限');
 ```
 
-保存直後は語彙から検索でき、`prepareIndex` が埋め込み索引を更新します。大量の投入では `cursor` をホストのジョブに持たせて処理を続けます。検索結果の `diagnostics.index` で反映待ちを確認できます。
+保存直後は語彙から検索でき、`prepareIndex` がcurrent headをcursor付きで走査して埋め込み索引を更新します。大量の投入では `cursor` をホストのジョブに持たせて処理を続けます。変更後のheadだけを追う継続処理は `updateIndex` がsequence 0の変更フィードから行います。検索結果の `diagnostics.index` で反映待ちを確認できます。
 
-検索表現には本文と順序付きの役割・参照先本文を使います。同一入力・同一設定の埋め込みは、認証と権限を含むキーで再利用します。エンコーダーの版や変換を変えたら設定も更新してください。次元が同じでも、互換でない検索信号は `MODEL_SPACE_MISMATCH` になります。
+検索表現は各Atom自身の本文だけです。役割付きリンクは検索表現へ本文を暗黙に連結せず、候補確定後の構造ランキングで一度だけ使います。同一入力・同一設定の埋め込みは、認証と権限を含むキーで再利用します。エンコーダーの版や変換を変えたら設定も更新してください。次元が同じでも、互換でない検索信号は `MODEL_SPACE_MISMATCH` になります。
 
 ## 候補の探し方と規模
 
-既定の方式は `local-exact-lexical-vector-v1` です。語彙の一致と、利用可能な互換ベクトルの cosine を使って候補を評価します。走査した範囲を採点してから関連度順にページを返します。
+埋め込みなしの既定は `local-body-lexical-v1`、埋め込みありの既定は `local-hybrid-buckets-v1` です。どちらもAtom自身の本文を入口にし、走査・候補の範囲を採点してから関連度順にページを返します。`local-exact-lexical-vector-v1` は明示した場合だけ使う有限走査の基準です。
 
-一回の走査は既定10,000件までです。それより大きい対象は部分探索となり、cursor で先を探索できます。最初のページだけで全データの上位結果を確定できるわけではないため、`diagnostics.traversal` と `scanned` を確認してください。[ローカル測定](/acceptance)に件数別の結果があります。
+取得上限のmaxScanは既定10,000件です。操作予算の一部を候補取得に割り当てるため、既定の候補予算では5,000件で止まる場合もあります。候補は結果返却前に固定し、cursorはその結果の次ページです。未探索領域の続きではありません。`approximate` と `scanned` を確認し、大量のデータには語彙・ベクトルで候補を絞るproviderを選びます。`complete` は全コーパスの網羅を保証しません。
 
 `candidateProvider` に独自の `CandidateProvider` を渡すと、同じ取得処理を search・read・Writer で共有できます。プロバイダーには許可された資料への `CandidateAccess`、共有予算、キャンセル信号が渡されます。
 
-大量の原文をローカルDBで扱う場合は、`candidateProvider: new LexicalCandidateProvider()` を選べます。本文の語彙一致を保存層で絞ってから有限の候補を採点するため、無関係な先頭IDだけで走査予算を使い切ることを避けます。認可と読取snapshotは同じhostの`CandidateAccess.page`を通ります。本文を入口にする近似方式なので、関係先の本文だけが一致する候補まで完全に拾う保証はなく、`approximate=true`を返します。埋め込みが有効な場合は既定の完全走査方式へ戻ります。
+大量の原文をローカルDBで扱う場合は、`candidateProvider: new LexicalCandidateProvider()` を選べます。本文の語彙一致を保存層で絞ってから有限の候補を採点するため、無関係な先頭IDだけで走査予算を使い切ることを避けます。認可と読取snapshotは同じhostの `CandidateAccess.page` を通ります。本文を入口にする近似方式なので、関係先の本文だけが一致する候補まで完全に拾う保証はなく、`approximate=true` を返します。埋め込みがある場合の既定は `HybridCandidateProvider` です。
 
-既定の検索はローカルの完全走査を基準とする実装です。SQLiteでは後述の `HybridCandidateProvider` に切り替えて、ベクトルと語彙から候補を絞ることもできます。大規模な ANN やリモート索引を導入する場合は、取得品質、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。`StorageAdapter` 自体は同期ローカル保存の契約です。
+`LexicalCandidateProvider` は埋め込みなしの既定です。埋め込みを設定すると `HybridCandidateProvider` が既定になり、語彙候補とベクトル候補を合わせてから同じ本文スコアと構造ランキングを適用します。`ExactCandidateProvider` は有限の全走査を行う明示的な基準実装です。大規模な ANN やリモート索引を導入する場合は、取得品質、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。`StorageAdapter` 自体は同期ローカル保存の契約です。
 
-## 関係が変わった説明を作り直す
+## 古い生成物を更新する
 
-`generator` にはサービスAPIもローカルモデルも接続できます。`id`、`tokenizer`、出力上限、通信回数と `generate(input, signal)` を設定します。既定のreadはLLMを呼びません。
-
-派生物を作るときのsearch・inspectの対象と取得条件を、SDKが宣言的な計画として記録します。所属が変わった後は、今回の読取状態で計画を先頭から実行します。古いreceiptの入力一覧は監査用に残し、現在の構成へ戻すためには使いません。
-
-次の例では、要約を保存した後にルールを追加し、そのルールが生成器へ届くことを確認できます。
-
-<<< ../examples/regeneration.mjs
-
-```text output:regeneration.mjs
-追加したルールが再生成の入力に入りました。
-```
-
-生成器の `input.sources` は選び直した内容、`input.atoms` はその役割付き関係と出典、`input.receipt` は新しい入力記録です。`previous` は古い表現であり、現在の原資料として扱いません。生成結果は認証・入力・設定に束縛した一時cacheへ保存し、元のAtomやreceiptは書き換えません。
-
-再取得は既定10,000候補と同じ実行の総予算で制限します。探索の途中なら生成器を呼ばず、利用可能な資料と `pending / acquisition-incomplete` を返します。生成中に依存する版や検索範囲が変われば `STATE_INVALIDATED` になります。blobを入力とする再生成は `pending / unsupported-input` です。必要範囲を `inspect` で読み、ホストの入力アダプターから扱ってください。旧データの計画追加は [移行](/migration)にあります。
+`read` / `search` の `stale` をアプリのWriterへ渡します。ライブラリは生成器や取得計画の再実行を持ちません。[Agent側の例](/runtime#writerに整理を任せる)を参照してください。
 
 ## 長い原資料を読む
 
@@ -159,25 +144,11 @@ if (detail.cursor) {
 
 ## 保持期間と上限
 
-| 対象                                        | 既定値・上限                             |
-| ------------------------------------------- | ---------------------------------------- |
-| 一つの Atom                                 | 本文64KiB、参照・出典各128件             |
-| 一回の確定                                  | 256 Atom、要求2MiB                       |
-| 候補走査                                    | 10,000件                                 |
-| 継続する入力 manifest                       | 10,000版                                 |
-| cursor                                      | 5分                                      |
-| 一時的な読取 trace                          | 1,024件・1時間                           |
-| 埋め込み cache                              | 512件・5分                               |
-| 保持した履歴                                | 30日。構成の読取はページ・実行予算で制限 |
-| snapshot保持機能がないadapterの履歴manifest | 256 Atom                                 |
+クライアントの候補予算は既定10,000件、本文転送は4MiBです。各呼出しの `budget` で変更できます。cursorは既定5分、確定した派生物の監査ではない一時traceは既定1時間・1,024件、ベクトルcacheは既定5分・512件です。`HostOptions` で対応する上限を設定します。
 
-`MemoryHost` の `maxScan`、`cursorTtlMs`、`traceMaxEntries`、`traceTtlMs`、`cacheMaxEntries`、`cacheTtlMs`、`historyMaxAtoms`、`historyRetentionMs` で対応する値を設定できます。各実行の予算は [API](/api#共通の戻り値と診断)と [ハーネス](/runtime#予算を設定する)で調整します。
+管理操作 `purge` は対象と依存物の閲覧を拒否し、関連ベクトルとcursorを無効化します。Memory/SQLiteの保持snapshotも失効します。SQLiteの物理ページ回収と外部ログの削除は保存先の運用です。
 
-確定した版と出典 manifest は保存先に残ります。このローカル実装は旧版を自動 GC しないため、保存容量・バックアップ・物理削除はホストで管理します。`MemoryStorage` の保持はそのインスタンスの寿命まで、`SqliteStorage` の保持はDBの再オープン後も有効です。保持期間は閲覧の期限であり、期限到達時に物理容量が回収される保証ではありません。
-
-管理操作 `purge` は対象と依存物の閲覧を拒否し、派生 cache・索引・cursor を無効化します。snapshotは構成を事前列挙しないため、削除で関係が欠けたことを「当時の完全な構成」と誤認しないよう、この実装では **purge時に既存の保持snapshotをすべて失効**させます。無関係な履歴も `HISTORY_EXPIRED` になります。SQLite の物理ページ回収や外部ログの削除も、保存先の運用に含めてください。
-
-独自adapterは、snapshot読取とは別に `retainSnapshot(at, until)` と `retainedSnapshot(token)` で、指定した版と関係を期限まで保持する契約を実装できます。保持の確定は短い書込トランザクションに参加します。両方のメソッドがなければ、ホストは明示した構成計画に従って有限のmanifestを保存し、予算不足では後継の採用も失敗させます。
+保存adapterの任意の `retainSnapshot(at, until)` / `retainedSnapshot(token)` はホストが明示して使う保存機能です。保持期間や構成の採用はライブラリが決めず、MemoryClientが自動で履歴snapshotへ切り替わることもありません。
 
 ## 継続して差分を索引へ反映する
 
@@ -197,7 +168,7 @@ console.log(progress.indexed, progress.processed, progress.pending);
 // pendingなら、アプリの次のジョブで同じ呼び出しを繰り返す。
 ```
 
-`updateIndex` はSQLite／MemoryStorageのコミット順の変更フィードを使います。同一コミット内の複数Atomも、再起動・エンコーダー失敗・ページ境界をまたいで進められます。変更されたAtomと、その本文を検索表現に含む直接のlogical参照元を再計算します。固定されたobserved参照や無関係なAtomを毎回再生成しません。新しいエンコーダー設定では別の進捗として履歴を準備します。purgeは対象のベクトルも消し、無関係な索引を維持します。
+`updateIndex` はSQLite／MemoryStorageのコミット順の変更フィードを使います。同一コミット内の複数Atomも、再起動・エンコーダー失敗・ページ境界をまたいで進められます。変更されたAtomの現在headだけを、そのAtom自身の本文から再計算します。リンク先の改訂や所属の追加だけで、本文が変わらない親を再エンコードしません。新しい表現設定では別の進捗として履歴を準備します。purgeは対象のベクトルも消し、無関係な索引を維持します。
 
 これは意味を判断して説明を書き換えるAPIではありません。分解・再集約・説明の改訂はWriterが通常の `edit` で行い、索引はその受理済みの結果を扱います。外付けの所属が増えただけで親と全祖先を書き換えることもありません。
 
@@ -205,8 +176,12 @@ console.log(progress.indexed, progress.processed, progress.pending);
 
 SQLiteでベクトル候補も有限に絞るには `candidateProvider: new HybridCandidateProvider()` を指定します。ベクトルの近似バケットと語彙一致から候補を選び、実ベクトルで採点し、通常の関係探索を行います。非公開policyや過去版は候補の上限を適用する前に除外します。これは近似検索であり、`approximate=true`です。全世界の完全な上位候補や、百万件での応答性能を保証するものではありません。
 
-## v0.4 の候補とベクトル
+## 候補とベクトルの設定を分ける
 
 候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。組み込みproviderは入力種類の重み付き類似度でseedを採点します。`maxScan` と操作予算で候補取得を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。独自providerは `signals`・`ranking` を受け取れます。
 
-ベクトルの設定は順位の設定から独立しています。0.3のベクトル再利用とStorageAdapterの `indexEntries` は[移行](/migration)を参照してください。
+ベクトルの設定は順位の設定から独立しています。0.5の表現v3への移行、既知のv2設定に対するハッシュ検証付きの一行再利用、`StorageAdapter` の旧 `indexEntries` 境界は[移行](/migration)を参照してください。
+
+### 索引の準備状態
+
+`prepareIndex` の `pending: false` は、そのcurrent-head走査がcursorの終端へ到達したことを示します。`updateIndex` の `pending: false` は、その呼出しで処理したsequence 0起点の変更フィードに続きがないことを示します。旧索引メタデータが互換しない候補を調べた場合は `pending` として報告されます。提供中の全policy scopeを処理し、各scopeの永続checkpointが意図した終端へ到達してから、ホストはv3意味検索を準備済みと扱います。一つの呼出し、一つのチャンネル、または候補の存在だけでは全体の準備完了を証明できません。`complete`、`approximate`、`coverageCertified: false` もコーパス全体の網羅性を認証しません。

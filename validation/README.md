@@ -1,6 +1,12 @@
 # 検証記録
 
-0.4.0の構造ランキング・ベクトル移行・旧API整理の検証と公開情報は[最新の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。実行例は `npm run example:history`、全体の確認は `npm run check` です。
+0.5のnpm・Docs公開状態は[公開記録](release-v0.5.0.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)は公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存を確認しています。
+
+[初回の責務分離の検証](boundary-v0.5.0.json)は、本文表現をv3へ切り替える前のソースhashに対応する記録です。そこでのベクトル再利用結果を現在の移行条件に読み替えません。モデルを使う評価はAgent側が所有します。以下は0.4以前の実行記録であり、現行コードの説明や公開済み0.5の実績ではありません。
+
+## 過去の検証記録
+
+0.4.0の構造ランキング・ベクトル移行・旧API整理の検証と公開情報は[当時の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release.json)を参照してください。実行例は `npm run example:history`、全体の確認は `npm run check` です。
 
 # v0.2 API再設計の検証記録
 

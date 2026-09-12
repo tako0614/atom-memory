@@ -1,0 +1,72 @@
+{
+  "version": "0.5.0",
+  "date": "2026-09-12",
+  "status": "working-tree implementation; not published or deployed",
+  "sourceBase": "ee5b8754f2d971e295df6c458a36847b0a5490b4",
+  "sourceSha256": "d74df575c1a1c94a81d622f9be16c4b2b98d69339c29839c958d2bd0f24dc325",
+  "sourceHashMethod": "SHA-256 of sorted src/**/*.ts paths relative to the repository, each followed by NUL, file bytes and NUL",
+  "sourceFiles": 22,
+  "sourceLines": 4746,
+  "checks": {
+    "libraryCheck": "passed: tests, structural comparison, documentation examples and build",
+    "tests": {
+      "cases": 99,
+      "failed": 0,
+      "node": ["22.23.2", "24.18.0", "26.1.0"]
+    },
+    "documentation": {
+      "examples": 15,
+      "verifiedOutputs": 7,
+      "build": "passed"
+    },
+    "sakanaCheck": "passed: complete npm run check, including Writer, refresh, shared runtime and governance regressions",
+    "refinements": [
+      "Atom own-body v3 search representations; relationships affect explicit graph ranking",
+      "Stale generated memories are omitted without inheriting their score through source substitution",
+      "Stale seeds and graph nodes cannot propagate relevance",
+      "Node-cap saturation does not discard edges among already admitted nodes",
+      "Default lexical or hybrid candidate selection finds matches beyond the old exact-scan cutoff",
+      "Legacy vector reuse requires known config identity and matching body hash, policy and vectors",
+      "Current-head preparation and sequence-0 v3 feed maintenance resume independently of old checkpoints",
+      "Incompatible index metadata reports pending for examined candidates",
+      "Writer validates accepted organization refs during generation and after checkpoint restoration",
+      "Final edits preserve accepted input dependencies even without model-provided links",
+      "Intentional revisions remain recallable; guild isolation is preserved"
+    ],
+    "publishedV04Storage": {
+      "from": "published npm atom-memory 0.4.0",
+      "to": "unpublished 0.5.0 refinement",
+      "node": "26.1.0",
+      "preservedRevisions": 3,
+      "preservedObservedRefs": true,
+      "expiredOldCursor": true,
+      "reusedUnchangedVectors": 2,
+      "reencodedMixedTextVectors": 1,
+      "v3FeedEventsReplayed": 3,
+      "documentEncodesAfterLeafRevision": 1,
+      "oldInitialDocumentInputBytes": 130,
+      "ownBodyInitialDocumentInputBytes": 88,
+      "correctedInterpretationRecall": true
+    },
+    "packageConsumer": "passed: clean tarball install, ESM, SQLite, stale omission, observed refs, ledger-only execution and strict TypeScript",
+    "packageMatchesWorkingTree": true,
+    "packageIntegrityVerified": true,
+    "formatAndDiff": "passed: Atom formatter and both repository diff checks"
+  },
+  "package": {
+    "filename": "atom-memory-0.5.0.tgz",
+    "size": 129565,
+    "unpackedSize": 598402,
+    "shasum": "5c67b1c139b74d638a9bf3546fe355bbcbcf5203",
+    "integrity": "sha512-va7wTRTV7kRJiaZwfjbwr0Ho4asK/8JgpSCLzems6FxQl54sqemNsG9p2mESTAjM68q9HxFnDDlXWNa/7wlfYA==",
+    "entryCount": 122
+  },
+  "limits": [
+    "No live paid model request, npm publication, site deployment or production bot cutover",
+    "Fixed encoder fixtures and byte or call counts do not establish billed cost or semantic quality",
+    "PPR expresses query-relative relevance, not intrinsic importance, truth or causal strength",
+    "Writer granularity, semantic deduplication and question-blind structure quality remain evaluation questions",
+    "Corpus-wide semantic index readiness requires the host to drain every served scope",
+    "Conservative transitive purge and shared input dependencies remain"
+  ]
+}

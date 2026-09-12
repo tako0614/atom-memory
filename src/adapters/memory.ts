@@ -138,27 +138,6 @@ export class MemoryStorage implements StorageAdapter {
   metaDelete(key: string): void {
     this.#metadata.delete(key);
   }
-  indexEntries(
-    policies: readonly string[],
-    configs: readonly string[],
-    after: string | undefined,
-    limit: number,
-  ): [string, { config: string; hash: string; policyId: string; vectors: number[][] }][] {
-    return this.metaEntries<{
-      config: string;
-      hash: string;
-      policyId: string;
-      vectors: number[][];
-    }>('sdk:index:')
-      .filter(
-        ([key, value]) =>
-          (!after || key > after) &&
-          policies.includes(value.policyId) &&
-          configs.includes(value.config),
-      )
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .slice(0, limit);
-  }
   isPurged(atomId: string): boolean {
     return this.#purged.has(atomId);
   }

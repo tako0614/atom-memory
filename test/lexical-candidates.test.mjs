@@ -1,7 +1,65 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MemoryHost, LocalAuthority, LexicalCandidateProvider } from '../dist/index.js';
+import {
+  MemoryHost,
+  LocalAuthority,
+  MemoryStorage,
+  LexicalCandidateProvider,
+  ExactCandidateProvider,
+} from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
+
+for (const adapter of ['memory', 'sqlite'])
+  test(`${adapter}: default ingress reaches a known match beyond the finite exact scan`, async () => {
+    const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new MemoryStorage();
+    try {
+      const authority = new LocalAuthority();
+      const binding = {
+        auth: authority.issue({
+          subject: 'owner',
+          readPolicies: ['p'],
+          writePolicies: ['p'],
+          canIngestSource: true,
+        }),
+        writePolicy: 'p',
+        actor: { type: 'human' },
+      };
+      storage.transaction(() =>
+        storage.append(
+          Array.from({ length: 6000 }, (_, i) => ({
+            atomId: `node-${String(i).padStart(5, '0')}`,
+            revisionId: `revision-${i}`,
+            recordedAt: '2026-09-12T00:00:00.000Z',
+            schema: 'source',
+            state: 'active',
+            body: { kind: 'inline', value: i === 5999 ? 'unique_needle' : 'background' },
+            slots: [],
+            origins: [],
+            provenance: { kind: 'source', producerId: 'owner' },
+            policyId: 'p',
+          })),
+        ),
+      );
+      const options = { storage, authority };
+      const found = await new MemoryHost(options).connect(binding).search('unique_needle');
+      assert.deepEqual(
+        found.items.map((atom) => atom.text),
+        ['unique_needle'],
+      );
+      assert.equal(found.diagnostics.scanned, 1);
+      const reference = await new MemoryHost({
+        ...options,
+        candidateProvider: new ExactCandidateProvider(),
+      })
+        .connect(binding)
+        .search('unique_needle');
+      assert.deepEqual(reference.items, []);
+      assert.equal(reference.diagnostics.scanned, 5000);
+      assert.equal(reference.diagnostics.approximate, true);
+    } finally {
+      storage.close();
+    }
+  });
 
 test('lexical ingress finds late matches within a small scan budget and preserves scope and deletion', async () => {
   const storage = new SqliteStorage(':memory:');

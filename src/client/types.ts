@@ -1,4 +1,4 @@
-import type { AuthContext, AtomRevision, Budget, Json, Origin, PinnedRef } from '../contracts.js';
+import type { AuthContext, AtomRevision, Budget, Json } from '../contracts.js';
 import type { Authorizer } from '../core/authority.js';
 import type { EmbeddingProvider } from '../core/store.js';
 import type { BudgetLedger, Resource, Tokenizer } from '../core/budget.js';
@@ -35,7 +35,7 @@ export interface SearchSignal {
   readonly encoderId: string;
   readonly dimensions: number;
   readonly transformId: string;
-  readonly inputKind: 'text' | 'mapped-state';
+  readonly inputKind: 'text';
   readonly values: readonly number[];
 }
 export interface OperationOptions {
@@ -46,7 +46,6 @@ export interface OperationOptions {
   readonly budget?: Partial<Budget>;
 }
 export interface SearchOptions extends OperationOptions {
-  readonly historical?: boolean;
   readonly depth?: number;
 }
 export interface ReadOptions extends SearchOptions {
@@ -56,11 +55,7 @@ export interface ReadOptions extends SearchOptions {
 export interface InspectOptions extends OperationOptions {
   readonly depth?: number;
   readonly version?: 'observed' | 'latest';
-  readonly successor?: boolean;
-  readonly history?: 'retained';
   readonly range?: { readonly start?: number; readonly bytes?: number };
-  /** Host-declared composition, separate from bidirectional neighbourhood depth. */
-  readonly composition?: CompositionPlan;
 }
 export interface WriteOptions {
   readonly idempotencyKey?: string;
@@ -93,9 +88,8 @@ export interface Diagnostics {
   readonly approximate: boolean;
   readonly scanned: number;
   readonly index: 'ready' | 'pending' | 'unavailable';
-  readonly derived: 'ready' | 'pending' | 'regenerated' | 'unused';
-  readonly derivedReason?:
-    'missing-plan' | 'acquisition-incomplete' | 'dependency-stale' | 'unsupported-input' | 'budget';
+  readonly derived: 'ready' | 'pending' | 'unused';
+  readonly derivedReason?: 'dependency-stale';
   readonly stop: 'completed' | 'page-limit' | 'budget' | 'deadline';
   readonly minimumTokens?: number;
   readonly minimumBytes?: number;
@@ -107,6 +101,8 @@ export interface MemoryReceipt {
   readonly signalDigest: string;
 }
 export interface MemoryPage {
+  /** Stale Atoms excluded from recall. The host decides whether and when to revise them. */
+  readonly stale: readonly AtomRef[];
   readonly items: readonly (AtomView & {
     readonly score?: number;
     readonly scoreBreakdown?: ScoreBreakdown;
@@ -126,7 +122,6 @@ export interface Inspection extends MemoryPage {
     readonly base64?: string;
     readonly mediaType: string;
   };
-  readonly history?: { readonly retainedUntil: string; readonly ref: AtomRef };
 }
 export interface RecallResult extends MemoryPage {
   readonly text: string;
@@ -139,24 +134,10 @@ export interface WriteOutcome extends AtomView {
   readonly repeated: boolean;
   readonly indexing: 'pending' | 'ready';
 }
-export interface SupersedeOptions {
-  readonly retainForMs?: number;
-  readonly composition?: CompositionPlan;
-}
-/** Roles describe directed external relations. No reserved membership label is required.
- * Fixed include slots are always followed. Recursive rules apply at each selected child. */
-export interface CompositionPlan {
-  readonly relations: readonly {
-    readonly parent: string;
-    readonly children: readonly string[];
-    readonly recursive?: boolean;
-  }[];
-}
 export interface Draft {
   write(content: MemoryContent, options?: WriteOptions): Promise<AtomView>;
   revise(ref: AtomRef, content: MemoryContent, options?: WriteOptions): Promise<AtomView>;
   retire(ref: AtomRef): Promise<AtomView>;
-  supersede(oldRef: AtomRef, newRef: AtomRef, options?: SupersedeOptions): Promise<void>;
   search(query: string, options?: SearchOptions): Promise<MemoryPage>;
   inspect(ref: AtomRef, options?: InspectOptions): Promise<Inspection>;
 }
@@ -186,36 +167,17 @@ export interface ClientBinding {
   readonly readPolicies?: readonly string[];
   readonly actor: HostActor;
 }
-export interface Generator {
-  readonly id: string;
-  readonly tokenizer: Tokenizer;
-  readonly maxOutputTokens: number;
-  readonly networkCallsPerCall: number;
-  generate(
-    input: {
-      readonly previous: string;
-      readonly sources: readonly { ref: PinnedRef; text: string }[];
-      /** Current selected Atoms, including ordered roles and exact source ranges. */
-      readonly atoms: readonly AtomView[];
-      readonly receipt: MemoryReceipt;
-    },
-    signal: AbortSignal,
-  ): Promise<string>;
-}
 export interface HostOptions {
   readonly storage?: StorageAdapter;
   readonly limits?: Partial<import('../core/validation.js').Limits>;
   readonly authority?: Authorizer;
   readonly tokenizer?: Tokenizer;
   readonly embedding?: EmbeddingProvider;
-  readonly generator?: Generator;
   readonly candidateProvider?: CandidateProvider;
   readonly ranking?: RankingOptions;
   readonly defaults?: Partial<Budget>;
   readonly maxScan?: number;
   readonly cursorTtlMs?: number;
-  readonly historyRetentionMs?: number;
-  readonly historyMaxAtoms?: number;
   readonly cacheMaxEntries?: number;
   readonly cacheTtlMs?: number;
   readonly traceTtlMs?: number;
@@ -286,31 +248,5 @@ export interface CandidateProvider {
     approximate: boolean;
   }>;
 }
-/** Internal host trace; raw references and policies are never model-supplied authority. */
-export interface Trace {
-  readonly id: string;
-  readonly at: number;
-  readonly authBinding: string;
-  readonly generation: string;
-  readonly policies: readonly string[];
-  readonly signalDigest: string;
-  reads: PinnedRef[];
-  current: PinnedRef[];
-  queries: { query: import('../adapters/storage.js').ScanQuery; revisions: string[] }[];
-  /** Declarative acquisition, distinct from the immutable observed reads/pages. */
-  plans?: AcquisitionPlan[];
-  readonly createdAt: number;
-  readonly config: string;
-}
-/** SDK-owned records, never executable model instructions. Pages are always replayed from the start. */
-export type AcquisitionPlan =
-  | { kind: 'search'; state: MemoryState; depth: number; historical: boolean }
-  | {
-      kind: 'inspect';
-      target: import('../contracts.js').Ref;
-      depth: number;
-      composition?: CompositionPlan;
-    }
-  | { kind: 'source'; target: import('../contracts.js').Ref };
 export type Usage = Readonly<Record<Resource, number>>;
 export type AuditValue = Json;

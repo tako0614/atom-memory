@@ -7,11 +7,9 @@ export const defaultBudget: Readonly<Budget> = Object.freeze({
   maxNetworkCalls: 16,
   maxModelCalls: 4,
   maxModelInputTokens: 8192,
-  maxModelOutputTokens: 2048,
   maxContextTokens: 8192,
-  maxHops: 2,
 });
-export type Resource = Exclude<keyof Budget, 'deadline' | 'maxHops'>;
+export type Resource = Exclude<keyof Budget, 'deadline'>;
 export class BudgetLedger {
   readonly limits: Budget;
   #used: Record<Resource, number>;
@@ -27,11 +25,10 @@ export class BudgetLedger {
     if (limits.deadline !== undefined && !Number.isFinite(Date.parse(limits.deadline)))
       fail('INVALID_SCHEMA', 'Invalid deadline');
     this.limits = clone(limits);
-    this.#used = Object.fromEntries(
-      Object.keys(defaultBudget)
-        .filter((k) => k !== 'maxHops')
-        .map((k) => [k, 0]),
-    ) as Record<Resource, number>;
+    this.#used = Object.fromEntries(Object.keys(defaultBudget).map((k) => [k, 0])) as Record<
+      Resource,
+      number
+    >;
   }
   get expired(): boolean {
     return this.limits.deadline !== undefined && Date.now() >= Date.parse(this.limits.deadline);
@@ -60,12 +57,11 @@ export class BudgetLedger {
   reserve(limits: Budget): BudgetLedger {
     const child = new BudgetLedger(limits);
     if (
-      limits.maxHops > this.limits.maxHops ||
-      (this.limits.deadline &&
-        (!limits.deadline || Date.parse(limits.deadline) > Date.parse(this.limits.deadline)))
+      this.limits.deadline &&
+      (!limits.deadline || Date.parse(limits.deadline) > Date.parse(this.limits.deadline))
     )
       fail('BUDGET_EXHAUSTED');
-    const { maxHops: _, deadline: __, ...cost } = limits;
+    const { deadline: _, ...cost } = limits;
     this.charge(cost);
     return child;
   }

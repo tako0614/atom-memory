@@ -286,23 +286,6 @@ export class SqliteStorage implements StorageAdapter {
       { value: string } | undefined;
     return row ? (JSON.parse(row.value) as T) : undefined;
   }
-  indexEntries(
-    policies: readonly string[],
-    configs: readonly string[],
-    after: string | undefined,
-    limit: number,
-  ): [string, { config: string; hash: string; policyId: string; vectors: number[][] }][] {
-    if (!policies.length || !configs.length) return [];
-    const rows = this.#db
-      .prepare(
-        `SELECT m.key,m.value FROM am_vector_buckets b
-      JOIN am_metadata m ON m.key='sdk:index:'||b.revision_id
-      WHERE b.config IN (${configs.map(() => '?').join(',')}) AND b.policy IN (${policies.map(() => '?').join(',')})
-      AND b.band=0 AND m.key>? GROUP BY m.key ORDER BY m.key LIMIT ?`,
-      )
-      .all(...configs, ...policies, after ?? '', limit) as { key: string; value: string }[];
-    return rows.map((row) => [row.key, JSON.parse(row.value)]);
-  }
   metaSet(key: string, value: unknown): void {
     this.#db
       .prepare(

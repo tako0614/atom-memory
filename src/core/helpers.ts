@@ -64,7 +64,7 @@ export function origin(
     selector: { kind: 'utf8', start, end, quoteDigest: digest(bytes.subarray(start, end)) },
   };
 }
-/** Source coverage is an interval union; generated statements remain separate ContextUnits. */
+/** Source coverage is an interval union; generated statements remain separate Atoms. */
 export function sourceCoverage(
   origins: readonly Origin[],
 ): { source: PinnedRef; ranges: { start: number; end: number }[]; bytes: number }[] {

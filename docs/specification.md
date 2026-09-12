@@ -1,58 +1,83 @@
 # アーキテクチャ
 
-v0.4の検索は共通の[構造ランキング](/ranking)を使います。公開操作はMemoryHost/MemoryClientとMemoryHarnessに集約し、旧Kernelのread/index/overlayと旧ハーネスは削除しました。不変版・CAS・原子コミット・出典・purgeは内部のAtomicStoreが持ちます。
-
-Atom Memory は、アプリが扱う内容と関係を、高水準クライアントから一つの Atom ストアへ保存します。検索、モデルへの記憶供給、Writer の整理は同じ取得処理を使います。
+Atom Memoryは、本文・関係・不変版を保存し、現在の文脈に合う記憶を返すJavaScriptライブラリです。0.5では、モデル実行と履歴運用をアプリケーションへ分離しました。
 
 ```text
-アプリ                         MemoryHarness
-write / search / inspect       自動 read → モデル → 明示操作
-edit / read                            │
-        └──────── MemoryClient ────────┘
-                         │
-        候補取得 → 関係展開 → 依存検証 → パッキング
-                         │
-        不変版・出典・認可・原子的な編集確定
-                         │
-                 Memory / SQLite
+アプリ / Agent
+  入力の取得、期間の選択、モデル、ツール、費用、再試行、チェックポイント
+  read → モデル → 検証した write / edit → 索引更新の呼出し
+                │
+          MemoryClient / MemoryHost
+                │
+  候補取得 → 鮮度検証 → seed採用 → 構造ランキング → パッキング
+                │
+  不変版・出典・認可・CAS・原子的な編集確定
+                │
+          Memory / SQLite
 ```
 
-## ホストとクライアント
+## ライブラリが持つもの
 
-`MemoryHost` は認証、保存先、エンコーダー、生成器、予算の設定を持ちます。`connect` は認証主体と書き手を束縛した `MemoryClient` を返します。クライアントは保存や検索で参照を発行し、参照の解決時に版と現在の権限を検証します。
+- `text + links` によるAtom。本文・まとまり・関係は同じ形式で、再帰・多重所属を表す一般グラフです。
+- 検索表現は `representationVersion: 3` のAtom自身の本文だけです。役割付きリンクは候補確定後の構造ランキングで一度だけ適用します。
+- 観測済みrevisionと現在版の区別、原子的な複数編集、競合検出、再送の冪等性。
+- 出典、実際に読んだ入力の記録、スコープ認可、削除による依存物の失効。
+- 埋め込みproviderと候補providerを通した検索、役割・方向付きの構造ランキング。
+- 取得・本文・通信などの有限予算、cursor、索引更新の操作。
 
-この分担により、アプリの通常操作では内容と関係に集中できます。原資料の投入は入力アダプター、生成物の保存は生成エージェントという出自もホストで記録します。
+## Agent / アプリが持つもの
 
-## 取得から記憶領域まで
+- 何を意味単位とするか、どの関係を作るか、同じ根拠の重複をどう整理するか。
+- 使用モデル、モデルの応答形式、ツール実行、文脈や明示的な検討状態の選択。
+- 履歴をどの期間・件数で処理するか、いつ再整理するか、費用上限と再試行。
+- どの整理を採用するか、後継の意味、履歴をいつまで保持するか。
 
-1. **候補取得**：本文・役割を含む検索表現を使い、許可された候補を取得する。
-2. **関係展開**：正引きと逆引きで接続先をたどり、深さ・件数・訪問済みで範囲を制限する。
-3. **依存検証**：使用する版、出典、生成物の入力、現在の権限を確かめる。
-4. **パッキング**：関連度と本文長、同じ証拠の重複、必須条件の本文を扱い、今回の予算に収める。
+Sakanaでは `src/ai/runtime.js` の `runAgent` を共通実行ループとし、`src/conversation/writer.js` が意味構造を作ります。Atom内に別のモデルプロトコルや実行ループはありません。
 
-`search` は候補のページ、`inspect` は特定の参照と周辺、`read` はパックした記憶領域を返します。続きには読取状態と検索信号を結び付け、別のクエリで使ったり、失効を空結果として扱ったりしないよう検証します。
+## 読取と再整理の境界
 
-## 編集の確定
+`read` / `search` は保存済み生成物の入力が古くなっていないか確認します。古い生成物を `items` や `text` へ返さず、`stale` にその参照を返します。古い候補の現在の出典を、その候補の順位・score・ページ位置へ代用しません。現在の原資料は、通常の本文候補取得または構造展開で独立に見つかった場合だけ返します。
 
-`edit` は非公開 overlay で変更を作ります。Writer やアプリは自分の変更を読みながら、有限のバッチを組み立てます。確定時に改訂の前提版、参照、関係範囲、入力依存、権限を検証し、全件を原子的に保存します。
+候補の鮮度・認可はseedへ採用する前に検証し、その結果を一回の操作内でrevisionごとにキャッシュします。構造ランキングでも、新しいグラフノードを追加する前に同じ検証を行うため、staleなノードが現在の隣接ノードへ関連度を渡すことはありません。
 
-`supersede` はこの編集の一部として後継を採用し、旧構成の具体的な版を manifest に残します。作業中の検索結果をそのまま永続的な整理へ昇格させることはなく、保存する内容は明示的な編集で決まります。
+ライブラリは古い検索を再実行して意図を推測したり、LLMで文章を生成したりしません。アプリが必要な入力を選び直し、Writerを呼び、通常の `edit` で新しい版を確定します。埋め込みの計算は検索機能の一部で、設定したproviderと予算に従います。
 
-## モデル入力の寿命
+`inspect` は指定した版を調べる操作です。古い生成文そのものも調査でき、現在の正しい回答であることは保証しません。`read` の鮮度判定と区別します。
 
-ハーネスはユーザー入力と作業状態を保持し、今回の記憶領域をモデル呼出しごとに選び直します。監査ログはホストに別保存し、入力の全履歴をモデルへ送り続ける構成にはしません。
+## 改訂と履歴
 
-呼出し前にシリアライズ済みの全入力を計測し、出力の予約も含めてウィンドウを検証します。モデルと索引などの外部処理にも、同じ実行予算・キャンセルを伝搬します。
+`revise` は同じAtomの新しい版を作ります。既存の観測参照は元の版を指し、logicalリンクは現在版を指します。あるAtomの旧版を指すことと、その周辺全体を過去の同じ時点へ戻すことは別です。
+
+ライブラリは後継採用、構成の自動推定、30日などの保持期間を設定しません。必要ならアプリが通常の関係と改訂・retireを組み合わせ、保存adapterのsnapshot機能を使って保持方針を実装します。
+
+## 監査と削除の保証
+
+現在のpurgeは保守的です。出典、任意リンク、読取receiptに記録された入力から依存物を連鎖削除します。同じeditでAIが見た入力は全出力の監査依存になり、出典ラベルだけで個別出力の因果的独立を推定しません。
+
+この分離では削除保証を弱めていません。細かい独立性が必要なWriterは、原子的なコミットの大きさだけでなく、モデルへ渡す入力の単位を設計します。一般の関連と削除依存の契約をさらに変える場合は、別の保存・削除仕様として扱います。
+
+一つのreceipt manifestには、モデルが見た `reads`、currentnessを検査する subset、queryの observations、出力の所属、認可、historical basisを記録します。これらは同じイベント内の別の意味です。観測・鮮度・出典・erase lineageを別の新しいframeworkへ分割することは0.5の要件ではありません。引用リストやモデルのlinksだけでerase lineageを狭めず、opaqueなWriter editでは見えた入力全体を保守的な依存として残します。
+
+## 表現・関係・検証の判断境界
+
+隣接Atomの本文を親の埋め込みや語彙表現へ連結する方式は、関係weightが0でも候補入口に影響し、同じリンクを候補取得と構造伝播で二重に数え、対象改訂だけで親を再エンコードする依存を作ります。0.5ではこの暗黙の経路を削除し、本文一致を `direct`、リンク経由の寄与を `structural` として分けます。代替案を戻す場合は、表現方式を版管理し、役割・方向ごとの寄与を指定した同条件評価で、構造探索を超える利益を示すことが先です。
+
+Atomは addressable な意味を持つ不変版ですが、数学的に唯一の「最小意味単位」を定めません。通常の二項関係は役割付きリンクで表します。関係自身に本文・出典・改訂・認可・n項参加者・リンクが必要な場合だけ、関係を別Atomへ reify します。一つのレコード形を採用することは、すべての関係をノードへ変換する方針ではありません。重複やWriterの粒度が順位へ与える影響は、Agent側の意味設計と評価で確認します。
+
+`score` は query への相対関連度です。真偽、因果独立性、絶対的重要度を保証しません。候補providerは既定で、embeddingなしなら `LexicalCandidateProvider`、embeddingありなら `HybridCandidateProvider` を使います。`ExactCandidateProvider` は明示的な有限走査の基準であり、近似診断や `complete` はコーパス全体の網羅性を証明しません。
+
+表現v3への移行では、旧Atom本文・revision・receipt・linksを意味データとして保ち、索引を投影として再生成します。既知のv2設定からの一行再利用は、本文hash、policy、encoder、dimensionsが一致する場合に限ります。`prepareIndex` はcursor付きでcurrent headを走査し、`updateIndex` だけがsequence 0の変更フィードを使います。旧進捗やcursorをコピーせず、全policy scopeをそれぞれの走査または変更フィードの終端までdrainしてから意味検索の準備完了を宣言します。一つの呼出し・channelの `pending: false` は全体のreadinessではありません。旧索引メタデータが互換しない候補を調べた場合も `pending` として報告します。
+
+残る検証仮説は、(1) own-body候補と明示的グラフ展開でrelation-only evidenceのrecall・費用が保てるか、(2) Writerが将来の質問を知らずに適切な粒度・関係を作れるか、(3) 関係Atomの重複がseed massや順位を歪めないか、(4) 長期履歴のscope別drainが再起動・encoder失敗後も完了するか、です。既存の決定的な構造評価は(1)のグラフ因果を部分的に示すだけで、実モデル品質・有料モデル差・本番公開を示しません。
 
 ## 実装を読む
 
-| 関心                       | 主なファイル                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------ |
-| 公開クライアントと編集     | [client/memory.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/memory.ts)       |
-| 認可・読取状態・参照の管理 | [client/engine.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/engine.ts)       |
-| 関係展開・依存・パッキング | [client/retrieval.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/retrieval.ts) |
-| 候補取得                   | [core/candidates.ts](https://github.com/tako0614/atom-memory/blob/main/src/core/candidates.ts)   |
-| 不変版と編集の確定         | [core/kernel.ts](https://github.com/tako0614/atom-memory/blob/main/src/core/kernel.ts)           |
-| モデル実行                 | [runtime/harness.ts](https://github.com/tako0614/atom-memory/blob/main/src/runtime/harness.ts)   |
+| 責務                  | 実装                                                                                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 公開操作と編集        | [client/memory.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/memory.ts)                                                                                              |
+| 認可・参照・取得状態  | [client/engine.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/engine.ts)                                                                                              |
+| 鮮度検証・本文構築    | [client/retrieval.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/retrieval.ts)                                                                                        |
+| グラフ取得・順位      | [client/ranking.ts](https://github.com/tako0614/atom-memory/blob/main/src/client/ranking.ts) / [core/ranking.ts](https://github.com/tako0614/atom-memory/blob/main/src/core/ranking.ts) |
+| 原子保存・出典・purge | [core/store.ts](https://github.com/tako0614/atom-memory/blob/main/src/core/store.ts)                                                                                                    |
 
-保存方式と対応規模は [保存と検索](/adapters)、動作と実モデルの検証は [検証](/acceptance)にまとめています。
+公開APIは[操作一覧](/api)、移行は[0.5への移行](/migration)を参照してください。

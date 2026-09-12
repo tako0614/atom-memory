@@ -6,7 +6,7 @@ import { canonical, digest, fail } from '../core/util.js';
 
 export async function indexRevision(engine: Engine, r: AtomRevision, s: Session): Promise<number> {
   engine.get({ kind: 'pinned', atomId: r.atomId, revisionId: r.revisionId }, s);
-  const text = engine.representation(r, s);
+  const text = engine.text(r);
   const key = `sdk:index:${r.revisionId}`;
   const old = engine.storage.metaGet<{
     config: string;
@@ -15,7 +15,8 @@ export async function indexRevision(engine: Engine, r: AtomRevision, s: Session)
     vectors?: number[][];
   }>(key);
   if (
-    old?.config === engine.legacyConfig &&
+    old &&
+    [engine.previousIndexConfig, engine.legacyConfig].includes(old.config) &&
     old.hash === digest(text) &&
     old.policyId === r.policyId &&
     old.vectors
@@ -56,12 +57,10 @@ export async function indexRevision(engine: Engine, r: AtomRevision, s: Session)
 
 interface Progress {
   after: ChangePosition;
-  event?: { atomId: string; position: ChangePosition; indexed: boolean; dependentAfter?: string };
 }
 /** A durable consumer of committed revisions, independent of model transactions.
  * A failed encoder leaves the event pending; a restart never requires a full scan.
- * Direct logical dependents are refreshed because representations include their
- * direct targets. External membership does not recursively rewrite every parent. */
+ * Only the changed Atom is indexed: relationship traversal is separate from its body. */
 export async function updateIndex(
   engine: Engine,
   binding: ClientBinding,
@@ -74,9 +73,7 @@ export async function updateIndex(
   const limit = options.limit ?? 32;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10000) fail('INVALID_INPUT');
   const s = engine.session(binding, options);
-  const migration = migrateIndex(engine, s, limit);
-  if (migration.pending) return { indexed: 0, processed: migration.processed, pending: true };
-  let processed = migration.processed,
+  let processed = 0,
     indexed = 0,
     pending = false;
   for (const policy of s.trace.policies) {
@@ -90,85 +87,25 @@ export async function updateIndex(
       });
     for (;;) {
       const before = engine.storage.metaGet<Progress>(key);
-      const state: Progress = structuredClone(before ?? { after: { sequence: 0, revisionId: '' } });
-      if (!state.event) {
-        s.ledger.charge({ maxCandidates: 1 });
-        const changed = engine.storage.changes([policy], state.after, 1, s.at)[0];
-        if (!changed) break;
-        state.event = {
-          atomId: changed.revision.atomId,
-          position: { sequence: changed.sequence, revisionId: changed.revision.revisionId },
-          indexed: false,
-        };
-      }
+      s.ledger.charge({ maxCandidates: 1 });
+      const changed = engine.storage.changes(
+        [policy],
+        before?.after ?? { sequence: 0, revisionId: '' },
+        1,
+        s.at,
+      )[0];
+      if (!changed) break;
       if (processed >= limit) {
         pending = true;
         break;
       }
-      const event = state.event;
-      if (!event.indexed) {
-        const head = engine.storage.get({ kind: 'logical', atomId: event.atomId }, s.at);
-        if (head?.state === 'active') indexed += await indexRevision(engine, head, s);
-        event.indexed = true;
-      } else {
-        const dependent = engine.scan(
-          {
-            policies: [...s.trace.policies],
-            relation: { target: { kind: 'logical', atomId: event.atomId } },
-            after: event.dependentAfter,
-            limit: 1,
-          },
-          s,
-        )[0];
-        if (!dependent) {
-          state.after = event.position;
-          delete state.event;
-        } else {
-          if (
-            dependent.slots.some(
-              (slot) => slot.target.kind === 'logical' && slot.target.atomId === event.atomId,
-            )
-          )
-            indexed += await indexRevision(engine, dependent, s);
-          event.dependentAfter = dependent.atomId;
-        }
-      }
+      const head = engine.storage.get({ kind: 'logical', atomId: changed.revision.atomId }, s.at);
+      if (head?.state === 'active') indexed += await indexRevision(engine, head, s);
       processed++;
-      save(before, state);
+      save(before, {
+        after: { sequence: changed.sequence, revisionId: changed.revision.revisionId },
+      });
     }
   }
   return { indexed, processed, pending };
-}
-
-/** One-way 0.3 metadata migration. Compatible vectors are never re-encoded. */
-export function migrateIndex(engine: Engine, s: Session, limit: number) {
-  const id = `sdk:index-migration:04:${digest(canonical([engine.indexConfig, engine.legacyConfig, s.trace.policies]))}`;
-  const saved = engine.storage.metaGet<{ complete?: boolean; after?: string }>(id);
-  if (saved?.complete) return { processed: 0, pending: false };
-  const page =
-    engine.storage.indexEntries?.(s.trace.policies, [engine.legacyConfig], saved?.after, limit) ??
-    [];
-  engine.storage.transaction(() => {
-    engine.check(s);
-    for (const [key, value] of page) {
-      s.ledger.charge({ maxCandidates: 1, maxBytes: Buffer.byteLength(canonical(value)) });
-      engine.storage.metaSet(key, { ...value, config: engine.indexConfig });
-    }
-    const complete = page.length < limit;
-    engine.storage.metaSet(id, { complete, after: page.at(-1)?.[0] ?? saved?.after });
-    if (complete)
-      for (const policy of s.trace.policies) {
-        const oldKey = `sdk:index-progress:${digest(canonical([engine.legacyConfig, policy, s.trace.policies]))}`;
-        const newKey = `sdk:index-progress:${digest(canonical([engine.indexConfig, policy, s.trace.policies]))}`;
-        const progress = engine.storage.metaGet(oldKey);
-        if (progress && !engine.storage.metaGet(newKey)) engine.storage.metaSet(newKey, progress);
-        engine.storage.metaDelete(oldKey);
-      }
-    if (page.length)
-      engine.storage.metaSet(
-        'sdk:index-generation',
-        (engine.storage.metaGet<number>('sdk:index-generation') ?? 0) + 1,
-      );
-  });
-  return { processed: page.length, pending: page.length === limit };
 }

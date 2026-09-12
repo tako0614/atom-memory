@@ -50,13 +50,6 @@ export interface StorageAdapter {
   metaGet<T>(key: string): T | undefined;
   metaSet(key: string, value: unknown): void;
   metaEntries<T>(prefix: string): [string, T][];
-  /** Bounded, policy-scoped vector metadata migration. */
-  indexEntries?(
-    policies: readonly string[],
-    configs: readonly string[],
-    after: string | undefined,
-    limit: number,
-  ): [string, { config: string; hash: string; policyId: string; vectors: number[][] }][];
   /** Filter paired metadata keys before loading values (for example durable versus transient traces). */
   metaUnbackedEntries?<T>(prefix: string, backingPrefix: string): [string, T][];
   metaDelete(key: string): void;
