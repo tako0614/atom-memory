@@ -1,20 +1,72 @@
 {
-  "at": "2026-09-12T12:12:13.667915+00:00",
-  "sourceCommit": null,
+  "at": "2026-09-12T12:19:36.831Z",
+  "sourceCommit": "1495d5aaf2004e014cb35caa51cbdc1e48eb5b1b",
   "tag": "v0.4.0",
   "npm": {
     "version": "0.4.0",
-    "published": false
+    "published": true,
+    "publicationAccepted": true,
+    "integrity": "sha512-ZHG2ebDN40im8OGiUS2RZ3KSJOSE2nB1rXCOz3krW3W+rUi5rnw7pQpMYudZS+1DVCA7GhMUgwN7tY4NsuhIJA==",
+    "sha256": "06e43723dd879229c2181a26ea439011ddd2da3fcc572ec6dc4e445bb427fb95",
+    "bytes": 220609,
+    "entryCount": 151,
+    "localTarballInstall": "passed: public exports, types, MemoryStorage, SQLite, automatic recall, required evidence",
+    "registryInstall": "passed with empty cache: public exports, types, MemoryStorage, SQLite and automatic recall",
+    "tarball": "https://registry.npmjs.org/atom-memory/-/atom-memory-0.4.0.tgz",
+    "latest": "0.4.0"
   },
   "site": {
     "url": "https://atom-memory.takos.jp",
     "worker": "atom-memory-docs",
-    "published": false,
-    "dryRun": "passed"
+    "published": true,
+    "dryRun": "passed",
+    "sourceCommit": "1495d5aaf2004e014cb35caa51cbdc1e48eb5b1b",
+    "build": "passed",
+    "versionId": "390e7451-288b-4628-ae48-204d3bea2d45",
+    "pages": [
+      {
+        "path": "/",
+        "status": 200,
+        "sha256": "a644c51165135e836e6db070fd059b15771d12dd2c4671f20808f22fb8facf71"
+      },
+      {
+        "path": "/ranking",
+        "status": 200,
+        "sha256": "da42101beaeff15e4e2b8e1569f0f1db6a2c12194cee31e95012fbc59a927bbf"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "sha256": "b5eb925f3e4d9c2a0ee4149261ed39d34fcca844bce52af75d28f992c60eaba4"
+      },
+      {
+        "path": "/release",
+        "status": 200,
+        "sha256": "871de15028f066803ff0880d185f6238b059f9c7978e7d3af086190ff2b1fba0"
+      },
+      {
+        "path": "/api",
+        "status": 200,
+        "sha256": "4c51e5db53dbd0c801a72cc492897e2d694456f19530a9d829f6730619f01196"
+      },
+      {
+        "path": "/contracts",
+        "status": 200,
+        "sha256": "6f1ec141e0a8b7bbccbf780468182d2daf7c5dd46a2273ae3e3e039271bc4303"
+      },
+      {
+        "path": "/release.json",
+        "status": 200,
+        "sha256": "9ed407f480c1ce8425bdb31fc414f026a7cfc9353ee4a233a3018a50a8b7d694"
+      }
+    ],
+    "releaseManifest": "verified on custom domain and workers.dev"
   },
   "regression": {
     "tests": 136,
     "nodeVersions": [
+      "22 (CI)",
+      "24 (CI)",
       "26.1.0 (local)"
     ],
     "documentationExamples": 15,
@@ -34,5 +86,14 @@
     "newEvaluation": false,
     "note": "OpenRouter key is absent; question-blind Ling Writer evaluation is pending. No paid corpus processing."
   },
-  "localEvaluation": "validation/ranking-v0.4.0.json"
+  "localEvaluation": "validation/ranking-v0.4.0.json",
+  "ci": {
+    "url": "https://github.com/tako0614/atom-memory/actions/runs/34693103893",
+    "conclusion": "success",
+    "matrix": [
+      22,
+      24
+    ],
+    "commit": "1495d5aaf2004e014cb35caa51cbdc1e48eb5b1b"
+  }
 }

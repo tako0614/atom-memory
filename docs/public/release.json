@@ -1,20 +1,23 @@
 {
-  "at": "2026-09-12T12:12:13.667915+00:00",
-  "sourceCommit": null,
+  "at": "2026-09-12T12:15:48.742659+00:00",
+  "sourceCommit": "1495d5aaf2004e014cb35caa51cbdc1e48eb5b1b",
   "tag": "v0.4.0",
   "npm": {
     "version": "0.4.0",
-    "published": false
-  },
-  "site": {
-    "url": "https://atom-memory.takos.jp",
-    "worker": "atom-memory-docs",
-    "published": false,
-    "dryRun": "passed"
+    "published": true,
+    "publicationAccepted": true,
+    "integrity": "sha512-ZHG2ebDN40im8OGiUS2RZ3KSJOSE2nB1rXCOz3krW3W+rUi5rnw7pQpMYudZS+1DVCA7GhMUgwN7tY4NsuhIJA==",
+    "sha256": "06e43723dd879229c2181a26ea439011ddd2da3fcc572ec6dc4e445bb427fb95",
+    "bytes": 220609,
+    "entryCount": 151,
+    "localTarballInstall": "passed: public exports, types, MemoryStorage, SQLite, automatic recall, required evidence",
+    "registryInstall": "passed with empty cache: public exports, types, MemoryStorage, SQLite and automatic recall",
+    "tarball": "https://registry.npmjs.org/atom-memory/-/atom-memory-0.4.0.tgz",
+    "latest": "0.4.0"
   },
   "regression": {
     "tests": 136,
-    "nodeVersions": ["26.1.0 (local)"],
+    "nodeVersions": ["22 (CI)", "24 (CI)", "26.1.0 (local)"],
     "documentationExamples": 15,
     "documentedOutputs": 7,
     "format": "passed"
@@ -32,5 +35,11 @@
     "newEvaluation": false,
     "note": "OpenRouter key is absent; question-blind Ling Writer evaluation is pending. No paid corpus processing."
   },
-  "localEvaluation": "validation/ranking-v0.4.0.json"
+  "localEvaluation": "validation/ranking-v0.4.0.json",
+  "ci": {
+    "url": "https://github.com/tako0614/atom-memory/actions/runs/34693103893",
+    "conclusion": "success",
+    "matrix": [22, 24],
+    "commit": "1495d5aaf2004e014cb35caa51cbdc1e48eb5b1b"
+  }
 }
