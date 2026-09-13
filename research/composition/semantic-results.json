@@ -1,0 +1,4612 @@
+{
+  "at": "2026-09-13T00:49:08.190Z",
+  "model": "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
+  "revision": "2c4055b12046f11709e9df2c122e59ffbdc2f900",
+  "runtime": "@huggingface/transformers@3.8.1",
+  "dtype": "q8",
+  "embeddingMs": 293.51929700000005,
+  "vectorSha256": "11dc3aaa18611ec734f665333181d3086fcbde613fe2b6c8770a214027fa231e",
+  "sourceSha256": {
+    "semantic-corpus.mjs": "f829d3cc6b2f12fe667a401003d589b7cb6100e2f610f0e07a41fe6241380ff7",
+    "embed-semantic.mjs": "48a9ee8df75239a0b6dc55dce9f21cec1277741ef76ddfff7da4b612ad7f976f",
+    "evaluate-semantic.mjs": "1092e46e7237fb6b51b096d344aa25a103d736c60b7f0b653b58b167588530a2",
+    "reader.mjs": "7b3d13f6358abce41d493fbd4a5772781c5a90b680a2cf67a0d51f818aea51d4",
+    "evaluator.mjs": "b24de055b428c289dd1ace04fe852158dd302090a7319e3249fa743da6ef8c72",
+    "linear.mjs": "0dc0e695e1dfb179d29527ca07fb47a22d81600bdb186555f2d4dff9fc7e282e",
+    "../../src/client/retrieval.ts": "7a0dc7e9cc199137954ed20939d447df9c65e80448af77bd416e428c80878b86"
+  },
+  "corpus": "97 synthetic Japanese community records including 72 chronological activity messages; deterministic policy structure built before queries; six fixed evaluation paraphrases; not an independently authored blind benchmark",
+  "results": [
+    {
+      "question": 0,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 1.514116999999942,
+      "readMs": 29.724437999999964,
+      "work": 35666,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 1.1152199999999084,
+      "readMs": 25.63684999999998,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.296530999999959,
+      "readMs": 24.227798000000007,
+      "work": 51648,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.07821400000000267,
+      "readMs": 29.56199499999991,
+      "work": 117454,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.03288104736836052,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.9614940000000161,
+      "readMs": 26.744797000000062,
+      "work": 35199,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.03288104736836052,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 2.6852649999999585,
+      "readMs": 25.09878200000003,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.03288104736836052,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.07574800000008963,
+      "readMs": 58.05018299999995,
+      "work": 1999794,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.03288104736836052,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.06438699999989694,
+      "readMs": 66.51645200000007,
+      "work": 1999366,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2603626537161657,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 1.0718500000000404,
+      "readMs": 5.248023000000103,
+      "work": 7543,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2603626537161657,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 2.7264580000000933,
+      "readMs": 2.1685030000001007,
+      "work": 10935,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2603626537161657,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.0690559999998186,
+      "readMs": 3.7815949999999248,
+      "work": 32729,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2603626537161657,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.07140400000002955,
+      "readMs": 4.854874999999993,
+      "work": 53601,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.26294411520748245,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.05110799999988558,
+      "readMs": 1.8121000000001004,
+      "work": 384,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.26294411520748245,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.033456999999998516,
+      "readMs": 3.1271429999999327,
+      "work": 166,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.26294411520748245,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.035112999999910244,
+      "readMs": 2.2849630000000616,
+      "work": 2699,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.26294411520748245,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.016769999999951324,
+      "readMs": 1.8407900000001973,
+      "work": 1013,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:77280442-9cf8-40c8-b38d-9b224ff9c5bb",
+        "atom:c17eb74b-cf5c-4bcf-9c7f-86ac83f34ae5",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90",
+        "atom:a66f13c3-212f-40be-9466-7f5776e62505",
+        "atom:7fdd53dc-1d5c-4071-8a23-97d89454c5d8",
+        "atom:fe6497ea-ec97-4a30-8c5f-699c629af683",
+        "atom:28f7024b-b5ed-415f-9f72-f2cd1beaaac5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "イベントの写真は共有チャンネルに投稿できます。",
+        "顔が写る本人全員から公開の同意を得てください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。",
+        "第7回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第3回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第10回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。",
+        "第6回の活動記録。写真の共有について運営で話し合いました。担当班は1班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10685188068742967,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.713282000000163,
+      "readMs": 34.788458999999875,
+      "work": 36008,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10685188068742967,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 1.3125780000000304,
+      "readMs": 24.995556999999962,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10685188068742967,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.09052399999995941,
+      "readMs": 61.011977000000115,
+      "work": 1999818,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 0,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10685188068742967,
+      "acquisitionMs": 64.258643,
+      "prepareMs": 0.0713740000001053,
+      "readMs": 74.980186,
+      "work": 1999424,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.6772240000000238,
+      "readMs": 24.871476999999913,
+      "work": 35985,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 1.1229940000000624,
+      "readMs": 22.76091100000008,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.06780800000001364,
+      "readMs": 23.738400000000183,
+      "work": 51592,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.06386999999995169,
+      "readMs": 25.193252999999913,
+      "work": 116313,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.041349659836373814,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.741704000000027,
+      "readMs": 22.997736999999915,
+      "work": 35748,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.041349659836373814,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 1.197691000000077,
+      "readMs": 22.62529500000005,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.041349659836373814,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.06603300000006129,
+      "readMs": 47.212256000000025,
+      "work": 1999804,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.041349659836373814,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.07441599999992832,
+      "readMs": 72.82176099999992,
+      "work": 1999901,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2564738803321841,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.5895020000000386,
+      "readMs": 2.34011200000009,
+      "work": 7345,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4678,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2564738803321841,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 1.0564840000001823,
+      "readMs": 1.7676960000001145,
+      "work": 10935,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4678,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2564738803321841,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.036518999999998414,
+      "readMs": 2.2520750000001044,
+      "work": 30443,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4678,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2564738803321841,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.028375000000096406,
+      "readMs": 3.063961000000063,
+      "work": 49103,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4678,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.13256817138015511,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.04522500000007312,
+      "readMs": 1.5219680000000153,
+      "work": 359,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3031,
+      "outputAtomIds": [
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654",
+        "atom:27f54d3b-8e32-43b5-9260-9d5cb0e7229e"
+      ],
+      "outputTexts": [
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第12回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.13256817138015511,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.02366499999993721,
+      "readMs": 1.2255649999999605,
+      "work": 171,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3031,
+      "outputAtomIds": [
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654",
+        "atom:27f54d3b-8e32-43b5-9260-9d5cb0e7229e"
+      ],
+      "outputTexts": [
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第12回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.13256817138015511,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.04144099999984974,
+      "readMs": 1.2202230000000327,
+      "work": 142,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3031,
+      "outputAtomIds": [
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654",
+        "atom:27f54d3b-8e32-43b5-9260-9d5cb0e7229e"
+      ],
+      "outputTexts": [
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第12回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.13256817138015511,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.005439999999907741,
+      "readMs": 1.225460000000112,
+      "work": 142,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3031,
+      "outputAtomIds": [
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:cbd2388c-9d73-483b-923e-cdc499416103",
+        "atom:2f019a7f-16ab-4f4f-829d-ac0ea434f26f",
+        "atom:f5de5d68-f378-4fc3-82f7-86b25751cb3d",
+        "atom:8d858f96-f8b5-4597-ae66-2e88f0a9f654",
+        "atom:27f54d3b-8e32-43b5-9260-9d5cb0e7229e"
+      ],
+      "outputTexts": [
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "第1回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第3回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第8回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第7回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。",
+        "第12回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.09804386761483008,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.5809109999997872,
+      "readMs": 24.872067000000015,
+      "work": 36316,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.09804386761483008,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 1.0805179999999837,
+      "readMs": 22.107682000000068,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.09804386761483008,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.06464100000016515,
+      "readMs": 48.18038300000012,
+      "work": 1999942,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 1,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.09804386761483008,
+      "acquisitionMs": 60.289702000000034,
+      "prepareMs": 0.06740199999990182,
+      "readMs": 69.58763199999999,
+      "work": 2000000,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.5396439999999529,
+      "readMs": 23.64788599999997,
+      "work": 37939,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 1.0529709999998431,
+      "readMs": 20.548089000000118,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.08881499999984044,
+      "readMs": 20.302844999999934,
+      "work": 52543,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.06066499999997177,
+      "readMs": 23.845996000000014,
+      "work": 119545,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.035656082170309716,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.5393039999999019,
+      "readMs": 22.514941000000135,
+      "work": 37442,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.035656082170309716,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 1.1291189999997187,
+      "readMs": 19.873485000000073,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.035656082170309716,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.07205500000009124,
+      "readMs": 45.141549999999825,
+      "work": 1999980,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.035656082170309716,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.06363400000009278,
+      "readMs": 66.68422199999986,
+      "work": 1999953,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2500192923881227,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.5847349999999096,
+      "readMs": 2.4964090000003125,
+      "work": 7821,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2500192923881227,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 1.0529740000001766,
+      "readMs": 1.8378680000000713,
+      "work": 11127,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2500192923881227,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.05593700000008539,
+      "readMs": 2.4239769999999226,
+      "work": 43553,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2500192923881227,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.05315500000006068,
+      "readMs": 4.055376000000251,
+      "work": 78186,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4682,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.24184248579641737,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.04149599999982456,
+      "readMs": 1.2981520000003002,
+      "work": 398,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3034,
+      "outputAtomIds": [
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1",
+        "atom:3fcf5b6e-d2d3-449c-bd5c-700f4733169c"
+      ],
+      "outputTexts": [
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第7回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.24184248579641737,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.02422500000011496,
+      "readMs": 1.2158030000000508,
+      "work": 180,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3034,
+      "outputAtomIds": [
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1",
+        "atom:3fcf5b6e-d2d3-449c-bd5c-700f4733169c"
+      ],
+      "outputTexts": [
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第7回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.24184248579641737,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.006949000000076921,
+      "readMs": 1.307376000000204,
+      "work": 1906,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3034,
+      "outputAtomIds": [
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1",
+        "atom:3fcf5b6e-d2d3-449c-bd5c-700f4733169c"
+      ],
+      "outputTexts": [
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第7回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.24184248579641737,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.0067490000001271255,
+      "readMs": 1.2375930000002882,
+      "work": 341,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3034,
+      "outputAtomIds": [
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:cfb193c7-ce4f-4736-b33f-acf305f567ef",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:eac14d8f-abf5-43d8-bc03-11f72e828a9d",
+        "atom:d26446b1-6cbf-46f7-977e-c38af1aebd16",
+        "atom:0cc6aba9-2830-4475-a378-e59373b48928",
+        "atom:e6202286-fb0b-453b-b014-f0730a648ee1",
+        "atom:3fcf5b6e-d2d3-449c-bd5c-700f4733169c"
+      ],
+      "outputTexts": [
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "第6回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第5回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第10回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第8回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。",
+        "第7回の活動記録。外部リンクについて運営で話し合いました。担当班は3班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0925611982210451,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.5754950000000463,
+      "readMs": 22.108088999999836,
+      "work": 40003,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：資料の再利用"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0925611982210451,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 1.0233509999998205,
+      "readMs": 23.739043000000038,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：資料の再利用"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0925611982210451,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.06416499999977532,
+      "readMs": 46.2242040000001,
+      "work": 1999950,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：資料の再利用"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 2,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0925611982210451,
+      "acquisitionMs": 58.953101999999944,
+      "prepareMs": 0.06701900000007299,
+      "readMs": 67.3924350000002,
+      "work": 1999676,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：資料の再利用"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.5000840000002427,
+      "readMs": 23.06728299999986,
+      "work": 38573,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 1.0443390000000363,
+      "readMs": 20.083575999999994,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.06448600000021543,
+      "readMs": 20.175285000000258,
+      "work": 56135,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.06512599999996382,
+      "readMs": 25.515129999999772,
+      "work": 125740,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0260049592662802,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.4869090000001961,
+      "readMs": 22.115033999999923,
+      "work": 38795,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0260049592662802,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 1.035591000000295,
+      "readMs": 19.863570999999865,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0260049592662802,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.08605100000022503,
+      "readMs": 47.41625499999964,
+      "work": 1999706,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0260049592662802,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.036410000000159926,
+      "readMs": 72.57873000000018,
+      "work": 1999524,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7984,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.22301868911338585,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.5846330000003945,
+      "readMs": 2.6694370000000163,
+      "work": 7887,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4699,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.22301868911338585,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 1.0469230000003336,
+      "readMs": 1.8948169999998754,
+      "work": 11127,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4699,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.22301868911338585,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.03097299999990355,
+      "readMs": 2.344728000000032,
+      "work": 37882,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4699,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.22301868911338585,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.027515000000221335,
+      "readMs": 3.517797999999857,
+      "work": 67175,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 4699,
+      "outputAtomIds": [
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：利用者の処分",
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2241839283637322,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.028568000000177562,
+      "readMs": 1.3957409999998163,
+      "work": 398,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3051,
+      "outputAtomIds": [
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5",
+        "atom:19112d6e-e155-481a-9e24-afa02ac1acda"
+      ],
+      "outputTexts": [
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第8回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2241839283637322,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.02106000000003405,
+      "readMs": 1.3343189999995957,
+      "work": 180,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3051,
+      "outputAtomIds": [
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5",
+        "atom:19112d6e-e155-481a-9e24-afa02ac1acda"
+      ],
+      "outputTexts": [
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第8回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2241839283637322,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.00592899999992369,
+      "readMs": 1.3783269999998993,
+      "work": 1644,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3051,
+      "outputAtomIds": [
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5",
+        "atom:19112d6e-e155-481a-9e24-afa02ac1acda"
+      ],
+      "outputTexts": [
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第8回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.2241839283637322,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.004920999999740161,
+      "readMs": 1.2967990000001919,
+      "work": 338,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3051,
+      "outputAtomIds": [
+        "atom:2e87daf2-2e58-456a-b351-cebcda5322d0",
+        "atom:0ecee645-66f5-4846-8009-6546c07c376c",
+        "atom:66e480cd-848d-488a-8327-479a124f40f8",
+        "atom:1b835e4a-81ee-4946-9f35-cf47c10cddbc",
+        "atom:a1dd6285-9831-48f1-b23e-e5d72d3537b7",
+        "atom:9f4a1286-e690-4c2b-a8ae-b090909a4947",
+        "atom:a4296d6f-ca2e-4765-8bc6-cf645ce8ace5",
+        "atom:19112d6e-e155-481a-9e24-afa02ac1acda"
+      ],
+      "outputTexts": [
+        "BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "重大な違反には利用停止の判断を提案します。",
+        "重大な違反には利用停止の判断を提案します。BANとKICKの実行は管理者が承認した後に人間が行います。",
+        "第12回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第7回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第1回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第10回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。",
+        "第8回の活動記録。利用者の処分について運営で話し合いました。担当班は4班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.12162671732155501,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.4461100000003171,
+      "readMs": 24.089484000000084,
+      "work": 38480,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.12162671732155501,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.9871149999999034,
+      "readMs": 20.903813000000355,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.12162671732155501,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.0416800000002695,
+      "readMs": 47.13462400000026,
+      "work": 1999995,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 3,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.12162671732155501,
+      "acquisitionMs": 57.758490000000165,
+      "prepareMs": 0.0383679999999913,
+      "readMs": 68.72066700000005,
+      "work": 1999966,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.4335089999999582,
+      "readMs": 22.68231300000025,
+      "work": 39096,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 1.0175169999997706,
+      "readMs": 20.923033000000032,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03277799999978015,
+      "readMs": 21.52916600000026,
+      "work": 50024,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03765900000007605,
+      "readMs": 21.462447999999767,
+      "work": 114569,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.04407109580332314,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.4419820000002801,
+      "readMs": 22.737289000000146,
+      "work": 36792,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.04407109580332314,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.9805500000002212,
+      "readMs": 20.828755,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.04407109580332314,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03614800000013929,
+      "readMs": 44.64788899999985,
+      "work": 1999301,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.04407109580332314,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03512799999998606,
+      "readMs": 65.55437599999959,
+      "work": 1999380,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10759109652747215,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.4241259999998874,
+      "readMs": 2.694029999999657,
+      "work": 10915,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6632,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10759109652747215,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 1.611377000000175,
+      "readMs": 2.933057999999619,
+      "work": 10748,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6632,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10759109652747215,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.034267999999883614,
+      "readMs": 2.5833990000000995,
+      "work": 22855,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6632,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.10759109652747215,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03380299999980707,
+      "readMs": 2.8891480000002048,
+      "work": 35644,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6632,
+      "outputAtomIds": [
+        "atom:9b6c0813-03ee-4e89-b826-19336769247e",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：資料の再利用",
+        "コミュニティの規則：会議の録音",
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.17497809250979188,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.14822400000002744,
+      "readMs": 1.439611000000241,
+      "work": 314,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3336,
+      "outputAtomIds": [
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:b0428708-d2e1-45b0-a113-7ac22b646fb6",
+        "atom:2a50f0e0-6c5e-4a51-8e07-a3e98d6e1670"
+      ],
+      "outputTexts": [
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第3回の活動記録。資料の再利用について運営で話し合いました。担当班は5班です。",
+        "第5回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.17497809250979188,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.02299799999991592,
+      "readMs": 1.3631209999998646,
+      "work": 161,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3336,
+      "outputAtomIds": [
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:b0428708-d2e1-45b0-a113-7ac22b646fb6",
+        "atom:2a50f0e0-6c5e-4a51-8e07-a3e98d6e1670"
+      ],
+      "outputTexts": [
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第3回の活動記録。資料の再利用について運営で話し合いました。担当班は5班です。",
+        "第5回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.17497809250979188,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.003881000000092172,
+      "readMs": 1.3395030000001498,
+      "work": 143,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3336,
+      "outputAtomIds": [
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:b0428708-d2e1-45b0-a113-7ac22b646fb6",
+        "atom:2a50f0e0-6c5e-4a51-8e07-a3e98d6e1670"
+      ],
+      "outputTexts": [
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第3回の活動記録。資料の再利用について運営で話し合いました。担当班は5班です。",
+        "第5回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.17497809250979188,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.0037710000001425215,
+      "readMs": 1.3426329999997506,
+      "work": 143,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 3336,
+      "outputAtomIds": [
+        "atom:eb558c94-425b-49c8-afcd-8dba4727a872",
+        "atom:6f382900-f903-42bb-9b32-dcd42fcf5ca5",
+        "atom:d10d3ef4-057c-4ff6-8966-f413120daaac",
+        "atom:2df6ce37-666d-40fa-a29c-50a9f15046ad",
+        "atom:ee5d7656-ef78-4779-aaca-a6b7d2fdc559",
+        "atom:f2497196-3d78-41d3-8793-a8912862f1ef",
+        "atom:b0428708-d2e1-45b0-a113-7ac22b646fb6",
+        "atom:2a50f0e0-6c5e-4a51-8e07-a3e98d6e1670"
+      ],
+      "outputTexts": [
+        "勉強会の資料を編集して別の会で使えます。",
+        "原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "勉強会の資料を編集して別の会で使えます。原作者の名前と出典を記載し、ライセンスの条件を守ってください。",
+        "オンライン会議を録音して議事録を作れます。",
+        "録音前に参加者全員へ知らせて了承を得てください。",
+        "オンライン会議を録音して議事録を作れます。録音前に参加者全員へ知らせて了承を得てください。",
+        "第3回の活動記録。資料の再利用について運営で話し合いました。担当班は5班です。",
+        "第5回の活動記録。会議の録音について運営で話し合いました。担当班は2班です。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07490852218145,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.5904120000000148,
+      "readMs": 22.612253000000237,
+      "work": 37630,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7978,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07490852218145,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.9854180000002088,
+      "readMs": 19.113902000000053,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7978,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07490852218145,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.03459599999996499,
+      "readMs": 47.344146000000364,
+      "work": 1999843,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7978,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 4,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 0.5,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07490852218145,
+      "acquisitionMs": 58.79663400000027,
+      "prepareMs": 0.0418880000001991,
+      "readMs": 68.1022009999997,
+      "work": 1999824,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7978,
+      "outputAtomIds": [
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：写真の共有",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：予算の支出"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "full",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.4283949999999095,
+      "readMs": 24.019169000000147,
+      "work": 40740,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "full",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 1.0481039999999666,
+      "readMs": 22.14915800000017,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "full",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.03654599999981656,
+      "readMs": 22.040158999999676,
+      "work": 57008,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "full",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.04080999999996493,
+      "readMs": 22.377766000000065,
+      "work": 128584,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分"
+      ],
+      "coverage": {
+        "candidates": "exhaustive-this-fixture",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top64-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0511373526894667,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.45964500000036423,
+      "readMs": 22.774401000000125,
+      "work": 37226,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top64-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0511373526894667,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.9978780000001279,
+      "readMs": 22.262085000000297,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top64-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0511373526894667,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.034592999999858876,
+      "readMs": 43.919570999999905,
+      "work": 1999766,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top64-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.0511373526894667,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.04471799999964787,
+      "readMs": 67.84852599999977,
+      "work": 1999235,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：会議の録音"
+      ],
+      "coverage": {
+        "candidates": "controlled-top64-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-seeds",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1265623031586297,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.4877059999998892,
+      "readMs": 4.2679299999999785,
+      "work": 14753,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 8014,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：外部リンク",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：会議の録音",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-seeds",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1265623031586297,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 1.0039919999999256,
+      "readMs": 3.3818959999998697,
+      "work": 11306,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 8014,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：外部リンク",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：会議の録音",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-seeds",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1265623031586297,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.036877000000004045,
+      "readMs": 4.750048000000334,
+      "work": 25804,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 8014,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：外部リンク",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：会議の録音",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-seeds",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1265623031586297,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.0381640000000516,
+      "readMs": 5.195317000000159,
+      "work": 46974,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 8014,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：外部リンク",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "コミュニティの規則：会議の録音",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-seeds",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-graph",
+      "method": "composition",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1907087033967128,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.08931100000017977,
+      "readMs": 2.219547000000148,
+      "work": 255,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6591,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "コミュニティの規則：会議の録音",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-graph",
+      "method": "block",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1907087033967128,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.025789000000258966,
+      "readMs": 2.0151019999998425,
+      "work": 166,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6591,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "コミュニティの規則：会議の録音",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-graph",
+      "method": "flat",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1907087033967128,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.006570000000010623,
+      "readMs": 2.1033879999999954,
+      "work": 1561,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6591,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "コミュニティの規則：会議の録音",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "top8-graph",
+      "method": "push",
+      "nodes": 8,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 1,
+      "goldEvidenceRecall": 1,
+      "fullGoldEvidenceReturned": true,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.1907087033967128,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.005766000000221538,
+      "readMs": 2.020199000000048,
+      "work": 432,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 6591,
+      "outputAtomIds": [
+        "atom:08a08f39-edac-4732-8f82-ea08bf0caf2c",
+        "atom:566c8c88-1ab2-420a-b700-7bef507f78d2",
+        "atom:614d6c48-afe1-4438-8d24-7d91d0669e94",
+        "atom:2ae58a24-9ec7-4ea0-a44b-5889ad99b0ca",
+        "atom:20996aae-7772-42e5-8369-64e0edde253c",
+        "atom:5b7dd685-5e92-4251-b9e2-ac0f5c265abc",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:00656a54-97b6-4243-990f-0f49d9b2eb90"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：予算の支出",
+        "共同イベントの会場費をコミュニティの予算から支出できます。",
+        "支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "共同イベントの会場費をコミュニティの予算から支出できます。支出前に承認された担当者が金額と領収書の扱いを確認します。",
+        "紹介料を受け取る場合は広告であると明示してください。",
+        "役立つ外部サイトのリンクを紹介できます。紹介料を受け取る場合は広告であると明示してください。",
+        "コミュニティの規則：会議の録音",
+        "イベントの写真は共有チャンネルに投稿できます。顔が写る本人全員から公開の同意を得てください。"
+      ],
+      "coverage": {
+        "candidates": "controlled-top8-graph",
+        "graph": "controlled-truncation-renormalized"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "missed-topic",
+      "method": "composition",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07219264242435072,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.7640329999999267,
+      "readMs": 23.462532999999894,
+      "work": 38843,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "missed-topic",
+      "method": "block",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07219264242435072,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 1.0331500000002052,
+      "readMs": 19.67536599999994,
+      "work": 23765,
+      "completeWithinSelectedGraph": true,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "missed-topic",
+      "method": "flat",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07219264242435072,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.04867400000011912,
+      "readMs": 47.15735799999993,
+      "work": 1999737,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    },
+    {
+      "question": 5,
+      "variant": "missed-topic",
+      "method": "push",
+      "nodes": 97,
+      "goldSeedRecall": 1,
+      "goldAtomRecall": 0,
+      "goldEvidenceRecall": 0,
+      "fullGoldEvidenceReturned": false,
+      "conditionOmissions": 0,
+      "wholeGraphScoreDifference": 0.07219264242435072,
+      "acquisitionMs": 56.359195,
+      "prepareMs": 0.050679999999829306,
+      "readMs": 71.30897099999993,
+      "work": 1999660,
+      "completeWithinSelectedGraph": false,
+      "outputTokens": 7981,
+      "outputAtomIds": [
+        "atom:dddcf159-e0b7-44e5-bc9b-9330981a8245",
+        "atom:026e859f-0cc5-4a3d-a926-073532a717d8",
+        "atom:d2760e51-c1fd-4ebc-b326-3378b47a17b1",
+        "atom:593b2d3a-fa19-42ab-ac9e-5f9034df836e"
+      ],
+      "outputTexts": [
+        "コミュニティの規則：外部リンク",
+        "コミュニティの規則：会議の録音",
+        "コミュニティの規則：利用者の処分",
+        "コミュニティの規則：写真の共有"
+      ],
+      "coverage": {
+        "candidates": "controlled-missed-topic",
+        "graph": "complete-this-fixture"
+      },
+      "globalCoverageCertified": false
+    }
+  ],
+  "limitations": [
+    "Small synthetic corpus, not a real Discord history or a Writer quality evaluation",
+    "Controlled top-8 restriction is a sensitivity test, not an ANN implementation",
+    "Gold evidence checks both original-source spans; returning their containing source also counts, separate from exact Atom-ID recall",
+    "No LLM response or paid inference calls; model ran locally on CPU",
+    "Condition closure may fetch evidence outside the numerical graph; graph approximation remains explicit"
+  ]
+}

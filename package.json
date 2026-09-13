@@ -47,18 +47,19 @@
   "scripts": {
     "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "check": "npm test && node scripts/evaluate-ranking.mjs && npm run docs:examples && npm run docs:build",
+    "check": "npm test && npm run check:research && node scripts/evaluate-ranking.mjs && npm run docs:examples && npm run docs:build",
     "example": "npm run build && node examples/basic.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:deploy": "npm run docs:build && wrangler deploy",
     "prepack": "npm run build",
-    "format:check": "prettier --check src test examples scripts docs README.md package.json tsconfig.json wrangler.jsonc",
+    "format:check": "prettier --check src test research examples scripts docs README.md package.json tsconfig.json wrangler.jsonc",
     "docs:examples": "node scripts/check-doc-examples.mjs",
     "example:writer": "npm run build && node examples/writer.mjs",
     "example:history": "npm run build && node examples/history-writer.mjs",
-    "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs"
+    "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs",
+    "check:research": "node --test research/composition/*.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

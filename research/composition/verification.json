@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-13T00:53:44.016133+00:00",
+  "baseline": "43ef7182467b348253f6279305a41a264d6908c9",
+  "checks": {
+    "npm run check": {
+      "libraryTests": 101,
+      "researchTests": 16,
+      "failures": 0,
+      "docExamples": 15,
+      "documentedOutputs": 7,
+      "docsBuild": "passed"
+    },
+    "node22.23.2": {
+      "tests": 117,
+      "failures": 0
+    },
+    "node24.18.0": {
+      "tests": 117,
+      "failures": 0
+    },
+    "node26.1.0": {
+      "libraryTests": 101,
+      "researchTests": 16,
+      "failures": 0
+    },
+    "Sakana": [
+      "check-memory-writer.mjs passed",
+      "check-memory-refresh.mjs passed",
+      "check-memory-index.mjs passed"
+    ],
+    "format": "passed",
+    "diffCheck": "passed",
+    "recordedSourceAndVectorHashes": "matched",
+    "npmResearchFiles": "excluded"
+  },
+  "publication": {
+    "npm": false,
+    "docs": false,
+    "productionEvaluatorChanged": false
+  },
+  "artifacts": {
+    "results.json": "78baad826e1c8481fdc2db2659139453c2b5124ad77ea2af339f9f5660edbfc2",
+    "reader-results.json": "11e634971e713dd1b95e518525cec77ef2a4df5b5e3dd0470fcc9db590841f64",
+    "semantic-results.json": "1dfe2522280a1c18108f4e4aac47e5fbf322861b19312ad0b2bb66bc6070d0e2",
+    "semantic-vectors.json.gz": "11dc3aaa18611ec734f665333181d3086fcbde613fe2b6c8770a214027fa231e"
+  }
+}

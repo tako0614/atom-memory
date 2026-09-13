@@ -51,6 +51,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: 'アーキテクチャ', link: '/specification' },
+          { text: '合成評価の研究', link: '/composition' },
           { text: '受入条件と検証', link: '/acceptance' },
           { text: 'リリース', link: '/release' },
         ],

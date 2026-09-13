@@ -201,13 +201,17 @@ export interface Packed {
   deferred: Candidate[];
   minimumTokens?: number;
 }
-export async function pack(
+/** Internal incremental packer. Callers offer candidates in their established
+ * ranking order; every accepted root includes the same indivisible evidence
+ * bundle as pack(). No selection commits before exact serialization fits. */
+export function createPacking(
   engine: Engine,
   s: Session,
-  candidates: readonly Candidate[],
+  candidateByRevision: (revisionId: string) => Candidate | undefined,
   tokens: number,
   limit: number,
-): Promise<Packed> {
+) {
+  let finished = false;
   const items: import('./types.js').MemoryPage['items'][number][] = [];
   const selected = new Set<string>();
   const quotes = new Map<AtomView['ref'], Origin>();
@@ -267,25 +271,18 @@ export async function pack(
       }),
     });
   };
-  const ranked = [...candidates].sort(
-    (a, b) =>
-      b.score - a.score ||
-      Buffer.byteLength(canonical(a.revision.body)) -
-        Buffer.byteLength(canonical(b.revision.body)) ||
-      a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
-  );
-  for (let index = 0; index < ranked.length; index++) {
-    const candidate = ranked[index]!;
+  const offer = (candidate: Candidate): 'selected' | 'skipped' | 'deferred' | 'exhausted' => {
+    if (finished) fail('INVALID_INPUT', 'Packing already finished');
     try {
       if (candidate.revision.state === 'retired' || selected.has(candidate.revision.revisionId))
-        continue;
+        return 'skipped';
       if (items.length >= limit) {
         deferred.push(candidate);
-        continue;
+        return 'deferred';
       }
-      if (!validateMemory(engine, candidate.revision, s)) continue;
+      if (!validateMemory(engine, candidate.revision, s)) return 'skipped';
       const unit = bundle(engine, candidate.revision, s);
-      if (!unit) continue;
+      if (!unit) return 'skipped';
       const all = new Map(unit.map((r) => [r.revisionId, r]));
       const views: AtomView[] = [];
       const nextQuotes = new Map(quotes);
@@ -293,9 +290,7 @@ export async function pack(
       for (const r of all.values()) {
         if (selected.has(r.revisionId)) continue;
         const span = quote(engine, r, s);
-        const scored = candidates.find(
-          (candidate) => candidate.revision.revisionId === r.revisionId,
-        );
+        const scored = candidateByRevision(r.revisionId);
         const view = {
           ...engine.view(r, s, true),
           score: scored?.score ?? 0,
@@ -315,7 +310,7 @@ export async function pack(
           nextCitations.push(...r.origins);
         }
       }
-      if (!views.length) continue;
+      if (!views.length) return 'skipped';
       const nextText = serialize([...items, ...views], nextQuotes);
       const count = engine.tokenizer.count(nextText);
       if (!Number.isSafeInteger(count) || count < 0)
@@ -330,7 +325,7 @@ export async function pack(
           engine.tokenizer.count(serialize(views, nextQuotes)),
         );
         deferred.push(candidate);
-        continue;
+        return 'deferred';
       }
       s.ledger.charge({ maxAtoms: views.length });
       items.push(...views);
@@ -340,28 +335,79 @@ export async function pack(
       text = nextText;
       tokenCount = count;
       used++;
+      return 'selected';
     } catch (e) {
       if (e instanceof AtomMemoryError && e.code === 'BUDGET_EXHAUSTED') {
-        deferred.push(...ranked.slice(index));
-        break;
+        deferred.push(candidate);
+        return 'exhausted';
       }
       throw e;
     }
-  }
-  s.ledger.charge({ maxContextTokens: tokenCount });
-  const sources: SourceCitation[] = [];
-  for (const c of sourceCoverage(citations)) {
-    const source = engine.get(c.source, s);
-    const ref = engine.issue(source, s);
-    for (const range of c.ranges) sources.push({ ref, start: range.start, end: range.end });
-  }
-  return {
-    items,
-    text,
-    tokenCount,
-    sources,
-    used,
-    deferred,
-    ...(minimumTokens ? { minimumTokens } : {}),
   };
+  const finish = (): Packed => {
+    if (finished) fail('INVALID_INPUT', 'Packing already finished');
+    engine.check(s);
+    s.ledger.charge({ maxContextTokens: tokenCount });
+    const sources: SourceCitation[] = [];
+    for (const c of sourceCoverage(citations)) {
+      const source = engine.get(c.source, s);
+      const ref = engine.issue(source, s);
+      for (const range of c.ranges) sources.push({ ref, start: range.start, end: range.end });
+    }
+    finished = true;
+    return {
+      items,
+      text,
+      tokenCount,
+      sources,
+      used,
+      deferred,
+      ...(minimumTokens ? { minimumTokens } : {}),
+    };
+  };
+  return {
+    offer,
+    finish,
+    deferred,
+    has: (revisionId: string) => selected.has(revisionId),
+    get full() {
+      return items.length >= limit;
+    },
+    get tokenCount() {
+      return tokenCount;
+    },
+    get itemCount() {
+      return items.length;
+    },
+  };
+}
+
+export async function pack(
+  engine: Engine,
+  s: Session,
+  candidates: readonly Candidate[],
+  tokens: number,
+  limit: number,
+): Promise<Packed> {
+  const packing = createPacking(
+    engine,
+    s,
+    (revisionId) => candidates.find((c) => c.revision.revisionId === revisionId),
+    tokens,
+    limit,
+  );
+  const ranked = [...candidates].sort(
+    (a, b) =>
+      b.score - a.score ||
+      Buffer.byteLength(canonical(a.revision.body)) -
+        Buffer.byteLength(canonical(b.revision.body)) ||
+      a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
+  );
+  for (let index = 0; index < ranked.length; index++) {
+    if (packing.offer(ranked[index]!) === 'exhausted') {
+      packing.deferred.push(...ranked.slice(index + 1));
+      break;
+    }
+  }
+  return packing.finish();
 }

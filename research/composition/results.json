@@ -1,0 +1,153 @@
+{
+  "at": "2026-09-13T00:48:57.229Z",
+  "node": "v26.1.0",
+  "libraryCommit": "43ef7182467b348253f6279305a41a264d6908c9",
+  "sha256": {
+    "evaluator.mjs": "b24de055b428c289dd1ace04fe852158dd302090a7319e3249fa743da6ef8c72",
+    "fixture.mjs": "b3a438d350723db5f7009ad4e42d1155a6afb09e35d4e6c9af58080fa1d4ae2c",
+    "numeric.test.mjs": "b7f34efb27511e19901ab3759ee50506e0eb596a08511b2e5e8d67462c86ec57",
+    "adapters.test.mjs": "4484e5db1ecaeaf49e81446581bc7412242225cc2a5b54c4781b3098f96bb044",
+    "evaluate.mjs": "36361ff22f5fe2107d547595a13adc07f2a6dbe98e3ed65dd93085d27819c742",
+    "../../src/core/ranking.ts": "fd94c0d7504a3467328871df066e123d5b9ebf0d5c9eb89fc5cefc4e59070d00",
+    "../../src/client/ranking.ts": "8513f224656ca59a7817f2fdf606543970efabba64e805cbe559d0382dd572ce"
+  },
+  "kind": "experimental compositional evaluation on real Atom storage; not a default evaluator or novelty claim",
+  "reference": "Same authorized, current, bounded graph; propagation=0.65; converged L1 iteration tolerance=1e-13",
+  "timing": "Median of 7 batches of 40 numeric queries after 8 warm-ups; cached recompilation uses 8 repetitions; excludes embedding, graph acquisition and packing",
+  "runs": [
+    {
+      "adapter": "memory",
+      "nodes": 157,
+      "directedEdges": 598,
+      "plan": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 0,
+        "coefficientMisses": 13
+      },
+      "acquisitionMs": 143.17381699999999,
+      "coldCompileMs": 3.3855459999999766,
+      "fullFactorCompileMs": 6.502205000000004,
+      "medianPerQueryMs": {
+        "referenceConverged": 0.536695899999998,
+        "currentFiniteIteration": 0.07114965000000098,
+        "composedAllScores": 0.05535595000000058,
+        "composedAdaptiveTop5": 0.04306612500000142,
+        "residualCorrectionAllScores": 0.05902867500000184,
+        "fullFactorAllScores": 0.05315567499999929,
+        "recompileWithCache": 0.7962426250000192
+      },
+      "numericSpeedupAgainstConverged": 9.69536066131992,
+      "numericSpeedupAgainstFinite": 1.2853116963939781,
+      "referenceIterations": 51,
+      "maximumScoreError": 1.0762224444960111e-14,
+      "defaultMaximumScoreError": 8.273101864339494e-8,
+      "contextChange": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 13,
+        "coefficientMisses": 0,
+        "correctionMaximumError": 1.734723475976807e-17
+      },
+      "adaptiveTop5": {
+        "certificateScope": "compiled-numeric-scores",
+        "recoveredNodes": [0, 0],
+        "closedBlocks": [12, 12],
+        "medianNumericCoefficientsVisited": 2305,
+        "medianBoundCoefficientsVisited": 23,
+        "allSelectedIndicesAndScoresMatchFullRecovery": true
+      },
+      "relationshipChange": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 11,
+        "coefficientMisses": 2,
+        "maximumScoreError": 7.809725088847586e-15,
+        "correctedMaximumScoreError": 7.813194535799539e-15
+      },
+      "packedTextAndOrderIdentical": true,
+      "graphAcquisitionsSaved": 0
+    },
+    {
+      "adapter": "sqlite",
+      "nodes": 157,
+      "directedEdges": 598,
+      "plan": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 0,
+        "coefficientMisses": 13
+      },
+      "acquisitionMs": 1689.2523700000002,
+      "coldCompileMs": 1.4762039999995977,
+      "fullFactorCompileMs": 6.421620000000075,
+      "medianPerQueryMs": {
+        "referenceConverged": 0.21571444999999584,
+        "currentFiniteIteration": 0.07292390000000068,
+        "composedAllScores": 0.04594465000000127,
+        "composedAdaptiveTop5": 0.05253602500001762,
+        "residualCorrectionAllScores": 0.046829500000012556,
+        "fullFactorAllScores": 0.052771774999996524,
+        "recompileWithCache": 0.6641738749999604
+      },
+      "numericSpeedupAgainstConverged": 4.695093988091973,
+      "numericSpeedupAgainstFinite": 1.5872120040091426,
+      "referenceIterations": 51,
+      "maximumScoreError": 1.0734468869344482e-14,
+      "defaultMaximumScoreError": 8.273101863645604e-8,
+      "contextChange": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 13,
+        "coefficientMisses": 0,
+        "correctionMaximumError": 1.3877787807814457e-17
+      },
+      "adaptiveTop5": {
+        "certificateScope": "compiled-numeric-scores",
+        "recoveredNodes": [0, 0],
+        "closedBlocks": [12, 12],
+        "medianNumericCoefficientsVisited": 2305,
+        "medianBoundCoefficientsVisited": 23,
+        "allSelectedIndicesAndScoresMatchFullRecovery": true
+      },
+      "relationshipChange": {
+        "eliminated": 133,
+        "blocks": 12,
+        "skipped": 1,
+        "boundary": 24,
+        "sharedPorts": 11,
+        "coefficientHits": 11,
+        "coefficientMisses": 2,
+        "maximumScoreError": 1.1600095883856909e-14,
+        "correctedMaximumScoreError": 1.1600095883856909e-14
+      },
+      "packedTextAndOrderIdentical": true,
+      "graphAcquisitionsSaved": 0
+    }
+  ],
+  "decision": "Keep default read/search unchanged. Numeric reuse works, but graph acquisition is still full and current finite-iteration semantics differ.",
+  "limits": [
+    "Synthetic graph and fixed encoder; no LLM or paid calls",
+    "Dense initial matrix and boundary LU are bounded prototypes, not a large-scale sparse solver",
+    "Computational regions are explicit fixture hints; arbitrary semantic membership is not inferred",
+    "Top-k bounds enclose floating reconstruction within the compiled graph, not exact PPR or all memory",
+    "Node-recovery budget excludes RHS/boundary solves, bound calculation and full graph acquisition",
+    "Ordinary packing comparison still recovers all scores; no output-cost-aware expansion or local-push comparison",
+    "These results do not establish research novelty or end-to-end speedup"
+  ]
+}
