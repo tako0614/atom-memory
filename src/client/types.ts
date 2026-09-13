@@ -19,6 +19,21 @@ export interface EmbeddingProvider {
 declare const referenceBrand: unique symbol;
 /** A host-registered observed reference. The brand is not authorization. */
 export type AtomRef = string & { readonly [referenceBrand]: true };
+declare const inputBrand: unique symbol;
+/** Host-issued, scope-bound generation input. Never expose in model tool schemas. */
+export type InputToken = string & { readonly [inputBrand]: true };
+export interface HostInput {
+  readonly presentations?: readonly {
+    readonly receipt: MemoryReceipt;
+    readonly refs?: readonly AtomRef[];
+  }[];
+  readonly sources?: readonly SourceCitation[];
+  readonly inherit?: readonly InputToken[];
+  readonly watches?: readonly MemoryReceipt[];
+  readonly basis?: 'current' | 'historical';
+  /** SHA-256 of the final host payload. Host attestation, not model introspection. */
+  readonly payloadDigest: string;
+}
 export type LinkTarget =
   | AtomRef
   | {
@@ -70,6 +85,7 @@ export interface InspectOptions extends OperationOptions {
   readonly range?: { readonly start?: number; readonly bytes?: number };
 }
 export interface WriteOptions {
+  readonly input?: InputToken;
   readonly idempotencyKey?: string;
   readonly sources?: readonly SourceCitation[];
   readonly signal?: AbortSignal;
@@ -77,16 +93,19 @@ export interface WriteOptions {
 export interface EditOptions extends OperationOptions {
   readonly basis?: 'current' | 'historical';
 }
+export type AtomLink = {
+  readonly role: string;
+  readonly at: 'logical' | 'observed';
+  readonly required: boolean;
+  readonly orderKey?: string;
+} & (
+  | { readonly ref: AtomRef; readonly unavailable?: false }
+  | { readonly unavailable: true; readonly ref?: never }
+);
 export interface AtomView {
   readonly ref: AtomRef;
   readonly text: string;
-  readonly links: readonly {
-    readonly role: string;
-    readonly ref: AtomRef;
-    readonly at: 'logical' | 'observed';
-    readonly required: boolean;
-    readonly orderKey?: string;
-  }[];
+  readonly links: readonly AtomLink[];
   readonly sources: readonly SourceCitation[];
   readonly provenance: {
     readonly origin: 'source' | 'extraction' | 'organization' | 'derived' | 'hypothesis';
@@ -95,6 +114,18 @@ export interface AtomView {
   readonly state: 'active' | 'retired';
 }
 export interface Diagnostics {
+  readonly acquisition?: {
+    readonly partial: boolean;
+    readonly scanned: number;
+    readonly index: string;
+  };
+  readonly validation?: { readonly stale: number; readonly blocked: number };
+  readonly evaluation?: {
+    readonly converged: boolean;
+    readonly numericErrorL1Upper: number;
+    readonly scope: 'acquired-graph';
+  };
+  readonly selection?: SelectionDiagnostics;
   readonly method: string;
   readonly traversal: 'complete' | 'partial';
   readonly approximate: boolean;
@@ -110,6 +141,16 @@ export interface Diagnostics {
   readonly minimumTokens?: number;
   readonly minimumBytes?: number;
   readonly coverageCertified: false;
+}
+export interface SelectionDiagnostics {
+  readonly method: 'bounded-marginal-gain';
+  readonly complete: boolean;
+  readonly baselineComplete: boolean;
+  /** Proxy utility only; not answer quality or independent evidence count. */
+  readonly utility: number;
+  readonly baselineUtility: number;
+  readonly work: number;
+  readonly minimumTokens?: number;
 }
 export interface MemoryReceipt {
   readonly id: string;
@@ -128,6 +169,8 @@ export interface MemoryPage {
   readonly usage: Readonly<Record<Resource, number>>;
 }
 export interface Inspection extends MemoryPage {
+  /** Inspect does not certify eligibility for normal read; an unavailable immediate condition is explicit. */
+  readonly readEligibility: 'unchecked' | 'blocked';
   readonly atom: AtomView;
   readonly range?: {
     readonly start: number;
@@ -139,6 +182,7 @@ export interface Inspection extends MemoryPage {
   };
 }
 export interface RecallResult extends MemoryPage {
+  readonly formatVersion: 2;
   readonly text: string;
   readonly refs: readonly AtomRef[];
   readonly sources: readonly SourceCitation[];
@@ -200,6 +244,7 @@ export interface HostOptions {
   readonly commitRetries?: number;
 }
 export interface Candidate {
+  readonly activation?: number;
   readonly revision: AtomRevision;
   readonly score: number;
 }

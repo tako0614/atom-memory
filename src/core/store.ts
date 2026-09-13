@@ -18,13 +18,37 @@ import {
   validateOrigin,
   type Limits,
 } from './validation.js';
-import { purgeUse } from './use-state.js';
+import { purgeStorage } from './purge.js';
 
 export interface ReceiptManifest {
+  contractVersion?: 2;
+  dependencyContract?: 'legacy' | 'source' | 'observed';
+  authorityGeneration?: string;
   receipt: { receiptId: string };
   subject: string;
   authBinding: string;
-  generation: string;
+  generation?:
+    | string
+    | {
+        id: string;
+        scope: string;
+        payloadDigest: string;
+        presentations: { receiptId: string; digest: string; units: PresentationUnit[] }[];
+        sources: import('../contracts.js').Origin[];
+        inherited: string[];
+        inheritedOutputs?: PinnedRef[];
+        historicalReads?: PinnedRef[];
+        outputs: PinnedRef[];
+      };
+  acquisition?: {
+    reads: PinnedRef[];
+    ranges: AcquiredRange[];
+    observations: ReceiptManifest['observations'];
+    index: number;
+  };
+  presentation?: { formatVersion: 2; digest: string; units: PresentationUnit[] };
+  watches?: { reads: PinnedRef[]; observations: ReceiptManifest['observations'] };
+  acknowledgement?: { eventId: string; acceptedAt: number; revisions: PinnedRef[] }[];
   policies: string[];
   /** Observed storage position for audit; not a retained-snapshot token. */
   watermark: number;
@@ -42,6 +66,24 @@ export interface ReceiptManifest {
   }[];
   expiresAt: number;
 }
+export interface AcquiredRange {
+  revision: PinnedRef;
+  start: number;
+  end: number;
+  unit: 'utf8' | 'byte';
+  digest: string;
+}
+export interface PresentationUnit {
+  ref: import('../client/types.js').AtomRef;
+  revision: PinnedRef;
+  digest: string;
+  metadata?: Omit<import('../client/types.js').AtomView, 'text' | 'ref'>;
+  display?: 'body' | 'quote' | 'range';
+  quote?: { ref: import('../client/types.js').AtomRef; start: number; end: number; unit: 'utf8' };
+  range?: { start: number; end: number };
+}
+export const manifestAuthorityGeneration = (m: ReceiptManifest): string | undefined =>
+  m.authorityGeneration ?? (typeof m.generation === 'string' ? m.generation : undefined);
 interface BlobRecord {
   bytes: string;
   policyId: string;
@@ -79,7 +121,7 @@ export class AtomicStore {
     if (
       m.authBinding !== authBinding(auth) ||
       m.subject !== p.subject ||
-      m.generation !== p.generation ||
+      manifestAuthorityGeneration(m) !== p.generation ||
       m.policies.some((id) => !p.readPolicies.includes(id))
     )
       fail('ACCESS_DENIED');
@@ -91,6 +133,18 @@ export class AtomicStore {
     at: number,
     proposals: readonly ProposedRevision[],
   ): boolean {
+    if (
+      m.dependencyContract === 'observed' &&
+      (m.currentReads ?? []).some((ref) =>
+        proposals.some(
+          (proposal) =>
+            proposal.atomId === ref.atomId &&
+            proposal.revisionId !== ref.revisionId &&
+            proposal.content.provenance.inputReceiptId !== m.receipt.receiptId,
+        ),
+      )
+    )
+      return false;
     if (
       m.observations.some(
         (o) =>
@@ -118,6 +172,7 @@ export class AtomicStore {
     hooks?: { validate?(): void; committed?(result: WriteResult): void },
   ): Promise<WriteResult> {
     const input = clone(request);
+    if (this.storage.metaGet('purge:pending')) fail('ACCESS_DENIED', 'Erasure is incomplete');
     const p = this.#principal(auth);
     if (!this.storage.capabilities.atomicBatch) fail('ATOMICITY_UNAVAILABLE');
     if (!input || !Array.isArray(input.revisions) || !Array.isArray(input.guards))
@@ -216,14 +271,42 @@ export class AtomicStore {
         const c = item.content;
         const receiptId = c.provenance.inputReceiptId;
         const receipt = receiptId ? manifestFor(receiptId) : undefined;
+        if (
+          c.provenance.dependencyContract === 'observed-v2' &&
+          (receipt?.contractVersion !== 2 ||
+            receipt.dependencyContract !== 'observed' ||
+            !receipt.generation ||
+            typeof receipt.generation === 'string')
+        )
+          fail('ACCESS_DENIED', 'Observed derivation requires a host input token');
+        if (
+          c.provenance.dependencyContract === 'source-v2' &&
+          (c.provenance.kind !== 'source' ||
+            !p.canIngestSource ||
+            receipt?.dependencyContract !== 'source')
+        )
+          fail('ACCESS_DENIED');
         if (actor && receiptId !== actor.receipt.receiptId)
           fail('ACCESS_DENIED', 'All Writer changes must retain the host input receipt');
         if (receipt && receipt.policies.some((id) => id !== c.policyId))
           fail('ACCESS_DENIED', 'Persistent derivation cannot cross policies');
         if (receipt && !currentDependency(receipt)) fail('REVISION_CONFLICT');
-        for (const slot of c.slots) {
+        const previous = item.expectedHead
+          ? this.storage.get(
+              { kind: 'pinned', atomId: item.atomId, revisionId: item.expectedHead },
+              at,
+            )
+          : undefined;
+        // Retiring an authorized unchanged body must preserve even unavailable
+        // references. This cannot introduce a hidden target or alter its content.
+        const unchangedRetirement =
+          c.state === 'retired' &&
+          previous &&
+          canonical([c.body, c.slots, c.origins]) ===
+            canonical([previous.body, previous.slots, previous.origins]);
+        for (const slot of unchangedRetirement ? [] : c.slots) {
           const target = resolve(slot.target);
-          if (target.policyId !== c.policyId)
+          if (target.policyId !== c.policyId && !c.provenance.dependencyContract)
             fail('ACCESS_DENIED', 'Persistent references must remain in one policy');
         }
         for (const origin of c.origins) {
@@ -304,6 +387,7 @@ export class AtomicStore {
     mediaType: string,
     auth: AuthContext,
   ): { kind: 'blob'; blobId: string; digest: string; mediaType: string; bytes: number } {
+    if (this.storage.metaGet('purge:pending')) fail('ACCESS_DENIED', 'Erasure is incomplete');
     const p = this.#principal(auth);
     if (!p.canIngestSource || !p.writePolicies.includes(policyId)) fail('ACCESS_DENIED');
     validId(mediaType);
@@ -318,76 +402,8 @@ export class AtomicStore {
     return { kind: 'blob', blobId: id, digest: hash, mediaType, bytes: bytes.length };
   }
   /** Deny old reads immediately, then remove transitive derivatives and private execution data. Host-only. */
-  purge(atomId: string): { erasedAtomIds: string[]; physicalStorageReclaimed: false } {
-    validId(atomId);
-    return this.storage.transaction(() => {
-      const erased = new Set([atomId]);
-      const plan = this.storage.purgePlan?.(atomId);
-      const receipts: [string, ReceiptManifest][] = plan
-        ? plan.receiptKeys.flatMap((key) => {
-            const value = this.storage.metaGet<ReceiptManifest>(key);
-            return value ? [[key, value] as [string, ReceiptManifest]] : [];
-          })
-        : this.storage.metaEntries<ReceiptManifest>('receipt:');
-      const all: AtomRevision[] = plan?.revisions ?? [];
-      let after: string | undefined;
-      // Purge inspects every historical revision, including retired content and old blobs.
-      while (!plan) {
-        const page = this.storage.history(after, 256);
-        all.push(...page);
-        if (page.length < 256) break;
-        after = page.at(-1)!.revisionId;
-      }
-      let changed = true;
-      while (changed) {
-        changed = false;
-        for (const r of all) {
-          const m = receipts.find(
-            ([, m]) => m.receipt.receiptId === r.provenance.inputReceiptId,
-          )?.[1];
-          if (
-            !erased.has(r.atomId) &&
-            (r.origins.some((o) => erased.has(o.source.atomId)) ||
-              r.slots.some((s) => erased.has(s.target.atomId)) ||
-              m?.reads.some((v) => erased.has(v.atomId)))
-          ) {
-            erased.add(r.atomId);
-            changed = true;
-          }
-        }
-      }
-      for (const r of all)
-        if (erased.has(r.atomId) && r.body.kind === 'blob')
-          this.storage.metaDelete(`blob:${r.body.blobId}`);
-      // Use aggregates, reverse indexes, and deduplication markers are part of
-      // the same purge transaction as the revision closure. Reset deliberately
-      // retains markers; only purge removes them.
-      purgeUse(
-        this.storage,
-        all.filter((revision) => erased.has(revision.atomId)),
-      );
-      this.storage.erase([...erased]);
-      const clear = (prefix: string) => {
-        if (this.storage.metaDeletePrefix) this.storage.metaDeletePrefix(prefix);
-        else for (const [key] of this.storage.metaEntries(prefix)) this.storage.metaDelete(key);
-      };
-      clear('cursor:');
-      clear('observation:');
-      for (const [key, m] of receipts)
-        if (m.reads.some((r) => erased.has(r.atomId))) this.storage.metaDelete(key);
-      for (const r of all)
-        if (erased.has(r.atomId)) {
-          this.storage.metaDelete(`embedding:${r.revisionId}`);
-          this.storage.metaDelete(`sdk:index:${r.revisionId}`);
-        }
-      clear('sdk:cache:');
-      clear('sdk:cursor:');
-      this.storage.metaSet(
-        'sdk:index-generation',
-        (this.storage.metaGet<number>('sdk:index-generation') ?? 0) + 1,
-      );
-      return { erasedAtomIds: [...erased], physicalStorageReclaimed: false };
-    });
+  purge(atomId: string, options: import('./purge.js').PurgeOptions = {}) {
+    return purgeStorage(this.storage, atomId, options);
   }
 }
 

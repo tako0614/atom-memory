@@ -39,9 +39,9 @@ export function graphPage(
         continue;
       }
       const slot = r.slots[task.slot]!;
-      const target = engine.get(slot.target, s, slot.target.kind === 'logical');
+      const target = engine.neighbor(slot.target, s, slot.target.kind === 'logical');
       task.slot++;
-      if (!seen.has(target.revisionId))
+      if (target && !seen.has(target.revisionId))
         state.tasks.splice(1, 0, {
           ref: pinRevision(target),
           depth: task.depth + 1,
@@ -122,7 +122,15 @@ function compatible(
     // It remains in the receipt for provenance and transitive purge.
     if (ref.atomId !== r.atomId && !m.ownedRevisionIds?.includes(ref.revisionId)) {
       const input = engine.get(ref, s);
-      if (!compatible(engine, input, s, new Set(visiting), frozen)) return false;
+      const watched = (m.currentReads ?? []).some((r) => r.revisionId === ref.revisionId);
+      const historicalInput =
+        !watched &&
+        !!m.generation &&
+        typeof m.generation !== 'string' &&
+        m.generation.historicalReads?.some((r) => r.revisionId === ref.revisionId);
+      const auditOnly = m.dependencyContract === 'observed' && !watched;
+      if (!compatible(engine, input, s, new Set(visiting), frozen || historicalInput || auditOnly))
+        return false;
     }
   return true;
 }
@@ -147,28 +155,36 @@ export function validateMemory(engine: Engine, r: AtomRevision, s: Session): boo
   markStale(engine, r, s);
   return false;
 }
-function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] | undefined {
+export function bundle(engine: Engine, root: AtomRevision, s: Session): AtomRevision[] | undefined {
   const output: AtomRevision[] = [];
   const pending = [root];
   const seen = new Set<string>();
-  while (pending.length) {
-    const r = pending.shift()!;
+  for (let position = 0; position < pending.length; position++) {
+    s.ledger.charge({ maxPackingWork: 1 });
+    const r = pending[position]!;
     if (seen.has(r.revisionId)) continue;
     seen.add(r.revisionId);
     engine.get(pinRevision(r), s);
-    if (r.state === 'retired' || !compatible(engine, r, s)) {
-      markStale(engine, root, s);
-      markStale(engine, r, s);
+    if (r.state === 'retired' || !validateMemory(engine, r, s)) {
+      (s.blocked ??= new Set()).add(engine.issue(root, s));
       return;
     }
     output.push(r);
-    for (const link of r.slots)
-      if (link.mode === 'include' || link.required === true)
-        pending.push(engine.get(link.target, s, link.target.kind === 'logical'));
+    for (const link of r.slots) {
+      s.ledger.charge({ maxPackingWork: 1 });
+      if (link.mode === 'include' || link.required === true) {
+        const target = engine.neighbor(link.target, s, link.target.kind === 'logical');
+        if (!target) {
+          (s.blocked ??= new Set()).add(engine.issue(root, s));
+          return;
+        }
+        pending.push(target);
+      }
+    }
   }
   return output;
 }
-function quote(engine: Engine, r: AtomRevision, s: Session): Origin | undefined {
+export function quote(engine: Engine, r: AtomRevision, s: Session): Origin | undefined {
   if (r.body.kind !== 'inline' || typeof r.body.value !== 'string') return;
   if (Buffer.from(r.body.value).toString('utf8') !== r.body.value) return;
   if (r.provenance.kind === 'source')
@@ -193,7 +209,7 @@ function quote(engine: Engine, r: AtomRevision, s: Session): Origin | undefined 
     return o;
 }
 export interface Packed {
-  items: AtomView[];
+  items: import('./types.js').MemoryPage['items'][number][];
   text: string;
   tokenCount: number;
   sources: SourceCitation[];
@@ -201,34 +217,104 @@ export interface Packed {
   deferred: Candidate[];
   minimumTokens?: number;
 }
-/** Internal incremental packer. Callers offer candidates in their established
- * ranking order; every accepted root includes the same indivisible evidence
- * bundle as pack(). No selection commits before exact serialization fits. */
-export function createPacking(
+export interface PackingSolution {
+  revisions: AtomRevision[];
+  items: Packed['items'];
+  text: string;
+  tokenCount: number;
+  sources: SourceCitation[];
+  utility: number;
+}
+/** One closure, render, and cost evaluator shared by the frozen baseline and selector. */
+export function packingMaterials(
   engine: Engine,
   s: Session,
-  candidateByRevision: (revisionId: string) => Candidate | undefined,
-  tokens: number,
-  limit: number,
+  candidateByRevision: (id: string) => Candidate | undefined,
 ) {
-  let finished = false;
-  const items: import('./types.js').MemoryPage['items'][number][] = [];
-  const selected = new Set<string>();
-  const quotes = new Map<AtomView['ref'], Origin>();
-  const citations: Origin[] = [];
-  const deferred: Candidate[] = [];
-  let text = '';
-  let tokenCount = 0;
-  let minimumTokens: number | undefined;
-  let used = 0;
-  const serialize = (views: AtomView[], spans: typeof quotes) => {
-    const selected = views.flatMap((v) => (spans.has(v.ref) ? [spans.get(v.ref)!] : []));
+  const closures = new Map<string, AtomRevision[] | undefined>();
+  const material = new Map<
+    string,
+    {
+      view: AtomView;
+      span?: Origin;
+      citations: readonly Origin[];
+      bytes: number;
+      key: string;
+      weight: number;
+    }
+  >();
+  const work = (n = 1) => {
+    engine.check(s);
+    s.ledger.charge({ maxPackingWork: n });
+  };
+  const closure = (root: AtomRevision) => {
+    work();
+    if (closures.has(root.revisionId)) return closures.get(root.revisionId);
+    const value = bundle(engine, root, s);
+    closures.set(root.revisionId, value);
+    return value;
+  };
+  const prepare = (r: AtomRevision) => {
+    const prior = material.get(r.revisionId);
+    if (prior) return prior;
+    work(Buffer.byteLength(canonical(r)));
+    const span = quote(engine, r, s);
+    const view = engine.view(r, s, true);
+    if (span) {
+      const source = engine.get(span.source, s);
+      const sources = [
+        { ref: engine.issue(source, s), start: span.selector.start, end: span.selector.end },
+      ];
+      Object.assign(view, { sources });
+    }
+    const value = {
+      view,
+      span,
+      citations: span ? [span] : r.origins,
+      bytes: Buffer.byteLength(canonical(view)),
+      key: span
+        ? canonical({
+            source: span.source,
+            start: span.selector.start,
+            end: span.selector.end,
+            attribution: r.provenance.producerId,
+            origin: r.provenance.kind,
+            slots: r.slots,
+          })
+        : r.revisionId,
+      weight:
+        candidateByRevision(r.revisionId)?.activation ??
+        candidateByRevision(r.revisionId)?.score ??
+        0,
+    };
+    material.set(r.revisionId, value);
+    return value;
+  };
+  const empty: PackingSolution = {
+    revisions: [],
+    items: [],
+    text: '',
+    tokenCount: 0,
+    sources: [],
+    utility: 0,
+  };
+  const evaluate = (input: readonly AtomRevision[]): PackingSolution => {
+    work();
+    const revisions = [...new Map(input.map((r) => [r.revisionId, r])).values()];
+    if (!revisions.length) return empty;
+    const materials = revisions.map(prepare);
+    const inputBytes = materials.reduce((n, m) => n + m.bytes, 0);
+    work(inputBytes);
+    // Bound serialization before allocating its output. JSON escaping is at most sixfold.
+    if (!s.ledger.can({ maxPackingWork: 2 * (inputBytes * 6 + 4096) })) fail('BUDGET_EXHAUSTED');
+    const spans = materials.flatMap((m) => (m.span ? [m.span] : []));
     const key = (o: Origin) => canonical(o.source);
     const shared = new Set<string>();
-    for (let i = 0; i < selected.length; i++)
-      for (let j = i + 1; j < selected.length; j++) {
-        const a = selected[i]!,
-          b = selected[j]!;
+    for (let i = 0; i < spans.length; i++)
+      for (let j = i + 1; j < spans.length; j++) {
+        work();
+        const a = spans[i]!,
+          b = spans[j]!;
         if (
           key(a) === key(b) &&
           a.selector.start < b.selector.end &&
@@ -236,10 +322,9 @@ export function createPacking(
         )
           shared.add(key(a));
       }
-    return canonical({
-      memory: views.map((item) => {
-        const { score: _score, ...view } = item as AtomView & { score?: number };
-        const span = spans.get(view.ref);
+    const text = canonical({
+      formatVersion: 2,
+      memory: materials.map(({ view, span }) => {
         if (!span || !shared.has(key(span))) return view;
         const { text: _text, ...metadata } = view;
         return {
@@ -252,9 +337,9 @@ export function createPacking(
           },
         };
       }),
-      evidence: sourceCoverage(selected.filter((o) => shared.has(key(o)))).map((o) => {
-        const source = engine.get(o.source, s);
-        const bytes = Buffer.from(engine.text(source));
+      evidence: sourceCoverage(spans.filter((o) => shared.has(key(o)))).map((o) => {
+        const source = engine.get(o.source, s),
+          bytes = Buffer.from(engine.text(source));
         return {
           ref: engine.issue(source, s),
           unit: 'utf8',
@@ -266,69 +351,66 @@ export function createPacking(
         };
       }),
     });
+    work(Buffer.byteLength(text) * 2); // Serialization output and tokenizer input are separate work.
+    const tokenCount = engine.tokenizer.count(text);
+    if (!Number.isSafeInteger(tokenCount) || tokenCount < 0)
+      fail('INVALID_INPUT', 'Tokenizer returned an invalid count');
+    const classes = new Map<string, number>();
+    for (const m of materials) classes.set(m.key, Math.max(classes.get(m.key) ?? 0, m.weight));
+    const sources: SourceCitation[] = [];
+    for (const coverage of sourceCoverage(materials.flatMap((m) => [...m.citations]))) {
+      const ref = engine.issue(engine.get(coverage.source, s), s);
+      for (const range of coverage.ranges) sources.push({ ref, ...range });
+    }
+    return {
+      revisions,
+      items: materials.map((m, i) => ({
+        ...m.view,
+        score: candidateByRevision(revisions[i]!.revisionId)?.score ?? 0,
+      })),
+      text,
+      tokenCount,
+      sources,
+      utility: [...classes.values()].reduce((a, b) => a + b, 0),
+    };
   };
+  return { closure, evaluate, empty, work };
+}
+
+/** Frozen v0.7 rank-order policy, evaluated using the current shared closure/render contract. */
+export function createPacking(
+  engine: Engine,
+  s: Session,
+  candidateByRevision: (id: string) => Candidate | undefined,
+  tokens: number,
+  limit: number,
+) {
+  const evaluator = packingMaterials(engine, s, candidateByRevision);
+  let solution = evaluator.empty,
+    finished = false,
+    used = 0,
+    minimumTokens: number | undefined;
+  const deferred: Candidate[] = [];
   const offer = (candidate: Candidate): 'selected' | 'skipped' | 'deferred' | 'exhausted' => {
     if (finished) fail('INVALID_INPUT', 'Packing already finished');
     try {
-      if (candidate.revision.state === 'retired' || selected.has(candidate.revision.revisionId))
+      if (solution.revisions.some((r) => r.revisionId === candidate.revision.revisionId))
         return 'skipped';
-      if (items.length >= limit) {
-        deferred.push(candidate);
-        return 'deferred';
-      }
-      if (!validateMemory(engine, candidate.revision, s)) return 'skipped';
-      const unit = bundle(engine, candidate.revision, s);
+      const unit = evaluator.closure(candidate.revision);
       if (!unit) return 'skipped';
-      const all = new Map(unit.map((r) => [r.revisionId, r]));
-      const views: AtomView[] = [];
-      const nextQuotes = new Map(quotes);
-      const nextCitations = [...citations];
-      for (const r of all.values()) {
-        if (selected.has(r.revisionId)) continue;
-        const span = quote(engine, r, s);
-        const scored = candidateByRevision(r.revisionId);
-        const view = {
-          ...engine.view(r, s, true),
-          score: scored?.score ?? 0,
-        };
-        if (span) {
-          const source = engine.get(span.source, s);
-          const sourceRef = engine.issue(source, s);
-          views.push({
-            ...view,
-            sources: [{ ref: sourceRef, start: span.selector.start, end: span.selector.end }],
-          });
-          nextQuotes.set(view.ref, span);
-          nextCitations.push(span);
-        } else {
-          views.push(view);
-          nextCitations.push(...r.origins);
-        }
-      }
-      if (!views.length) return 'skipped';
-      const nextText = serialize([...items, ...views], nextQuotes);
-      const count = engine.tokenizer.count(nextText);
-      if (!Number.isSafeInteger(count) || count < 0)
-        fail('INVALID_INPUT', 'Tokenizer returned an invalid count');
+      const next = evaluator.evaluate([...solution.revisions, ...unit]);
       if (
-        count > tokens ||
-        items.length + views.length > limit ||
-        !s.ledger.can({ maxAtoms: views.length })
+        next.tokenCount > tokens ||
+        next.items.length > limit ||
+        !s.ledger.can({ maxAtoms: next.items.length - solution.items.length })
       ) {
-        minimumTokens = Math.min(
-          minimumTokens ?? Infinity,
-          engine.tokenizer.count(serialize(views, nextQuotes)),
-        );
+        const single = evaluator.evaluate(unit);
+        minimumTokens = Math.min(minimumTokens ?? Infinity, single.tokenCount);
         deferred.push(candidate);
         return 'deferred';
       }
-      s.ledger.charge({ maxAtoms: views.length });
-      items.push(...views);
-      all.forEach((r) => selected.add(r.revisionId));
-      for (const [ref, span] of nextQuotes) quotes.set(ref, span);
-      citations.splice(0, citations.length, ...nextCitations);
-      text = nextText;
-      tokenCount = count;
+      s.ledger.charge({ maxAtoms: next.items.length - solution.items.length });
+      solution = next;
       used++;
       return 'selected';
     } catch (e) {
@@ -342,19 +424,13 @@ export function createPacking(
   const finish = (): Packed => {
     if (finished) fail('INVALID_INPUT', 'Packing already finished');
     engine.check(s);
-    s.ledger.charge({ maxContextTokens: tokenCount });
-    const sources: SourceCitation[] = [];
-    for (const c of sourceCoverage(citations)) {
-      const source = engine.get(c.source, s);
-      const ref = engine.issue(source, s);
-      for (const range of c.ranges) sources.push({ ref, start: range.start, end: range.end });
-    }
+    s.ledger.charge({ maxContextTokens: solution.tokenCount });
     finished = true;
     return {
-      items,
-      text,
-      tokenCount,
-      sources,
+      items: solution.items,
+      text: solution.text,
+      tokenCount: solution.tokenCount,
+      sources: solution.sources,
       used,
       deferred,
       ...(minimumTokens ? { minimumTokens } : {}),
@@ -364,19 +440,18 @@ export function createPacking(
     offer,
     finish,
     deferred,
-    has: (revisionId: string) => selected.has(revisionId),
+    has: (id: string) => solution.revisions.some((r) => r.revisionId === id),
     get full() {
-      return items.length >= limit;
+      return solution.items.length >= limit;
     },
     get tokenCount() {
-      return tokenCount;
+      return solution.tokenCount;
     },
     get itemCount() {
-      return items.length;
+      return solution.items.length;
     },
   };
 }
-
 export async function pack(
   engine: Engine,
   s: Session,
@@ -384,13 +459,6 @@ export async function pack(
   tokens: number,
   limit: number,
 ): Promise<Packed> {
-  const packing = createPacking(
-    engine,
-    s,
-    (revisionId) => candidates.find((c) => c.revision.revisionId === revisionId),
-    tokens,
-    limit,
-  );
   const ranked = [...candidates].sort(
     (a, b) =>
       b.score - a.score ||
@@ -398,11 +466,17 @@ export async function pack(
         Buffer.byteLength(canonical(b.revision.body)) ||
       a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
   );
-  for (let index = 0; index < ranked.length; index++) {
-    if (packing.offer(ranked[index]!) === 'exhausted') {
-      packing.deferred.push(...ranked.slice(index + 1));
+  const packing = createPacking(
+    engine,
+    s,
+    (id) => candidates.find((c) => c.revision.revisionId === id),
+    tokens,
+    limit,
+  );
+  for (let i = 0; i < ranked.length; i++)
+    if (packing.offer(ranked[i]!) === 'exhausted') {
+      packing.deferred.push(...ranked.slice(i + 1));
       break;
     }
-  }
   return packing.finish();
 }

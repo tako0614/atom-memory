@@ -43,6 +43,8 @@ export type Body =
       readonly digest: string; readonly mediaType: string; readonly bytes: number };
 
 export interface Provenance {
+  /** Host-stamped dependency semantics; absent means conservative legacy links. */
+  readonly dependencyContract?: 'source-v2' | 'observed-v2';
   readonly kind: 'source' | 'extraction' | 'organization' | 'derived' | 'hypothesis';
   readonly producerId: Id;
   readonly runId?: Id;
@@ -86,6 +88,7 @@ export interface Budget {
   readonly maxModelInputTokens: number;
   readonly maxContextTokens: number;
   readonly maxEvaluationWork: number;
+  readonly maxPackingWork: number;
   readonly deadline?: string;
 }
 

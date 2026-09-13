@@ -26,9 +26,9 @@ await memory.write('招待リンクの有効期限は24時間です。');
 
 ファイルに残すなら [SQLite](/adapters#sqlite-に保存する)を設定します。入力アダプターから投入する資料は `actor: { type: 'input-adapter' }`、モデルが作る説明は `actor: { type: 'agent', generatedOrigin: 'organization' }` を使います。
 
-同じホストから複数のクライアントを発行できるので、入力アダプターと Writer は同じ記憶を扱えます。[Writer の例](/runtime#writerに整理を任せる)を参照してください。
+同じホストから複数のクライアントを発行できるので、入力アダプターと Writer は同じ記憶を扱えます。[Writer の例](/runtime#小さなwriter例)を参照してください。
 
-候補providerは `PinnedRef[]` だけを返し、保存本文の再読、スコア、構造伝播はCoreが担当します。embeddingの有無に応じて語彙または語彙＋ベクトルの候補入口を選びます。`ExactCandidateProvider` は小規模な有限走査の基準として必要な箇所で明示します。取得の上限は `retrieval`、利用可能性モデル・増幅・関係重みは `activation` に設定します。既定モデルは `adaptiveUse()` です。
+候補providerは `PinnedRef[]` だけを返し、保存本文の再読、スコア、構造伝播はCoreが担当します。embeddingの有無に応じて語彙または語彙＋ベクトルの候補入口を選びます。`ExactCandidateProvider` は小規模な有限走査の基準として必要な箇所で明示します。取得の上限は `retrieval`、利用状態モデル・増幅・関係重みは `activation` に設定します。既定モデルは `adaptiveUse()` です。
 
 ## アプリの認証につなぐ
 

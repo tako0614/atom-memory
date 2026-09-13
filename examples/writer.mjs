@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
+import { createHash, randomUUID } from 'node:crypto';
 import { MemoryHost, LocalAuthority } from 'atom-memory';
 
 // This is application code. Inject a real model here; Atom does not define its
@@ -15,24 +16,34 @@ export async function writerScenario(generate = async (source) => `認証の整�
   const host = new MemoryHost({ authority });
   const binding = { auth, writePolicy: 'p' };
   const memory = host.connect({ ...binding, actor: { type: 'input-adapter' } });
-  const writer = host.connect({
-    ...binding,
-    actor: { type: 'agent', generatedOrigin: 'organization' },
-  });
+  /** @type {import('atom-memory').ClientBinding} */
+  const agentBinding = { ...binding, actor: { type: 'agent', generatedOrigin: 'organization' } };
+  const writer = host.connect(agentBinding);
   const source = await memory.write('旧クライアントで認証を利用できる。');
-  const organize = (ref, previous) =>
-    writer.edit(async (draft) => {
-      const observed = (await draft.inspect(ref, { version: 'latest', depth: 0 })).atom;
-      const text = await generate(observed.text);
-      if (typeof text !== 'string' || !text.trim()) throw new Error('Invalid model output');
-      /** @type {import('atom-memory').MemoryContent} */
-      const content = {
-        text,
-        links: { 根拠: { ref: observed.ref, at: 'observed', required: true } },
-      };
-      const options = { sources: [{ ref: observed.ref }] };
-      return previous ? draft.revise(previous, content, options) : draft.write(content, options);
-    });
+  const organize = async (ref, previous) => {
+    const inspection = await writer.inspect(ref, { version: 'latest', depth: 0 });
+    const observed = inspection.atom;
+    const input = host.observe(
+      {
+        presentations: [{ receipt: inspection.receipt, refs: [observed.ref] }],
+        payloadDigest: createHash('sha256').update(observed.text).digest('hex'),
+      },
+      agentBinding,
+    );
+    const text = await generate(observed.text);
+    if (typeof text !== 'string' || !text.trim()) throw new Error('Invalid model output');
+    const eventId = randomUUID(); // Persist this ID with a request if its ack may be retried.
+    host.recordUse([observed.ref], agentBinding, { eventId, input });
+    /** @type {import('atom-memory').MemoryContent} */
+    const content = {
+      text,
+      links: { 根拠: { ref: observed.ref, at: 'observed', required: true } },
+    };
+    const options = { input, sources: [{ ref: observed.ref }] };
+    return writer.edit((draft) =>
+      previous ? draft.revise(previous, content, options) : draft.write(content, options),
+    );
+  };
   const created = await organize(source.ref);
   const options = { tokens: 10000, depth: 2 };
   const first = await memory.read({ query: '認証' }, options);

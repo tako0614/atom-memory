@@ -208,7 +208,7 @@ test('A31 purge invalidates issued refs, summaries and cached representation rou
   const target = host.engine.storage.metaGet(`sdk:ref:${a.ref}`).target;
   host.purge(target.atomId);
   await assert.rejects(m.inspect(a.ref), error('ACCESS_DENIED'));
-  assert.throws(() => m.assertAuthorized([trace.receipt]), error('ACCESS_DENIED'));
+  assert.throws(() => m.assertAuthorized([trace.receipt]), error('STATE_INVALIDATED')); // v0.8 erases the stored trace itself.
   assert.equal((await m.search('private')).items.length, 0);
 });
 

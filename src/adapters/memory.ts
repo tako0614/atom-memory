@@ -18,6 +18,13 @@ export class MemoryStorage implements StorageAdapter {
   #rows = new Map<string, StoredRevision[]>();
   #metadata = new Map<string, unknown>();
   #purged = new Set<string>();
+  #dependents = new Map<string, Set<string>>();
+  #receiptOwners = new Map<string, Set<string>>();
+  #edge(target: string, owner: string): void {
+    const owners = this.#dependents.get(target) ?? new Set<string>();
+    owners.add(owner);
+    this.#dependents.set(target, owners);
+  }
   watermark(): number {
     return this.#sequence;
   }
@@ -27,6 +34,8 @@ export class MemoryStorage implements StorageAdapter {
       rows: this.#rows,
       metadata: this.#metadata,
       purged: this.#purged,
+      dependents: this.#dependents,
+      receiptOwners: this.#receiptOwners,
     });
     try {
       return fn();
@@ -35,6 +44,8 @@ export class MemoryStorage implements StorageAdapter {
       this.#rows = backup.rows;
       this.#metadata = backup.metadata;
       this.#purged = backup.purged;
+      this.#dependents = backup.dependents;
+      this.#receiptOwners = backup.receiptOwners;
       throw error;
     }
   }
@@ -99,6 +110,17 @@ export class MemoryStorage implements StorageAdapter {
       const rows = this.#rows.get(revision.atomId) ?? [];
       rows.push({ revision: clone(revision), sequence: this.#sequence });
       this.#rows.set(revision.atomId, rows);
+      for (const origin of revision.origins) this.#edge(origin.source.atomId, revision.atomId);
+      if (!['source-v2', 'observed-v2'].includes(revision.provenance.dependencyContract ?? ''))
+        for (const slot of revision.slots) this.#edge(slot.target.atomId, revision.atomId);
+      const id = revision.provenance.inputReceiptId;
+      if (id) {
+        const owners = this.#receiptOwners.get(id) ?? new Set<string>();
+        owners.add(revision.atomId);
+        this.#receiptOwners.set(id, owners);
+        const m = this.metaGet<import('../core/store.js').ReceiptManifest>(`receipt:${id}`);
+        for (const ref of m?.reads ?? []) this.#edge(ref.atomId, revision.atomId);
+      }
     }
   }
   changes(
@@ -129,6 +151,33 @@ export class MemoryStorage implements StorageAdapter {
   }
   metaSet(key: string, value: unknown): void {
     this.#metadata.set(key, clone(value));
+    if (key.startsWith('receipt:')) {
+      const m = value as import('../core/store.js').ReceiptManifest;
+      for (const owner of this.#receiptOwners.get(key.slice(8)) ?? [])
+        for (const ref of m.reads) this.#edge(ref.atomId, owner);
+    }
+  }
+  purgeDependents(atomId: string, after: string | undefined, limit: number): string[] {
+    return [...(this.#dependents.get(atomId) ?? [])]
+      .filter((id) => this.#rows.has(id) && (after === undefined || id > after))
+      .sort()
+      .slice(0, limit);
+  }
+  purgeRevisions(atomId: string, after: string | undefined, limit: number): AtomRevision[] {
+    return clone(
+      (this.#rows.get(atomId) ?? [])
+        .map((r) => r.revision)
+        .filter((r) => after === undefined || r.revisionId > after)
+        .sort((a, b) => (a.revisionId < b.revisionId ? -1 : 1))
+        .slice(0, limit),
+    );
+  }
+  metaPage<T>(after: string | undefined, limit: number): [string, T][] {
+    return [...this.#metadata.keys()]
+      .filter((k) => after === undefined || k > after)
+      .sort()
+      .slice(0, limit)
+      .map((k) => [k, this.metaGet<T>(k)!]);
   }
   metaEntries<T>(prefix: string): [string, T][] {
     return [...this.#metadata.entries()]
@@ -140,6 +189,9 @@ export class MemoryStorage implements StorageAdapter {
   }
   isPurged(atomId: string): boolean {
     return this.#purged.has(atomId);
+  }
+  purgeGeneration(): number {
+    return this.metaGet<number>('retention-generation') ?? 0;
   }
   erase(atomIds: readonly string[]): void {
     if (atomIds.length)

@@ -13,13 +13,17 @@
 | 必須条件と重なる引用の実際の本文                                                   | `test/client-corrections.test.mjs`                                  |
 | スコープ、cursor、取消、保存互換                                                   | `test/client-hardening.test.mjs`                                    |
 | 埋め込みと関係による取得、staleからの伝播禁止、ノード上限と辺取得                  | `test/ranking.test.mjs`                                             |
-| 本文一致・利用可能性・関係伝播の単一評価、誤差上限、budget、near-unit拒否          | `test/evaluation.test.mjs`                                          |
+| 本文一致・利用状態・関係伝播の単一評価、誤差上限、budget、near-unit拒否            | `test/evaluation.test.mjs`                                          |
 | 主体・policy・revisionごとの利用、モデル状態、重複ack、reset、時計後退、purge      | `test/activation.test.mjs` / `test/activation-integration.test.mjs` |
 | AvailabilityModelの同期callback、1 KiB JSON、model ID、adaptiveUseとlegacy遅延変換 | `test/availability.test.mjs` / `test/activation*.test.mjs`          |
 | own-body索引、旧ベクトルの条件付き再利用、旧進捗の不採用、再開                     | `test/index-maintenance.test.mjs`                                   |
 | 遅いID位置の一致を取得する既定候補入口、削除索引                                   | `test/lexical-candidates.test.mjs` / `test/sqlite-*.test.mjs`       |
 
 `npm run evaluate:ranking` は同じ本文・固定ベクトル・同じ上限で、正しい構造・構造探索なし・同数の誤った関係を比較します。小さな決定的fixtureで取得の因果を分離する試験です。重複した意味をWriterが正しく整理するか、全コーパスの最適順位かは、この試験では主張しません。
+
+## v0.8の追加ゲート
+
+`V08_ACCEPTANCE.md` は40シナリオの対応表です。`test/v08*.test.mjs` は両adapterで同じ公開APIシナリオを実行し、旧0.7 packageからの移行と空consumerは `scripts/check-v08-migration.mjs` / `scripts/check-v08-consumer.mjs` で別に検証します。規範仕様と実行記録を分け、未実行・skipを合格に含めません。
 
 ## Agentと実モデル
 
@@ -28,3 +32,5 @@ Sakana側の `scripts/check-memory-refresh.mjs` は、古いAtomの通知、再�
 `check-memory-writer.mjs` と `check-agent-runtime.mjs` は保存障害後の再開、出典変更、モデル失敗、ツールの継続を検証します。Writerが実際に採用した生成記憶について、生成中の変更拒否・checkpoint再開・明示リンクなしの依存保存・訂正後の失効も確認します。実モデルとの接続はSakanaの `check-memory-writer-live.mjs` と `check-memory-embedding-live.mjs` が所有し、設定したモデルと予算で別に実行します。
 
 0.6以前の `validation/*.json` は当時の環境・契約での履歴記録です。旧HarnessやSchur研究の結果をv0.7の検証済み結果へ読み替えません。質問を見せずにWriterが構造を作れるか、構造が同じ費用で検索・回答を改善するかは、それぞれ別の品質評価です。v0.7の利用ackは、成功したモデル応答をアプリが自動記録する境界、AvailabilityModelの同期・状態上限・失敗伝播、0.6状態の遅延変換までをライブラリで検証します。
+
+v0.8で新しい実LLM評価やSakana本番連携の再検証は実施していません。ここに挙げた隣接プロジェクトの試験を、この版の実行済み結果として数えません。

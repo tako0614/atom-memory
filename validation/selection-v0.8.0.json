@@ -1,0 +1,382 @@
+{
+  "node": "v26.1.0",
+  "baseline": "v0.7 rank-order closure policy, v0.8 shared render/cost contract",
+  "tokenizer": "utf8-bytes-v1",
+  "evaluatedAt": 1789257600000,
+  "reports": [
+    {
+      "adapter": "memory",
+      "scenario": "long explanation and short facts",
+      "candidates": 4,
+      "budget": 2500,
+      "baselineU": 1.15,
+      "selectedU": 3,
+      "oracleU": 3,
+      "oracleGap": 0,
+      "baselineTokens": 2369,
+      "selectedTokens": 755,
+      "oracleTokens": 755,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 0,
+        "complete": false
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 16,
+      "packingWork": 76771,
+      "acquisitionCandidates": 4,
+      "latencyMs": 2.072352000000002,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "memory",
+      "scenario": "explanation is answer",
+      "candidates": 1,
+      "budget": 1000,
+      "baselineU": 1,
+      "selectedU": 1,
+      "oracleU": 1,
+      "oracleGap": 0,
+      "baselineTokens": 305,
+      "selectedTokens": 305,
+      "oracleTokens": 305,
+      "baselineEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 2,
+      "packingWork": 2197,
+      "acquisitionCandidates": 1,
+      "latencyMs": 0.2816580000000002,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "memory",
+      "scenario": "shared low-similarity condition",
+      "candidates": 2,
+      "budget": 2100,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 972,
+      "selectedTokens": 972,
+      "oracleTokens": 972,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 12851,
+      "acquisitionCandidates": 2,
+      "latencyMs": 0.7613949999999932,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "memory",
+      "scenario": "large mandatory condition",
+      "candidates": 2,
+      "budget": 1800,
+      "baselineU": 1,
+      "selectedU": 1,
+      "oracleU": 1,
+      "oracleGap": 0,
+      "baselineTokens": 279,
+      "selectedTokens": 279,
+      "oracleTokens": 279,
+      "baselineEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 50633,
+      "acquisitionCandidates": 2,
+      "latencyMs": 0.6228219999999993,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "memory",
+      "scenario": "Japanese metadata and low-frequency condition",
+      "candidates": 2,
+      "budget": 1600,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 894,
+      "selectedTokens": 894,
+      "oracleTokens": 894,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 10264,
+      "acquisitionCandidates": 2,
+      "latencyMs": 0.544516999999999,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "memory",
+      "scenario": "ordinary parent can contribute",
+      "candidates": 2,
+      "budget": 1500,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 639,
+      "selectedTokens": 639,
+      "oracleTokens": 639,
+      "baselineEvidence": {
+        "required": 2,
+        "found": 2,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 2,
+        "found": 2,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 7516,
+      "acquisitionCandidates": 2,
+      "latencyMs": 0.5737979999999965,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "long explanation and short facts",
+      "candidates": 4,
+      "budget": 2500,
+      "baselineU": 1.15,
+      "selectedU": 3,
+      "oracleU": 3,
+      "oracleGap": 0,
+      "baselineTokens": 2369,
+      "selectedTokens": 755,
+      "oracleTokens": 755,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 0,
+        "complete": false
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 16,
+      "packingWork": 76771,
+      "acquisitionCandidates": 4,
+      "latencyMs": 3.021794,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "explanation is answer",
+      "candidates": 1,
+      "budget": 1000,
+      "baselineU": 1,
+      "selectedU": 1,
+      "oracleU": 1,
+      "oracleGap": 0,
+      "baselineTokens": 305,
+      "selectedTokens": 305,
+      "oracleTokens": 305,
+      "baselineEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 2,
+      "packingWork": 2197,
+      "acquisitionCandidates": 1,
+      "latencyMs": 0.3516840000000059,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "shared low-similarity condition",
+      "candidates": 2,
+      "budget": 2100,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 972,
+      "selectedTokens": 972,
+      "oracleTokens": 972,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 12851,
+      "acquisitionCandidates": 2,
+      "latencyMs": 2.0221599999999995,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "large mandatory condition",
+      "candidates": 2,
+      "budget": 1800,
+      "baselineU": 1,
+      "selectedU": 1,
+      "oracleU": 1,
+      "oracleGap": 0,
+      "baselineTokens": 279,
+      "selectedTokens": 279,
+      "oracleTokens": 279,
+      "baselineEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 1,
+        "found": 1,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 50633,
+      "acquisitionCandidates": 2,
+      "latencyMs": 2.139482000000001,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "Japanese metadata and low-frequency condition",
+      "candidates": 2,
+      "budget": 1600,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 894,
+      "selectedTokens": 894,
+      "oracleTokens": 894,
+      "baselineEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 3,
+        "found": 3,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 10264,
+      "acquisitionCandidates": 2,
+      "latencyMs": 1.5122190000000018,
+      "complete": true,
+      "baselineComplete": true
+    },
+    {
+      "adapter": "sqlite",
+      "scenario": "ordinary parent can contribute",
+      "candidates": 2,
+      "budget": 1500,
+      "baselineU": 2,
+      "selectedU": 2,
+      "oracleU": 2,
+      "oracleGap": 0,
+      "baselineTokens": 639,
+      "selectedTokens": 639,
+      "oracleTokens": 639,
+      "baselineEvidence": {
+        "required": 2,
+        "found": 2,
+        "complete": true
+      },
+      "selectedEvidence": {
+        "required": 2,
+        "found": 2,
+        "complete": true
+      },
+      "baselineMissingRequired": 0,
+      "selectedMissingRequired": 0,
+      "enumerated": 4,
+      "packingWork": 7516,
+      "acquisitionCandidates": 2,
+      "latencyMs": 2.2829279999999983,
+      "complete": true,
+      "baselineComplete": true
+    }
+  ],
+  "realLLM": false,
+  "claim": "Finite proxy utility comparison only; no semantic quality, optimality, approximation ratio, or novelty claim."
+}

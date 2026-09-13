@@ -44,6 +44,7 @@ export class SqliteStorage implements StorageAdapter {
   readonly id: string;
   #db: DatabaseSync;
   #synchronous: 'FULL' | 'NORMAL';
+  #transactionDepth = 0;
   constructor(path: string, options: { synchronous?: 'FULL' | 'NORMAL' } = {}) {
     this.#synchronous = options.synchronous ?? 'FULL';
     if (!['FULL', 'NORMAL'].includes(this.#synchronous))
@@ -80,8 +81,9 @@ export class SqliteStorage implements StorageAdapter {
         DELETE FROM am_vector_buckets WHERE revision_id=substr(old.key,11);
       END;
       CREATE TABLE IF NOT EXISTS am_purged (atom_id TEXT PRIMARY KEY);
-      CREATE TRIGGER IF NOT EXISTS am_purge_revision_insert AFTER INSERT ON am_revisions BEGIN
-        INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.target.atomId') FROM json_each(new.data,'$.slots') WHERE true ON CONFLICT DO NOTHING;
+      DROP TRIGGER IF EXISTS am_purge_revision_insert;
+      CREATE TRIGGER am_purge_revision_insert AFTER INSERT ON am_revisions BEGIN
+        INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.target.atomId') FROM json_each(new.data,'$.slots') WHERE coalesce(json_extract(new.data,'$.provenance.dependencyContract'),'legacy') NOT IN ('source-v2','observed-v2') ON CONFLICT DO NOTHING;
         INSERT INTO am_purge_edges SELECT new.atom_id,json_extract(value,'$.source.atomId') FROM json_each(new.data,'$.origins') WHERE true ON CONFLICT DO NOTHING;
         INSERT INTO am_receipt_owners SELECT json_extract(new.data,'$.provenance.inputReceiptId'),new.atom_id WHERE json_extract(new.data,'$.provenance.inputReceiptId') IS NOT NULL ON CONFLICT DO NOTHING;
       END;
@@ -107,11 +109,21 @@ export class SqliteStorage implements StorageAdapter {
     if (!this.#db.prepare("SELECT 1 FROM am_state WHERE key='purge-index-v1'").get()) {
       this.transaction(() => {
         this.#db.exec(`
-          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(s.value,'$.target.atomId') FROM am_revisions r,json_each(r.data,'$.slots') s;
+          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(s.value,'$.target.atomId') FROM am_revisions r,json_each(r.data,'$.slots') s WHERE coalesce(json_extract(r.data,'$.provenance.dependencyContract'),'legacy') NOT IN ('source-v2','observed-v2');
           INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(o.value,'$.source.atomId') FROM am_revisions r,json_each(r.data,'$.origins') o;
           INSERT OR IGNORE INTO am_receipt_owners SELECT json_extract(data,'$.provenance.inputReceiptId'),atom_id FROM am_revisions WHERE json_extract(data,'$.provenance.inputReceiptId') IS NOT NULL;
           INSERT OR IGNORE INTO am_receipt_inputs SELECT substr(m.key,9),json_extract(r.value,'$.atomId') FROM am_metadata m,json_each(m.value,'$.reads') r WHERE m.key>='receipt:' AND m.key<'receipt;';
           INSERT INTO am_state VALUES('purge-index-v1','1');
+        `);
+      });
+    }
+    if (!this.#db.prepare("SELECT 1 FROM am_state WHERE key='purge-index-v2'").get()) {
+      this.transaction(() => {
+        this.#db.exec(`
+          DELETE FROM am_purge_edges;
+          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(s.value,'$.target.atomId') FROM am_revisions r,json_each(r.data,'$.slots') s WHERE coalesce(json_extract(r.data,'$.provenance.dependencyContract'),'legacy') NOT IN ('source-v2','observed-v2');
+          INSERT OR IGNORE INTO am_purge_edges SELECT r.atom_id,json_extract(o.value,'$.source.atomId') FROM am_revisions r,json_each(r.data,'$.origins') o;
+          INSERT INTO am_state VALUES('purge-index-v2','1');
         `);
       });
     }
@@ -140,14 +152,19 @@ export class SqliteStorage implements StorageAdapter {
     );
   }
   transaction<T>(fn: () => T): T {
-    this.#db.exec('BEGIN IMMEDIATE');
+    const depth = this.#transactionDepth;
+    const savepoint = `am_nested_${depth}`;
+    this.#db.exec(depth ? `SAVEPOINT ${savepoint}` : 'BEGIN IMMEDIATE');
+    this.#transactionDepth++;
     try {
       const result = fn();
-      this.#db.exec('COMMIT');
+      this.#db.exec(depth ? `RELEASE ${savepoint}` : 'COMMIT');
       return result;
     } catch (error) {
-      this.#db.exec('ROLLBACK');
+      this.#db.exec(depth ? `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}` : 'ROLLBACK');
       throw error;
+    } finally {
+      this.#transactionDepth--;
     }
   }
   get(ref: Ref, at: number): AtomRevision | undefined {
@@ -370,6 +387,37 @@ export class SqliteStorage implements StorageAdapter {
   }
   isPurged(atomId: string): boolean {
     return !!this.#db.prepare('SELECT 1 FROM am_purged WHERE atom_id=?').get(atomId);
+  }
+  purgeGeneration(): number {
+    return this.metaGet<number>('retention-generation') ?? 0;
+  }
+  purgeDependents(atomId: string, after: string | undefined, limit: number): string[] {
+    return (
+      this.#db
+        .prepare(
+          `SELECT owner_id FROM (
+      SELECT owner_id FROM am_purge_edges WHERE target_id=?
+      UNION SELECT o.owner_id FROM am_receipt_inputs i JOIN am_receipt_owners o ON o.receipt_id=i.receipt_id WHERE i.target_id=?
+    ) WHERE owner_id>? ORDER BY owner_id LIMIT ?`,
+        )
+        .all(atomId, atomId, after ?? '', limit) as { owner_id: string }[]
+    ).map((r) => r.owner_id);
+  }
+  purgeRevisions(atomId: string, after: string | undefined, limit: number): AtomRevision[] {
+    return (
+      this.#db
+        .prepare(
+          'SELECT data FROM am_revisions WHERE atom_id=? AND revision_id>? ORDER BY revision_id LIMIT ?',
+        )
+        .all(atomId, after ?? '', limit) as { data: string }[]
+    ).map((r) => JSON.parse(r.data));
+  }
+  metaPage<T>(after: string | undefined, limit: number): [string, T][] {
+    return (
+      this.#db
+        .prepare('SELECT key,value FROM am_metadata WHERE key>? ORDER BY key LIMIT ?')
+        .all(after ?? '', limit) as { key: string; value: string }[]
+    ).map((r) => [r.key, JSON.parse(r.value)]);
   }
   erase(atomIds: readonly string[]): void {
     if (atomIds.length)

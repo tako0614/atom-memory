@@ -325,8 +325,9 @@ test('automatic recall returns useful memory from a large corpus within the defa
   const result = await f.memory.read({ context: 'common topic' });
   assert.ok(result.refs.length > 0);
   assert.equal(result.diagnostics.approximate, true);
-  const trace = f.storage.metaGet(`sdk:trace:${result.receipt.id}`);
-  assert.ok(trace.reads.length < 256);
+  const trace = f.storage.metaGet(`sdk:manifest:${result.receipt.id}`);
+  assert.equal(trace.acquisition.reads.length, 700, 'retain every body used by acquisition');
+  assert.ok(trace.presentation.units.length < 256, 'the presentation remains bounded separately');
   const page = await f.memory.search('common topic', { limit: 1 });
   assert.equal(page.items.length, 1);
   const score = page.items[0].score;

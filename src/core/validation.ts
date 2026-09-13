@@ -50,6 +50,11 @@ export function validateContent(
   )
     fail('INVALID_SCHEMA');
   validId(c.provenance.producerId);
+  if (
+    c.provenance.dependencyContract !== undefined &&
+    !['source-v2', 'observed-v2'].includes(c.provenance.dependencyContract)
+  )
+    fail('INVALID_SCHEMA');
   if ((c.schema === 'source') !== (c.provenance.kind === 'source'))
     fail('INVALID_SCHEMA', 'Source schema and trusted provenance must agree');
   if (c.provenance.kind === 'source' && (!principal.canIngestSource || hostDerived))

@@ -1,0 +1,1012 @@
+TAP version 13
+# Subtest: memory V08-40 package exports and persisted observations
+not ok 1 - memory V08-40 package exports and persisted observations
+  ---
+  duration_ms: 10.047168
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08-package.test.mjs:10:3'
+  failureType: 'testCodeFailure'
+  error: 'host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08-package.test.mjs:30:24)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: sqlite V08-40 package exports and persisted observations
+not ok 2 - sqlite V08-40 package exports and persisted observations
+  ---
+  duration_ms: 5.026142
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08-package.test.mjs:10:3'
+  failureType: 'testCodeFailure'
+  error: 'host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08-package.test.mjs:30:24)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-22 acquisition and presentation are distinct
+not ok 3 - memory V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 16.856011
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:29:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.manifest is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:33:22)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: memory V08-24 independent generations share a commit only
+not ok 4 - memory V08-24 independent generations share a commit only
+  ---
+  duration_ms: 1.538258
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:39:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:43:20)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-28 forged token is refused
+not ok 5 - memory V08-28 forged token is refused
+  ---
+  duration_ms: 0.963218
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:57:3'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:59:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-31 independent source survives ordinary relation purge
+not ok 6 - memory V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 1.739272
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:100:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:106:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-33 unavailable required blocks read but permits inspect
+not ok 7 - memory V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 1.357237
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:117:3'
+  failureType: 'testCodeFailure'
+  error: 'ACCESS_DENIED'
+  code: 'ACCESS_DENIED'
+  name: 'AtomMemoryError'
+  stack: |-
+    fail (file:///tmp/atom-v08-old/package/dist/core/util.js:11:11)
+    Engine.resolve (file:///tmp/atom-v08-old/package/dist/client/engine.js:261:13)
+    MemoryClient.inspect (file:///tmp/atom-v08-old/package/dist/client/memory.js:345:35)
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:125:39)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-01 five operations use content-only input
+ok 8 - memory V08-01 five operations use content-only input
+  ---
+  duration_ms: 3.191133
+  type: 'test'
+  ...
+# Subtest: memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 9 - memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 4.849803
+  type: 'test'
+  ...
+# Subtest: memory V08-03 reading leaves semantic revisions and use state intact
+ok 10 - memory V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 2.516407
+  type: 'test'
+  ...
+# Subtest: memory V08-04 observed inspection and logical links retain separate versions
+ok 11 - memory V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 2.050918
+  type: 'test'
+  ...
+# Subtest: memory V08-05 edit rollback and CAS never replay callbacks
+ok 12 - memory V08-05 edit rollback and CAS never replay callbacks
+  ---
+  duration_ms: 2.546144
+  type: 'test'
+  ...
+# Subtest: memory V08-06 bounded use correction preserves the v0.7 activation formula
+ok 13 - memory V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 4.458803
+  type: 'test'
+  ...
+# Subtest: memory V08-07 use cannot create relevance without matching body or edge
+ok 14 - memory V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 2.351842
+  type: 'test'
+  ...
+# Subtest: memory V08-08 wall clock and iteration count do not mutate use
+ok 15 - memory V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 1.653255
+  type: 'test'
+  ...
+# Subtest: memory V08-09 cold and warm solve the same acquired graph
+ok 16 - memory V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 3.065687
+  type: 'test'
+  ...
+# Subtest: memory V08-10 invalid model values and states fail explicitly
+ok 17 - memory V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 4.6571
+  type: 'test'
+  ...
+# Subtest: memory V08-11 acquisition and numerical truncation are separate diagnostics
+not ok 18 - memory V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 1.205803
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:302:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'converged')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:310:46)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-12 long top-ranked body competes with short closure sets
+not ok 19 - memory V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 3.837363
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:315:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'baselineComplete')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:330:47)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-13 explanation itself can be the answer
+ok 20 - memory V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 1.014376
+  type: 'test'
+  ...
+# Subtest: memory V08-14 shared required body is rendered once
+ok 21 - memory V08-14 shared required body is rendered once
+  ---
+  duration_ms: 1.584738
+  type: 'test'
+  ...
+# Subtest: memory V08-15 deep required cycles close finitely
+ok 22 - memory V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 6.395827
+  type: 'test'
+  ...
+# Subtest: memory V08-16 oversized closure is deferred without ref-only substitution
+ok 23 - memory V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 2.264398
+  type: 'test'
+  ...
+# Subtest: memory V08-17 overlapping verified quotations share evidence
+ok 24 - memory V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 2.986768
+  type: 'test'
+  ...
+# Subtest: memory V08-18 different generated meanings and different sources stay separate
+ok 25 - memory V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 2.626678
+  type: 'test'
+  ...
+# Subtest: memory V08-19 identical quote classes count max activation while retaining selected refs
+not ok 26 - memory V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 3.369597
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:422:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'utility')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:446:39)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-20 exact UTF-8 display and explicit packing work limits
+not ok 27 - memory V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 1.661007
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:449:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'baselineComplete')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:460:48)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-21 small corpus oracle compares every feasible public rendering
+not ok 28 - memory V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 2.675124
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:464:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'utility')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:497:42)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-23 host filtering narrows delivery while preserving acquisition
+not ok 29 - memory V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 1.458495
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:509:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:514:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-25 citations cannot split one generation input
+not ok 30 - memory V08-25 citations cannot split one generation input
+  ---
+  duration_ms: 0.64308
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:533:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:537:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-26 inherited working state cannot drop its dependency
+not ok 31 - memory V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 0.52946
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:554:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:557:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory inherited staged generation outputs remain purge dependencies
+not ok 32 - memory inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 0.563822
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:566:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:569:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-27 unshown selection inputs remain erasure dependencies
+not ok 33 - memory V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 1.095817
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:591:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:597:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-29 historical and empty-query currentness differ
+not ok 34 - memory V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 0.571626
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:606:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:609:24)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-30 tokenless agent edit retains whole-edit legacy inputs
+ok 35 - memory V08-30 tokenless agent edit retains whole-edit legacy inputs
+  ---
+  duration_ms: 2.92777
+  type: 'test'
+  ...
+# Subtest: memory mixed edit keeps fallback inputs without merging verified generations
+not ok 36 - memory mixed edit keeps fallback inputs without merging verified generations
+  ---
+  duration_ms: 0.74625
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:655:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:659:15)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-32 generation and inherited erasure ignore search weights
+not ok 37 - memory V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 0.532897
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:680:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:683:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-34 hidden ordinary targets expose no identity or reason
+not ok 38 - memory V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 0.697902
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:695:3'
+  failureType: 'testCodeFailure'
+  error: 'Persistent derivation cannot cross policies'
+  code: 'ACCESS_DENIED'
+  name: 'AtomMemoryError'
+  stack: |-
+    fail (file:///tmp/atom-v08-old/package/dist/core/util.js:11:11)
+    file:///tmp/atom-v08-old/package/dist/core/store.js:145:21
+    MemoryStorage.transaction (file:///tmp/atom-v08-old/package/dist/adapters/memory.js:24:20)
+    AtomicStore.write (file:///tmp/atom-v08-old/package/dist/core/store.js:67:29)
+    Engine.commit (file:///tmp/atom-v08-old/package/dist/client/engine.js:368:42)
+    MemoryClient.writeInternal (file:///tmp/atom-v08-old/package/dist/client/memory.js:620:42)
+    MemoryClient.write (file:///tmp/atom-v08-old/package/dist/client/memory.js:567:21)
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:707:34)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-35 mixed legacy manifests preserve conservative deletion
+not ok 39 - memory V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 2.827444
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:721:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:734:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-36 failed and budgeted purge blocks reads until explicit resume
+not ok 40 - memory V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 0.671558
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:750:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:755:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-37 ack counts successful exposure once per event and revision
+not ok 41 - memory V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 0.750061
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:767:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:770:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: memory V08-38 reset, subjects, and revisions preserve isolation
+ok 42 - memory V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 1.982058
+  type: 'test'
+  ...
+# Subtest: memory V08-39 cursor fixes evaluation while each page includes required text
+ok 43 - memory V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 2.56736
+  type: 'test'
+  ...
+# Subtest: sqlite V08-22 acquisition and presentation are distinct
+not ok 44 - sqlite V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 16.266893
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:29:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.manifest is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:33:22)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-24 independent generations share a commit only
+not ok 45 - sqlite V08-24 independent generations share a commit only
+  ---
+  duration_ms: 2.227383
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:39:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:43:20)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-28 forged token is refused
+not ok 46 - sqlite V08-28 forged token is refused
+  ---
+  duration_ms: 1.351533
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:57:3'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:59:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-31 independent source survives ordinary relation purge
+not ok 47 - sqlite V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 3.35136
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:100:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:106:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-33 unavailable required blocks read but permits inspect
+not ok 48 - sqlite V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 2.477774
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:117:3'
+  failureType: 'testCodeFailure'
+  error: 'ACCESS_DENIED'
+  code: 'ACCESS_DENIED'
+  name: 'AtomMemoryError'
+  stack: |-
+    fail (file:///tmp/atom-v08-old/package/dist/core/util.js:11:11)
+    Engine.resolve (file:///tmp/atom-v08-old/package/dist/client/engine.js:261:13)
+    MemoryClient.inspect (file:///tmp/atom-v08-old/package/dist/client/memory.js:345:35)
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:125:39)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-01 five operations use content-only input
+ok 49 - sqlite V08-01 five operations use content-only input
+  ---
+  duration_ms: 5.390322
+  type: 'test'
+  ...
+# Subtest: sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 50 - sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 9.887004
+  type: 'test'
+  ...
+# Subtest: sqlite V08-03 reading leaves semantic revisions and use state intact
+ok 51 - sqlite V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 3.691896
+  type: 'test'
+  ...
+# Subtest: sqlite V08-04 observed inspection and logical links retain separate versions
+ok 52 - sqlite V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 4.196229
+  type: 'test'
+  ...
+# Subtest: sqlite V08-05 edit rollback and CAS never replay callbacks
+ok 53 - sqlite V08-05 edit rollback and CAS never replay callbacks
+  ---
+  duration_ms: 4.136204
+  type: 'test'
+  ...
+# Subtest: sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+ok 54 - sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 6.15441
+  type: 'test'
+  ...
+# Subtest: sqlite V08-07 use cannot create relevance without matching body or edge
+ok 55 - sqlite V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 6.326062
+  type: 'test'
+  ...
+# Subtest: sqlite V08-08 wall clock and iteration count do not mutate use
+ok 56 - sqlite V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 3.423937
+  type: 'test'
+  ...
+# Subtest: sqlite V08-09 cold and warm solve the same acquired graph
+ok 57 - sqlite V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 5.257694
+  type: 'test'
+  ...
+# Subtest: sqlite V08-10 invalid model values and states fail explicitly
+ok 58 - sqlite V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 12.559694
+  type: 'test'
+  ...
+# Subtest: sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+not ok 59 - sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 3.022832
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:302:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'converged')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:310:46)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-12 long top-ranked body competes with short closure sets
+not ok 60 - sqlite V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 8.873271
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:315:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'baselineComplete')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:330:47)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-13 explanation itself can be the answer
+ok 61 - sqlite V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 3.077983
+  type: 'test'
+  ...
+# Subtest: sqlite V08-14 shared required body is rendered once
+ok 62 - sqlite V08-14 shared required body is rendered once
+  ---
+  duration_ms: 4.231958
+  type: 'test'
+  ...
+# Subtest: sqlite V08-15 deep required cycles close finitely
+ok 63 - sqlite V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 12.042327
+  type: 'test'
+  ...
+# Subtest: sqlite V08-16 oversized closure is deferred without ref-only substitution
+ok 64 - sqlite V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 4.831581
+  type: 'test'
+  ...
+# Subtest: sqlite V08-17 overlapping verified quotations share evidence
+ok 65 - sqlite V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 6.977848
+  type: 'test'
+  ...
+# Subtest: sqlite V08-18 different generated meanings and different sources stay separate
+ok 66 - sqlite V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 7.075715
+  type: 'test'
+  ...
+# Subtest: sqlite V08-19 identical quote classes count max activation while retaining selected refs
+not ok 67 - sqlite V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 7.445819
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:422:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'utility')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:446:39)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-20 exact UTF-8 display and explicit packing work limits
+not ok 68 - sqlite V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 4.442337
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:449:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'baselineComplete')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:460:48)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-21 small corpus oracle compares every feasible public rendering
+not ok 69 - sqlite V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 6.568826
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:464:3'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'utility')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:497:42)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-23 host filtering narrows delivery while preserving acquisition
+not ok 70 - sqlite V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 3.45348
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:509:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:514:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-25 citations cannot split one generation input
+not ok 71 - sqlite V08-25 citations cannot split one generation input
+  ---
+  duration_ms: 2.130854
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:533:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:537:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-26 inherited working state cannot drop its dependency
+not ok 72 - sqlite V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 2.359459
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:554:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:557:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite inherited staged generation outputs remain purge dependencies
+not ok 73 - sqlite inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 1.88116
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:566:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:569:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-27 unshown selection inputs remain erasure dependencies
+not ok 74 - sqlite V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 4.395397
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:591:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:597:26)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-29 historical and empty-query currentness differ
+not ok 75 - sqlite V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 1.595808
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:606:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:609:24)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-30 tokenless agent edit retains whole-edit legacy inputs
+ok 76 - sqlite V08-30 tokenless agent edit retains whole-edit legacy inputs
+  ---
+  duration_ms: 5.637676
+  type: 'test'
+  ...
+# Subtest: sqlite mixed edit keeps fallback inputs without merging verified generations
+not ok 77 - sqlite mixed edit keeps fallback inputs without merging verified generations
+  ---
+  duration_ms: 2.069006
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:655:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:659:15)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-32 generation and inherited erasure ignore search weights
+not ok 78 - sqlite V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 1.674602
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:680:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:683:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-34 hidden ordinary targets expose no identity or reason
+not ok 79 - sqlite V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 1.67284
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:695:3'
+  failureType: 'testCodeFailure'
+  error: 'Persistent derivation cannot cross policies'
+  code: 'ACCESS_DENIED'
+  name: 'AtomMemoryError'
+  stack: |-
+    fail (file:///tmp/atom-v08-old/package/dist/core/util.js:11:11)
+    file:///tmp/atom-v08-old/package/dist/core/store.js:145:21
+    SqliteStorage.transaction (file:///tmp/atom-v08-old/package/dist/adapters/sqlite.js:129:28)
+    AtomicStore.write (file:///tmp/atom-v08-old/package/dist/core/store.js:67:29)
+    Engine.commit (file:///tmp/atom-v08-old/package/dist/client/engine.js:368:42)
+    MemoryClient.writeInternal (file:///tmp/atom-v08-old/package/dist/client/memory.js:620:42)
+    MemoryClient.write (file:///tmp/atom-v08-old/package/dist/client/memory.js:567:21)
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:707:34)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-35 mixed legacy manifests preserve conservative deletion
+not ok 80 - sqlite V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 7.874658
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:721:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:734:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+not ok 81 - sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 1.960082
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:750:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:755:12)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-37 ack counts successful exposure once per event and revision
+not ok 82 - sqlite V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 2.486713
+  type: 'test'
+  location: '/tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:767:3'
+  failureType: 'testCodeFailure'
+  error: 'f.host.observe is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    observed (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:20:19)
+    async TestContext.<anonymous> (file:///tmp/atom-v08-baseline-f8A4w9/test/v08.test.mjs:770:19)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: sqlite V08-38 reset, subjects, and revisions preserve isolation
+ok 83 - sqlite V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 4.86449
+  type: 'test'
+  ...
+# Subtest: sqlite V08-39 cursor fixes evaluation while each page includes required text
+ok 84 - sqlite V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 5.973625
+  type: 'test'
+  ...
+1..84
+# tests 84
+# suites 0
+# pass 38
+# fail 46
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 388.591434

@@ -1,52 +1,55 @@
-# v0.7への移行
+# v0.8への移行
 
-v0.7は v0.6 から利用可能性の公開契約を更新します。Atomの本文・ID・revision・出典・receipt・links、v3のown-bodyベクトルと保存データは保持します。認証・policyを含む既存の保存を消去して移行する必要はありません。設定identityが変わるため古いcursorは失効させて取り直します。公開版と検証結果は[リリース記録](/release)で確認できます。
+v0.7.0の基準は `a2f3c59098ba7f6a46ffd3903d2fc14fa43335f5`。意味の正本は[規範仕様](/specification)です。移行に利用者DBの消去は不要です。v0.7とv0.8を同一SQLiteへ同時に書き込まないでください。v0.8導入後の旧writer再開はサポートしません。
 
-## まず確認すること
+| 対象                            | 扱い                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------- |
+| Atom ID・revision・出典・links  | 再採番・本文rewriteなし                                                                       |
+| v3 own-body embedding           | encoder/前処理/本文が適合すれば保持                                                           |
+| AvailabilityModel.idと利用状態  | 同じIDなら保持。意味変更時だけ明示reset                                                       |
+| 旧manifestと意味が未確認のlinks | legacyとして全リンクを消去依存に残す                                                          |
+| 新InputToken                    | ホスト発行。モデルtool schemaへ追加しない                                                     |
+| 旧cursor                        | CURSOR_EXPIRED。新しい取得から開始                                                            |
+| read.text                       | formatVersion=2。memory/evidenceを一つの表示として渡す                                        |
+| AtomView.links                  | 利用可能形 / unavailable形のunion                                                             |
+| StorageAdapter                  | bounded purgeDependents / purgeRevisions / metaPageが必要。旧custom adapterの消去は明示エラー |
 
-バックアップを取り、旧版と新版のプロセスを同じ保存先へ同時に書き込まないでください。移行後は次を実行して、旧0.6設定・型・候補providerの差分を確認します。
+旧manifestをrole名や引用から小さい生成単位へ変換しません。新しい版を正しくobserveして生成しても、過去版のlegacy消去依存は残ります。「読めた」と「古い消去依存を解除した」は異なります。
 
-```sh
-ATOM_V06_PACKAGE=/path/to/published-0.6.0-package node scripts/check-v06-migration.mjs
+信頼済み原資料の通常関連は、原資料内容の独立性をホストが保証する新契約です。認可済みの別policyへの通常関連も記録でき、読取scopeから外れた先はunavailableになります。出典・生成内容のpolicy越境は引き続き拒否します。既知のコピー/抽出を原資料として取り込む場合もsourcesを付けてください。
+
+## 型と表示の移行例
+
+```ts runnable
+import type { AtomView, RecallResult } from 'atom-memory';
+export function availableTargets(atom: AtomView) {
+  return atom.links.flatMap((link) => (link.unavailable ? [] : [link.ref]));
+}
+export function modelMemory(result: RecallResult) {
+  if (result.formatVersion !== 2) throw new Error('Unsupported memory display');
+  return result.text;
+}
 ```
 
-このスクリプトは利用者の既存DBを書き換えません。公開0.6.0パッケージで一時SQLite fixtureを作成・再オープンし、本文・版・v3ベクトル・legacy利用状態を読み、0.7の状態decodeと次回recordUse時のrewrite、古いcursorの失効を確認します。公開npmのmanifestや過去の検証記録は、このローカル移行結果から更新しません。
+sourceのcitationは原資料への追跡情報です。本文提示はpresentation.unitsで判定します。共有evidenceは保存Atomの改変ではなく、一回の表示での費用共有です。inspect.readEligibilityはuncheckedまたはblockedであり、通常readで単独採用できる保証には使いません。
 
-## 公開APIと設定の変更
+## 消去と停止の契約
 
-| v0.6の利用                                                      | v0.7での扱い                                                                                                                               |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `activation.halfLifeMs`                                         | 削除。`activation.model` の既定は `adaptiveUse()`。初期半減期・最大半減期は `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` で設定する |
-| 固定の利用状態 `h` / 半減期                                     | `AvailabilityModel<S extends Json>` の `{ id, update, value }` へ移行する。既定状態はmass・時刻・半減期を持つ                              |
-| 利用状態の互換性                                                | `model.id` を状態の設定identityに含める。同じIDは継続し、異なるIDは `STATE_INVALIDATED` としてscope resetを要求する                        |
-| 0.6のlegacy利用状態                                             | readでは正確にdecodeし、イベント再送では書き換えない。新しいrecordUseでだけadaptiveUse形式へrewriteする                                    |
-| `retrieval`、`PinnedRef[]` provider、埋め込み80%・語彙20%の評価 | 0.6の契約を維持する。`b = m(1 + βu/(1+u))`、`a = b + Tᵀa` の評価境界も維持する                                                             |
-| 旧cursor                                                        | 0.7のmodel/config identityに束縛されるため `CURSOR_EXPIRED`。新しい検索から開始する                                                        |
+dry-runは新旧混在の全履歴から影響数とlegacy依存を確認します。`maxWork`は依存page、履歴とmetadataのbyte量を含む有限操作上限で、既定16,000,000です。DB内部の索引探索やストレージcallbackのCPU時間の上限ではありません。
 
-`recordUse` の戻り値は `{ acceptedAt, recorded, repeated }` です。利用状態は認証主体・policy・revisionごとに隔離され、同じ `eventId` の再送は一度だけ反映します。`host.resetUse(binding)` は現在の主体と許可policyの集計を消しますが、重複防止マーカーは残します。モデルの `id` やパラメータを変更して `STATE_INVALIDATED` になった場合は、明示的に `resetUse` を呼んでから読み直してください。`maxBoost` や伝播の変更だけでは利用状態をリセットしませんが、設定identityが変わるためcursorは失効します。
+実消去は先に永続的な停止マーカーを保存します。未完了・I/O失敗中は、この保存先全体の公開read/writeを止めます。ホストは同じatomIdでpurgeを再呼出し、complete=trueを確認してください。1 Atomの全履歴が一回の予算を超える場合はminimumWorkを参考に予算を増やします。自動ジョブはありません。
 
-### AvailabilityModelと既定モデル
+本文、blob、FTS相当のbody索引、vector、利用状態、cache、対象を含むpresentation/生成記録を処理します。SQLiteの空きページ・WAL回収はcompact、外部バックアップと送信済みpayloadはホスト所有です。
 
-`activation.model` は `AvailabilityModel<S extends Json>` です。`update(previous, acceptedAt)` と `value(state, now)` は同期的・純粋で、状態は正規化JSON 1 KiB以下、値は非負有限でなければなりません。query・context・score・graph・全履歴はcallbackへ渡されません。例外、Promise、無効な状態、非有限値は操作を失敗させます。ライブラリはscope、atomicity、dedup、purgeとモデルIDの状態照合を所有します。
+## 再現する移行検証
 
-既定の `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` は、初期7日・最大365日で `{ mass, updatedAt, halfLifeMs }` を保持します。イベント時に減衰したmassへ1を加えて1,000,000で上限を設け、保持率に応じて半減期を伸ばします。legacyの0.6状態は `mass=h`、`updatedAt`、旧半減期を読み出し時に正確に解釈します。旧半減期が新しい上限を超えていても短くしません。readや古いイベントの再送は状態を書き換えず、イベントを再生しません。新しい受理イベントが来たときだけadaptiveUseの形式へ書き換えます。
+```sh
+npm pack atom-memory@0.7.0 --pack-destination /tmp/atom-v07
+# 展開先のpackageを指定する (利用者DBは開かない)
+ATOM_V07_PACKAGE=/tmp/atom-v07/package node scripts/check-v08-migration.mjs
+npm run check:v08
+```
 
-アプリのモデル実行ループは引き続きアプリが所有します。モデルproviderから成功応答を受けた経路が、モデルへ渡したrefsを自動でackします。モデルのツール呼び出しや人の承認を利用イベントとして待つAPIはありません。
+旧npm packageが実際に作った一時SQLiteとMemory recordsで、ID・版・出典・利用状態・適合索引、cursor失効、legacy消去と新規独立原資料の残存を確認します。SQLiteでは停止した消去を再接続して再開します。配布tarballの空consumer試験も検証記録に分けます。
 
-## 保存・索引の扱い
-
-v3の表現は各Atom自身の本文から作られ、既存の互換なベクトル行は保持できます。encoder、dimensions、policy、own-body hashが一致する行だけを再利用し、旧形式の混在やconfigだけの書き換えは行いません。既存のstorage adapterは本文、版、出典、入力記録、v3索引を同じ境界で扱います。
-
-索引を使うhostは、提供する全policy scopeの `prepareIndex` / `updateIndex` を再開し、各scopeのcheckpointを終端までdrainしてから意味検索をreadyと扱います。一つの `pending: false` やproviderの `complete` は全体の準備完了を示しません。移行で設定世代が変わったcursorは `CURSOR_EXPIRED` として新しい検索から開始します。
-
-`MemoryHarness`、モデル実行、再取得計画、一時生成cache、旧 `supersede` の自動採用は v0.5 から引き続きライブラリにありません。`stale` を受けたアプリが入力を選び直し、通常の `edit` で改訂します。`basis: 'historical'`、観測版、不変版、receipt、明示的な `retainSnapshot` / `retainedSnapshot` は継続します。
-
-## v0.5の研究・移行データを残す範囲
-
-v0.5・v0.6で行った own-body v3、stale除外、既定候補入口、Writer入力依存の検証記録は歴史的なベースラインとして保持します。Schur合成評価、PPRの比較、保存済み埋め込みの意味評価は研究資料であり、v0.7 runtimeの実装や公開品質の証明ではありません。過去のJSON・release manifest・検証結果を v0.7 の実績として上書きしないでください。
-
-0.4以前からの移行で必要だった本文表現v3、既知のlegacy vector設定、旧checkpointの扱いは v0.5 の検証記録で確認します。既知のlegacy行をv3へ再利用できるのは、旧設定ID・encoder・dimensions・policy・own-body hash・vectorsが一致する場合だけです。リンク先本文を混ぜた旧行は再埋め込みし、旧cursor/checkpointをコピーしません。v3の `prepareIndex` はcurrent headを、`updateIndex` はsequence 0からの変更feedをscopeごとにdrainします。v0.7ではこの保存・索引境界を引き継ぎ、利用可能性モデルと状態identityだけを追加します。既存v3ベクトルは再エンコードしません。
-
-## Sakanaとの接続
-
-Sakanaの `runAgent` はモデル実行、入力選択、費用、再試行、完了記録を所有します。`memory.read` の結果をモデルへ届けて成功した後、同じbindingで `host.recordUse(deliveredRefs, binding, { eventId })` を呼びます。`deliveredRefs` はSakanaの最終フィルタ後の本文・引用の参照で、取得結果全体の `recalled.refs` とは限りません。Sakanaが現在性を再検証し、失敗した要求、stale・非認可・purge済みの入力を利用へ加算しません。ライブラリのhost-only通知は、現在も読取可能な保存済みの旧観測版を受理できますが、その利用を後継版へ移しません。
+0.6以前からの利用状態の変更は[旧v0.7移行資料](/migration-v07)を参照してください。ここに記載した手順はnpm公開やサイト再デプロイの承認ではありません。

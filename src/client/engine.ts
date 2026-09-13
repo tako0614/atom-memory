@@ -51,6 +51,7 @@ export interface OverlayState {
   revisions: Map<string, ProposedRevision>;
   refs: Set<AtomRef>;
   traces: Trace[];
+  inputs?: Map<string, import('./types.js').InputToken>;
 }
 export interface Session {
   binding: ClientBinding;
@@ -65,7 +66,10 @@ export interface Session {
   derivedReason?: Diagnostics['derivedReason'];
   pendingDerived?: boolean;
   stale: Set<AtomRef>;
+  blocked?: Set<AtomRef>;
   validated: Map<string, boolean>;
+  purgeEpoch?: number;
+  recording?: { trace: Trace; reads: Set<string>; current: Set<string> };
 }
 export interface QueryState {
   id: string;
@@ -79,6 +83,7 @@ export interface QueryState {
   expires: number;
   overlay?: string;
   candidates: Candidate[];
+  evaluatedCandidates?: Candidate[];
   offset: number;
   complete: boolean;
   scanned: number;
@@ -194,7 +199,7 @@ export class Engine {
           relations: activation.relations,
         },
         retrieval: this.options.retrieval,
-        version: 7,
+        version: 8,
       }),
     );
   }
@@ -214,6 +219,7 @@ export class Engine {
     at?: number,
     signalDigest = '',
   ): Session {
+    if (this.storage.metaGet('purge:pending')) fail('ACCESS_DENIED', 'Erasure is incomplete');
     const p = this.principal(binding);
     const ledger = operationBudget(this.options.defaults ?? {}, options, shared);
     if (!this.storage.capabilities.snapshot) fail('CONSISTENCY_UNAVAILABLE');
@@ -247,12 +253,17 @@ export class Engine {
     };
   }
   check(s: Session): void {
+    if (this.storage.metaGet('purge:pending')) fail('ACCESS_DENIED', 'Erasure is incomplete');
     if (s.signal.aborted) fail('ABORTED');
     if (s.ledger.expired) fail('BUDGET_EXHAUSTED');
     const current = this.principal(s.binding);
     if (current.generation !== s.principal.generation)
       fail('STATE_INVALIDATED', 'Authorization changed during operation');
-    if (s.trace.reads.some((r) => this.storage.isPurged(r.atomId))) fail('ACCESS_DENIED');
+    const epoch = this.storage.purgeGeneration?.();
+    if (epoch === undefined || s.purgeEpoch !== epoch) {
+      if (s.trace.reads.some((r) => this.storage.isPurged(r.atomId))) fail('ACCESS_DENIED');
+      s.purgeEpoch = epoch;
+    }
     if (s.overlay && !s.overlay.active) fail('INVALID_REF');
   }
   raw(ref: Ref, s: Session): AtomRevision | undefined {
@@ -285,11 +296,35 @@ export class Engine {
     if (record) this.record(r, s, current);
     return r;
   }
+  /** Missing or unauthorized neighbors are opaque; session invalidation still fails. */
+  neighbor(ref: Ref, s: Session, current = false): AtomRevision | undefined {
+    this.check(s);
+    try {
+      return this.get(ref, s, current);
+    } catch (error) {
+      if (
+        error instanceof AtomMemoryError &&
+        ['ACCESS_DENIED', 'REFERENCE_UNAVAILABLE'].includes(error.code)
+      )
+        return;
+      throw error;
+    }
+  }
   record(r: AtomRevision, s: Session, current = false): void {
-    if (!s.trace.reads.some((x) => x.revisionId === r.revisionId))
+    if (s.recording?.trace !== s.trace)
+      s.recording = {
+        trace: s.trace,
+        reads: new Set(s.trace.reads.map((r) => r.revisionId)),
+        current: new Set(s.trace.current.map((r) => r.revisionId)),
+      };
+    if (!s.recording.reads.has(r.revisionId)) {
       s.trace.reads.push(pinRevision(r));
-    if (current && !s.trace.current.some((x) => x.revisionId === r.revisionId))
+      s.recording.reads.add(r.revisionId);
+    }
+    if (current && !s.recording.current.has(r.revisionId)) {
       s.trace.current.push(pinRevision(r));
+      s.recording.current.add(r.revisionId);
+    }
   }
   scan(query: ScanQuery, s: Session, observe = false): AtomRevision[] {
     this.check(s);
@@ -375,10 +410,10 @@ export class Engine {
     this.record(r, s, current);
     const links: AtomView['links'][number][] = [];
     for (const slot of r.slots) {
-      const target = this.get(slot.target, s, slot.target.kind === 'logical' && current);
+      const target = this.neighbor(slot.target, s, slot.target.kind === 'logical' && current);
       links.push({
         role: slot.role,
-        ref: this.issue(target, s),
+        ...(target ? { ref: this.issue(target, s) } : { unavailable: true as const }),
         at: slot.target.kind === 'logical' ? 'logical' : 'observed',
         required: slot.mode === 'include' || slot.required === true,
         ...(slot.orderKey ? { orderKey: slot.orderKey } : {}),
@@ -432,7 +467,7 @@ export class Engine {
   trace(s: Session): MemoryReceipt {
     this.check(s);
     if (s.trace.reads.length > this.kernel.limits.maxReadCandidates) fail('LIMIT_EXCEEDED');
-    this.storage.metaSet(`sdk:trace:${s.trace.id}`, s.trace);
+    this.storage.metaSet(`sdk:manifest:${s.trace.id}`, this.traceManifest(s.trace, s.binding));
     if (s.overlay) s.overlay.traces.push(clone(s.trace));
     this.trimTransientMetadata();
     return {
@@ -442,6 +477,12 @@ export class Engine {
     };
   }
   trimTransientMetadata(): void {
+    const manifests = this.storage.metaEntries<ReceiptManifest>('sdk:manifest:');
+    const maximum = this.options.traceMaxEntries ?? 1024;
+    for (let i = 0; i < manifests.length; i++) {
+      const [key, m] = manifests[i]!;
+      if (m.expiresAt < Date.now() || i < manifests.length - maximum) this.storage.metaDelete(key);
+    }
     const traces = this.storage.metaUnbackedEntries
       ? this.storage.metaUnbackedEntries<Trace>('sdk:trace:', 'receipt:')
       : this.storage
@@ -453,8 +494,10 @@ export class Engine {
       if (
         Date.now() - t.createdAt > (this.options.traceTtlMs ?? 3600000) ||
         i < traces.length - max
-      )
+      ) {
         this.storage.metaDelete(key);
+        this.storage.metaDelete(`sdk:manifest:${t.id}`);
+      }
     }
     for (const [key, c] of this.storage.metaEntries<QueryState>('sdk:cursor:'))
       if (c.expires < Date.now()) this.storage.metaDelete(key);
@@ -500,27 +543,38 @@ export class Engine {
   }
   traceManifest(trace: Trace, binding: ClientBinding, forceHistorical = false): ReceiptManifest {
     const p = this.principal(binding);
+    const observations = trace.queries.map((q) => ({
+      observationId: digest(canonical(q)),
+      watermark: trace.at,
+      query: q.query,
+      revisionIds: q.revisions,
+    }));
     return {
+      contractVersion: 2,
+      dependencyContract: 'legacy',
       receipt: {
         receiptId: trace.id,
       },
       subject: p.subject,
       authBinding: bindingKey(binding.auth),
-      generation: p.generation,
+      authorityGeneration: p.generation,
       policies: [...trace.policies],
       watermark: trace.at,
       reads: trace.reads,
       currentReads: forceHistorical ? [] : trace.current,
       historicalInputs: forceHistorical,
-      observations: forceHistorical
-        ? []
-        : trace.queries.map((q) => ({
-            observationId: uid('observation'),
-            watermark: trace.at,
-            query: q.query,
-            revisionIds: q.revisions,
-          })),
-      expiresAt: Date.now() + 3600000,
+      observations: forceHistorical ? [] : observations,
+      expiresAt: Date.now() + (this.options.traceTtlMs ?? 3600000),
+      acquisition: {
+        reads: trace.reads,
+        ranges: [],
+        observations,
+        index: this.storage.metaGet<number>('sdk:index-generation') ?? 0,
+      },
+      watches: {
+        reads: forceHistorical ? [] : trace.current,
+        observations: forceHistorical ? [] : observations,
+      },
     };
   }
   bridge(trace: Trace, binding: ClientBinding, historical = false): string {
@@ -711,15 +765,17 @@ export class Engine {
           ? {
               vectorCandidates: (vectors: readonly (readonly number[])[], limit: number) => {
                 this.check(s);
-                return this.storage.vectorCandidates!(
+                const revisions = this.storage.vectorCandidates!(
                   { policies: s.trace.policies, config: this.indexConfig, vectors, limit },
                   s.at,
                 );
+                for (const r of revisions) this.get(pinRevision(r), s);
+                return revisions;
               },
             }
           : {}),
-        page: (after, limit, filter) =>
-          this.scan(
+        page: (after, limit, filter) => {
+          const revisions = this.scan(
             {
               policies: [...s.trace.policies],
               after,
@@ -728,8 +784,11 @@ export class Engine {
             },
             s,
             true,
-          ),
-        representation: (r) => this.indexedBody(this.get(pinRevision(r), s, false, false)),
+          );
+          for (const r of revisions) this.get(pinRevision(r), s);
+          return revisions;
+        },
+        representation: (r) => this.indexedBody(this.get(pinRevision(r), s)),
       },
     });
     this.check(s);

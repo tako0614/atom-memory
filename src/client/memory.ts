@@ -47,8 +47,19 @@ import {
   type QueryState,
   type Session,
 } from './engine.js';
-import { graph, graphPage, validateMemory, pack } from './retrieval.js';
+import { graph, graphPage, validateMemory } from './retrieval.js';
+import { select } from './selection.js';
 import { positive, cancellable } from './control.js';
+import {
+  observe,
+  manifest,
+  present,
+  inputManifest,
+  sourceManifest,
+  attachOutputs,
+  attachInheritedOutputs,
+} from './observation.js';
+import type { HostInput, InputToken } from './types.js';
 interface Retrieval {
   s: Session;
   state: QueryState;
@@ -66,6 +77,12 @@ export class MemoryHost {
     this.engine.principal(binding);
     return new MemoryClient(this.engine, clone(binding));
   }
+  observe(input: HostInput, binding: ClientBinding): InputToken {
+    return observe(this.engine, input, binding);
+  }
+  manifest(value: MemoryReceipt | InputToken, binding: ClientBinding) {
+    return manifest(this.engine, value, binding);
+  }
   reference(ref: PinnedRef, binding: ClientBinding): AtomRef {
     const s = this.engine.session(binding);
     return this.engine.issue(this.engine.get(ref, s), s);
@@ -74,10 +91,44 @@ export class MemoryHost {
   recordUse(
     refs: readonly AtomRef[],
     binding: ClientBinding,
-    options: { eventId: string },
+    options: { eventId: string; input?: InputToken },
   ): UseResult {
-    if (!options || Object.keys(options).some((key) => key !== 'eventId')) fail('INVALID_INPUT');
-    return recordUse(this.engine, refs, binding, options.eventId);
+    if (!options || Object.keys(options).some((key) => !['eventId', 'input'].includes(key)))
+      fail('INVALID_INPUT');
+    return this.engine.storage.transaction(() => {
+      const m =
+        options.input !== undefined
+          ? inputManifest(this.engine, options.input, binding)
+          : undefined;
+      const g = m?.generation;
+      if (g && typeof g !== 'string') {
+        const delivered = new Set(g.presentations.flatMap((p) => p.units.map((u) => u.ref)));
+        if (refs.some((ref) => !delivered.has(ref)))
+          fail('INVALID_INPUT', 'Use must match the host presentation');
+      }
+      const result = recordUse(this.engine, refs, binding, options.eventId);
+      if (m) {
+        const s = this.engine.session(binding);
+        const revisions = [
+          ...new Map(
+            refs.map((ref) => {
+              const target = this.engine.resolve(ref, s).target;
+              return [target.revisionId, target] as const;
+            }),
+          ).values(),
+        ];
+        const ack = m.acknowledgement ?? [];
+        const old = ack.find((a) => a.eventId === options.eventId);
+        if (old)
+          old.revisions = [
+            ...new Map([...old.revisions, ...revisions].map((r) => [r.revisionId, r])).values(),
+          ];
+        else ack.push({ eventId: options.eventId, acceptedAt: result.acceptedAt, revisions });
+        m.acknowledgement = ack;
+        this.engine.storage.metaSet(`receipt:${m.receipt.receiptId}`, m);
+      }
+      return result;
+    });
   }
   /** Reset scoped use aggregates; durable retry markers remain valid. */
   resetUse(binding: ClientBinding): void {
@@ -143,8 +194,8 @@ export class MemoryHost {
     const body = this.engine.kernel.putBlob(bytes, binding.writePolicy, mediaType, binding.auth);
     return this.connect(binding).hostWriteBody(body);
   }
-  purge(atomId: string) {
-    const result = this.engine.kernel.purge(atomId);
+  purge(atomId: string, options: import('../core/purge.js').PurgeOptions = {}) {
+    const result = this.engine.kernel.purge(atomId, options);
     this.engine.evaluations.clear();
     return result;
   }
@@ -166,6 +217,10 @@ export class MemoryClient implements MemoryAPI {
   assertAuthorized(receipts: readonly MemoryReceipt[] = []): void {
     const s = this.engine.session(this.binding, {}, this.execution?.ledger, this.overlay);
     for (const receipt of receipts) {
+      if (this.engine.storage.metaGet(`sdk:manifest:${receipt.id}`)) {
+        manifest(this.engine, receipt, this.binding);
+        continue;
+      }
       const trace = this.engine.storage.metaGet<Trace>(`sdk:trace:${receipt.id}`);
       if (!trace) fail('STATE_INVALIDATED');
       this.engine.auditCurrent(trace, s);
@@ -287,6 +342,7 @@ export class MemoryClient implements MemoryAPI {
     }
     const evaluated = finishRanking(this.engine, s, ranking, found.signals);
     q.candidates = evaluated.candidates;
+    q.evaluatedCandidates = evaluated.candidates;
     q.evaluation = evaluated.evaluation;
     q.approximate ||= ranking.truncated || ranking.depth > 0;
     q.complete = true;
@@ -323,6 +379,7 @@ export class MemoryClient implements MemoryAPI {
       fail('BUDGET_EXHAUSTED', 'Search cannot advance with this budget');
     const receipt = this.finish(s);
     const more = state.offset < state.candidates.length || !state.complete;
+    present(this.engine, s, receipt, items, canonical(items.map(({ score: _score, ...v }) => v)));
     const cursor = more ? this.engine.saveCursor({ ...state, trace: s.trace }) : undefined;
     return {
       items,
@@ -333,6 +390,21 @@ export class MemoryClient implements MemoryAPI {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
         ...state.evaluation,
+        acquisition: {
+          partial: state.approximate,
+          scanned: state.scanned,
+          index: state.pending ? 'pending' : 'ready',
+        },
+        validation: { stale: s.stale.size, blocked: s.blocked?.size ?? 0 },
+        ...(state.evaluation
+          ? {
+              evaluation: {
+                converged: state.evaluation.evaluationConverged,
+                numericErrorL1Upper: state.evaluation.numericErrorL1Upper,
+                scope: 'acquired-graph' as const,
+              },
+            }
+          : {}),
         derived: s.pendingDerived ? 'pending' : s.derived,
         ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
         stop:
@@ -359,15 +431,17 @@ export class MemoryClient implements MemoryAPI {
       key,
     );
     const seeds = state.candidates.slice(state.offset);
-    const packed = await pack(
+    const packed = select(
       this.engine,
       s,
       seeds,
       Math.min(tokens, s.ledger.remaining('maxContextTokens')),
       limit,
+      state.evaluatedCandidates,
     );
     const receipt = this.finish(s);
     const more = packed.deferred.length > 0 || !state.complete;
+    present(this.engine, s, receipt, packed.items, packed.text);
     const cursor = more
       ? this.engine.saveCursor({
           ...state,
@@ -380,6 +454,7 @@ export class MemoryClient implements MemoryAPI {
       items: packed.items,
       stale: [...s.stale],
       text: packed.text,
+      formatVersion: 2,
       refs: packed.items.map((i) => i.ref),
       sources: packed.sources,
       tokenCount: packed.tokenCount,
@@ -389,14 +464,30 @@ export class MemoryClient implements MemoryAPI {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
         ...state.evaluation,
+        acquisition: {
+          partial: state.approximate,
+          scanned: state.scanned,
+          index: state.pending ? 'pending' : 'ready',
+        },
+        validation: { stale: s.stale.size, blocked: s.blocked?.size ?? 0 },
+        ...(state.evaluation
+          ? {
+              evaluation: {
+                converged: state.evaluation.evaluationConverged,
+                numericErrorL1Upper: state.evaluation.numericErrorL1Upper,
+                scope: 'acquired-graph' as const,
+              },
+            }
+          : {}),
         derived: s.pendingDerived ? 'pending' : s.derived,
         ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
         stop:
           state.evaluation?.evaluationConverged === false
             ? 'numeric-budget'
-            : more
+            : more || !packed.selection.complete
               ? 'budget'
               : 'completed',
+        selection: packed.selection,
         ...(packed.minimumTokens ? { minimumTokens: packed.minimumTokens } : {}),
       },
       usage: s.ledger.usage(),
@@ -440,6 +531,7 @@ export class MemoryClient implements MemoryAPI {
     s.ledger.charge({ maxAtoms: revisions.length });
     const items = revisions.map((v) => this.engine.view(v, s, options.version === 'latest'));
     const receipt = this.finish(s);
+    present(this.engine, s, receipt, items, canonical(items));
     const cursor = !complete
       ? this.engine.saveCursor({
           kind: 'inspect',
@@ -463,6 +555,9 @@ export class MemoryClient implements MemoryAPI {
       : undefined;
     return {
       atom,
+      readEligibility: atom.links.some((link) => link.required && link.unavailable)
+        ? 'blocked'
+        : 'unchecked',
       items,
       stale: [...s.stale],
       receipt,
@@ -515,6 +610,14 @@ export class MemoryClient implements MemoryAPI {
     const end = start + part.length;
     const complete = end >= total;
     const receipt = this.finish(s);
+    present(
+      this.engine,
+      s,
+      receipt,
+      [{ ...atom, text: text ?? Buffer.from(part).toString('base64') }],
+      text ?? Buffer.from(part).toString('base64'),
+      { start, end, unit: textual ? 'utf8' : 'byte', digest: digest(part) },
+    );
     const cursor = !complete
       ? this.engine.saveCursor({
           kind: 'inspect',
@@ -538,6 +641,9 @@ export class MemoryClient implements MemoryAPI {
       : undefined;
     return {
       atom: { ...atom, text: text ?? '' },
+      readEligibility: atom.links.some((link) => link.required && link.unavailable)
+        ? 'blocked'
+        : 'unchecked',
       items: [{ ...atom, text: text ?? '' }],
       stale: [],
       range: {
@@ -621,6 +727,7 @@ export class MemoryClient implements MemoryAPI {
       });
     }
     const generated = this.binding.actor.type === 'agent';
+    if (options.input !== undefined) inputManifest(this.engine, options.input, this.binding);
     const kind = generated ? (this.binding.actor.generatedOrigin ?? 'derived') : 'source';
     const content: AtomContent = {
       schema: kind === 'source' ? 'source' : 'atom',
@@ -631,6 +738,11 @@ export class MemoryClient implements MemoryAPI {
       provenance: {
         kind,
         producerId: s.principal.subject,
+        ...(!generated
+          ? { dependencyContract: 'source-v2' as const }
+          : options.input !== undefined
+            ? { dependencyContract: 'observed-v2' as const }
+            : {}),
         ...(generated ? { inputReceiptId: s.trace.id } : {}),
       },
       policyId: this.binding.writePolicy,
@@ -670,7 +782,9 @@ export class MemoryClient implements MemoryAPI {
       };
     }
     const s = this.engine.session(this.binding, { signal: options.signal }, this.execution?.ledger);
-    const signature = digest(canonical({ input, sources: options.sources, body }));
+    const signature = digest(
+      canonical({ input, sources: options.sources, generationInput: options.input, body }),
+    );
     const opKey = options.idempotencyKey
       ? `sdk:operation:${digest(canonical([s.principal.subject, options.idempotencyKey]))}`
       : undefined;
@@ -695,9 +809,15 @@ export class MemoryClient implements MemoryAPI {
     const combined = this.engine.merge(traces, this.binding, s.at);
     if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
     this.engine.bridge(combined, this.binding, this.binding.actor.type !== 'agent');
+    if (this.binding.actor.type !== 'agent')
+      sourceManifest(this.engine, combined.id, content.origins, this.binding.writePolicy);
+    const receiptId =
+      options.input !== undefined
+        ? inputManifest(this.engine, options.input, this.binding).receipt.receiptId
+        : combined.id;
     const withProvenance = {
       ...content,
-      provenance: { ...content.provenance, inputReceiptId: combined.id },
+      provenance: { ...content.provenance, inputReceiptId: receiptId },
     };
     const proposal: ProposedRevision = {
       atomId: uid('atom'),
@@ -712,28 +832,26 @@ export class MemoryClient implements MemoryAPI {
         idempotencyKey: options.idempotencyKey ?? uid('operation'),
         guards: [],
         revisions: [proposal],
-        ...(this.binding.actor.type === 'agent' ? { actorInputReceiptId: combined.id } : {}),
+        ...(this.binding.actor.type === 'agent' && options.input === undefined
+          ? { actorInputReceiptId: combined.id }
+          : {}),
       },
       s,
       {
-        validate: () => this.engine.check(s),
+        validate: () => {
+          this.engine.check(s);
+          if (options.input !== undefined) inputManifest(this.engine, options.input, this.binding);
+        },
         committed: (result) => {
+          attachOutputs(this.engine, receiptId, result.committed);
+          attachInheritedOutputs(this.engine, receiptId);
           const committed = this.engine.storage.get(
             result.committed[0]!,
             this.engine.storage.watermark(),
           )!;
-          const manifest = this.engine.storage.metaGet<import('../core/store.js').ReceiptManifest>(
-            `receipt:${combined.id}`,
-          )!;
-          manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
-          manifest.observations = manifest.observations.map((o) => ({
-            ...o,
-            watermark: this.engine.storage.watermark(),
-            revisionIds: this.engine.storage
-              .scan(o.query, this.engine.storage.watermark())
-              .map((r) => r.revisionId),
-          }));
-          this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
+          // The token's generation owns these outputs. Do not retain an unused
+          // commit-wide manifest implying a second generation with all inputs.
+          if (receiptId !== combined.id) this.engine.storage.metaDelete(`receipt:${combined.id}`);
           ref = this.engine.issue(committed, { ...s, at: this.engine.storage.watermark() });
           if (opKey)
             this.engine.storage.metaSet(opKey, { signature, ref, operationId: result.operationId });
@@ -759,6 +877,7 @@ export class MemoryClient implements MemoryAPI {
     body?: AtomContent['body'],
     base?: AtomRef,
     retire = false,
+    retainedSlots?: readonly Slot[],
   ): Promise<AtomView> {
     const overlay = this.overlay ?? fail('INVALID_REF');
     const s = this.engine.session(
@@ -783,7 +902,11 @@ export class MemoryClient implements MemoryAPI {
       atomId,
       revisionId,
       expectedHead,
-      content: { ...content, state: retire ? 'retired' : 'active' },
+      content: {
+        ...content,
+        ...(retire && retainedSlots ? { slots: retainedSlots } : {}),
+        state: retire ? 'retired' : 'active',
+      },
     };
     if (
       overlay.revisions.size >= this.engine.kernel.limits.maxBatch &&
@@ -792,6 +915,10 @@ export class MemoryClient implements MemoryAPI {
       fail('LIMIT_EXCEEDED');
     s.ledger.charge({ maxAtoms: 1, maxBytes: Buffer.byteLength(canonical(proposal)) });
     overlay.revisions.set(atomId, proposal);
+    if (options.input !== undefined) {
+      overlay.inputs ??= new Map();
+      overlay.inputs.set(revisionId, options.input);
+    }
     const r = this.engine.get({ kind: 'pinned', atomId, revisionId }, s);
     this.finish(s);
     return this.engine.view(r, s);
@@ -827,15 +954,17 @@ export class MemoryClient implements MemoryAPI {
         return client.stageWrite(
           {
             text: this.engine.text(old),
-            links: view.links.map((link) => ({
-              role: link.role,
-              target: {
-                ref: link.ref,
-                at: link.at,
-                required: link.required,
-                orderKey: link.orderKey,
-              },
-            })),
+            links: view.links
+              .filter((link) => !link.unavailable)
+              .map((link) => ({
+                role: link.role,
+                target: {
+                  ref: link.ref!,
+                  at: link.at,
+                  required: link.required,
+                  orderKey: link.orderKey,
+                },
+              })),
           },
           {
             sources: old.origins.map((origin) => ({
@@ -847,6 +976,7 @@ export class MemoryClient implements MemoryAPI {
           old.body,
           ref,
           true,
+          old.slots,
         );
       },
       search: (query, opts) => client.search(query, opts),
@@ -862,18 +992,66 @@ export class MemoryClient implements MemoryAPI {
           operationId: uid('empty-edit'),
           resolve: (ref: AtomRef) => ref,
         };
-      const combined = this.engine.merge([...scope.traces, ...overlay.traces], this.binding, s.at);
+      const hasLegacyOutput =
+        this.binding.actor.type === 'agent' &&
+        [...overlay.revisions.values()].some((p) => !overlay.inputs?.has(p.revisionId));
+      const tokenInputs = hasLegacyOutput
+        ? [...new Set(overlay.inputs?.values())].map((token) =>
+            inputManifest(this.engine, token, this.binding),
+          )
+        : [];
+      const combined = this.engine.merge(
+        [
+          ...scope.traces,
+          ...overlay.traces,
+          // An unknown generation keeps ALL edit inputs, including inputs that
+          // entered through verified siblings. Verified siblings keep their own tokens.
+          ...tokenInputs.map((m) => ({
+            ...s.trace,
+            policies: m.policies,
+            reads: [...m.reads, ...(m.acquisition?.reads ?? [])],
+            current: m.currentReads ?? m.reads,
+            queries: m.observations.map((o) => ({ query: o.query, revisions: o.revisionIds })),
+          })),
+        ],
+        this.binding,
+        s.at,
+      );
       if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
       // Tentative inputs are audit records, never CAS preconditions against uncommitted heads.
       combined.current = combined.current.filter((r) => !overlay.revisions.has(r.atomId));
       this.engine.bridge(combined, this.binding, options.basis === 'historical');
+      if (tokenInputs.length) {
+        const manifest = this.engine.storage.metaGet<import('../core/store.js').ReceiptManifest>(
+          `receipt:${combined.id}`,
+        )!;
+        manifest.acquisition!.ranges.push(
+          ...tokenInputs.flatMap((m) => m.acquisition?.ranges ?? []),
+        );
+        manifest.acquisition!.observations.push(
+          ...tokenInputs.flatMap((m) => m.acquisition?.observations ?? []),
+        );
+        this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
+      }
       const proposals = [...overlay.revisions.values()].map((p) => ({
         ...p,
         content: {
           ...p.content,
-          provenance: { ...p.content.provenance, inputReceiptId: combined.id },
+          provenance: {
+            ...p.content.provenance,
+            inputReceiptId: overlay.inputs?.get(p.revisionId) ?? combined.id,
+          },
         },
       }));
+      if (this.binding.actor.type !== 'agent') {
+        // Separate source ingestion per output as well; sharing a commit does not imply copying siblings.
+        for (const proposal of proposals) {
+          const trace = { ...combined, id: uid('source') };
+          this.engine.bridge(trace, this.binding, true);
+          sourceManifest(this.engine, trace.id, proposal.content.origins, this.binding.writePolicy);
+          proposal.content.provenance.inputReceiptId = trace.id;
+        }
+      }
       const mapping = new Map<AtomRef, AtomRef>();
       const changes: AtomView[] = [];
       const result = await this.engine.commit(
@@ -881,31 +1059,47 @@ export class MemoryClient implements MemoryAPI {
           idempotencyKey: uid('edit'),
           guards: [],
           revisions: proposals,
-          ...(this.binding.actor.type === 'agent' ? { actorInputReceiptId: combined.id } : {}),
+          ...(this.binding.actor.type === 'agent' && !overlay.inputs?.size
+            ? { actorInputReceiptId: combined.id }
+            : {}),
         },
         s,
         {
           validate: () => {
             this.engine.check(s);
+            for (const token of overlay.inputs?.values() ?? [])
+              inputManifest(this.engine, token, this.binding);
           },
           committed: (result) => {
+            for (const id of new Set(proposals.map((p) => p.content.provenance.inputReceiptId)))
+              attachOutputs(
+                this.engine,
+                id,
+                result.committed.filter((r) =>
+                  proposals.some(
+                    (p) =>
+                      p.revisionId === r.revisionId && p.content.provenance.inputReceiptId === id,
+                  ),
+                ),
+              );
             const committedSession = { ...s, at: this.engine.storage.watermark() };
-            const manifest = this.engine.storage.metaGet<
-              import('../core/store.js').ReceiptManifest
-            >(`receipt:${combined.id}`)!;
-            manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
-            manifest.currentReads = [
-              ...(manifest.currentReads ?? []),
-              ...(options.basis === 'historical' ? [] : result.committed),
-            ];
-            manifest.observations = manifest.observations.map((o) => ({
-              ...o,
-              watermark: committedSession.at,
-              revisionIds: this.engine.storage
-                .scan(o.query, committedSession.at)
-                .map((r) => r.revisionId),
-            }));
-            this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
+            for (const id of new Set(proposals.map((p) => p.content.provenance.inputReceiptId)))
+              attachInheritedOutputs(this.engine, id);
+            if (hasLegacyOutput) {
+              const manifest = this.engine.storage.metaGet<
+                import('../core/store.js').ReceiptManifest
+              >(`receipt:${combined.id}`)!;
+              manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
+              manifest.currentReads = [
+                ...(manifest.currentReads ?? []),
+                ...(options.basis === 'historical' ? [] : result.committed),
+              ];
+              manifest.watches = {
+                reads: manifest.currentReads,
+                observations: manifest.observations,
+              };
+              this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
+            } else this.engine.storage.metaDelete(`receipt:${combined.id}`);
             for (const ref of overlay.refs) {
               const entry = this.engine.storage.metaGet<import('./engine.js').RefEntry>(
                 `sdk:ref:${ref}`,

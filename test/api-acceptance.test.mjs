@@ -145,7 +145,8 @@ test('A17/A18 source union is used in actual packing without merging different d
   await extractor.write(source.text, { sources: [{ ref: source.ref }] });
   const packed = await m.read({ query: '認証' }, opts);
   // Distinct quotation Atoms keep their identities; only serialized evidence is shared.
-  assert.equal(packed.items.filter((i) => i.text === source.text).length, 3);
+  assert.equal(packed.items.filter((i) => i.text === source.text).length, 2); // one exact quote class plus source; equal U uses less metadata.
+  assert.equal((await m.search('認証', opts)).items.length, 3, 'stored identities remain distinct');
   assert.equal((packed.text.match(/条件つきの認証を許可する。/g) ?? []).length, 1);
   assert.equal(packed.sources.length, 1);
   await writer.write('認証は承認を得た場合だけ許可する', { sources: [{ ref: source.ref }] });

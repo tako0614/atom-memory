@@ -86,7 +86,7 @@ for (const adapter of ['memory', 'sqlite'])
       );
       await assert.rejects(
         f.host
-          .connect(privateBinding)
+          .connect({ ...privateBinding, actor: { type: 'agent' } })
           .write({ text: 'PRIVATE CLAIM', links: { member: privateGroupRef } }),
         { code: 'ACCESS_DENIED' },
       );

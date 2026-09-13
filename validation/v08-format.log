@@ -1,0 +1,7 @@
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.8.0 format:check
+> prettier --check src test research examples scripts docs README.md package.json tsconfig.json wrangler.jsonc
+
+Checking formatting...
+All matched files use Prettier code style!

@@ -95,8 +95,8 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
           ? activation.relations[slot.role]
           : undefined;
         if (!weights || weights.forward || weights.reverse) {
-          const target = engine.get(slot.target, s, slot.target.kind === 'logical');
-          if (addNode(target, task.depth + 1)) addEdge(r, target, slot.role);
+          const target = engine.neighbor(slot.target, s, slot.target.kind === 'logical');
+          if (target && addNode(target, task.depth + 1)) addEdge(r, target, slot.role);
         }
         task.slot++;
       } else {
@@ -229,7 +229,6 @@ export function finishRanking(
     while (engine.evaluations.size > capacity)
       engine.evaluations.delete(engine.evaluations.keys().next().value!);
   }
-  state.truncated ||= !result.diagnostics.converged;
   return {
     evaluation: {
       evaluatedAt: usage.at,
@@ -237,7 +236,11 @@ export function finishRanking(
       numericErrorL1Upper: result.diagnostics.errorL1Upper,
     },
     candidates: state.nodes
-      .map((candidate, i) => ({ ...candidate, score: result.scores[i]! }))
+      .map((candidate, i) => ({
+        ...candidate,
+        score: result.scores[i]!,
+        activation: result.activation[i]!,
+      }))
       .filter((candidate) => candidate.score > 0)
       .sort(
         (a, b) =>

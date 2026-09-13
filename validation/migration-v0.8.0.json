@@ -1,0 +1,35 @@
+{
+  "scenario": "V08-40",
+  "node": "v26.1.0",
+  "reports": [
+    {
+      "adapter": "memory",
+      "oldPackage": "0.7.0",
+      "preservedRevisions": 3,
+      "preservedUse": true,
+      "reencodedDocuments": 0,
+      "activationL1Error": 0,
+      "oldCursorExpired": true,
+      "legacyCascade": true,
+      "newIndependentSurvives": true,
+      "erased": 4,
+      "reconnect": false,
+      "temporaryDataOnly": true
+    },
+    {
+      "adapter": "sqlite",
+      "oldPackage": "0.7.0",
+      "preservedRevisions": 3,
+      "preservedUse": true,
+      "reencodedDocuments": 0,
+      "activationL1Error": 0,
+      "oldCursorExpired": true,
+      "legacyCascade": true,
+      "newIndependentSurvives": true,
+      "erased": 4,
+      "reconnect": true,
+      "temporaryDataOnly": true
+    }
+  ],
+  "realLLM": false
+}

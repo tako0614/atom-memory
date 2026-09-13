@@ -1,0 +1,18 @@
+✔ memory V08-22 acquisition and presentation are distinct (22.712221ms)
+✔ memory V08-24 independent generations share a commit only (6.792617ms)
+✔ memory V08-28 forged token is refused (4.280913ms)
+✔ memory V08-31 independent source survives ordinary relation purge (5.231949ms)
+✔ memory V08-33 unavailable required blocks read but permits inspect (4.595995ms)
+✔ sqlite V08-22 acquisition and presentation are distinct (25.211668ms)
+✔ sqlite V08-24 independent generations share a commit only (9.221814ms)
+✔ sqlite V08-28 forged token is refused (4.445979ms)
+✔ sqlite V08-31 independent source survives ordinary relation purge (8.149892ms)
+✔ sqlite V08-33 unavailable required blocks read but permits inspect (5.739541ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 161.385265

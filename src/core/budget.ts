@@ -9,6 +9,7 @@ export const defaultBudget: Readonly<Budget> = Object.freeze({
   maxModelInputTokens: 8192,
   maxContextTokens: 8192,
   maxEvaluationWork: 500000,
+  maxPackingWork: 2000000,
 });
 export type Resource = Exclude<keyof Budget, 'deadline'>;
 export class BudgetLedger {

@@ -1,6 +1,6 @@
 {
   "name": "atom-memory",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Atom graph storage, revisioned edits and context-aware structural retrieval for host-owned agents.",
   "type": "module",
   "license": "MIT",
@@ -47,7 +47,7 @@
   "scripts": {
     "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && tsc -p tsconfig.json",
     "test": "npm run build && node --test test/*.test.mjs",
-    "check": "npm test && npm run check:research && node scripts/evaluate-ranking.mjs && npm run docs:examples && npm run docs:build",
+    "check": "npm test && npm run check:research && node scripts/evaluate-ranking.mjs && node scripts/evaluate-v08.mjs && npm run docs:examples && npm run docs:build",
     "example": "npm run build && node examples/basic.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -59,7 +59,8 @@
     "example:writer": "npm run build && node examples/writer.mjs",
     "example:history": "npm run build && node examples/history-writer.mjs",
     "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs",
-    "check:research": "node --test research/composition/*.test.mjs"
+    "check:research": "node --test research/composition/*.test.mjs",
+    "check:v08": "npm run build && node --test test/v08*.test.mjs && node scripts/evaluate-v08.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

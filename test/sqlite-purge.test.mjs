@@ -20,7 +20,7 @@ for (const reopenLegacy of [false, true])
         await draft.inspect(source.ref, { depth: 0 });
         return draft.write('uncited interpretation');
       });
-      const relation = await memory.write({
+      const relation = await writer.write({
         text: 'historical reference',
         links: { target: source.ref },
       });

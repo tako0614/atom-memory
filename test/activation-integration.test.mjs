@@ -222,7 +222,7 @@ test('SQLite reopen, scoped reset, and transitive purge preserve exact use-event
   });
   const f = fixture({ storage });
   const child = await f.memory.write('child');
-  const parent = await f.memory.write({ text: 'parent', links: { member: child.ref } });
+  const parent = await f.writer.write({ text: 'parent', links: { member: child.ref } });
   f.host.recordUse([child.ref, parent.ref, child.ref], f.binding, { eventId: 'request:0' });
   const childPin = storage.metaGet(`sdk:ref:${child.ref}`).target;
   storage.close();

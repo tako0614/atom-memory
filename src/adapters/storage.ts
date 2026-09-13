@@ -46,6 +46,10 @@ export interface StorageAdapter {
   vectorCandidates?(query: VectorQuery, at: number): AtomRevision[];
   /** Exact transitive purge closure across historical links, origins and host-read receipts. */
   purgePlan?(atomId: string): { revisions: AtomRevision[]; receiptKeys: string[] };
+  /** Bounded reverse dependency and historical pages for resumable erasure. */
+  purgeDependents?(atomId: string, after: string | undefined, limit: number): string[];
+  purgeRevisions?(atomId: string, after: string | undefined, limit: number): AtomRevision[];
+  metaPage?<T>(after: string | undefined, limit: number): [string, T][];
   append(revisions: readonly AtomRevision[]): void;
   metaGet<T>(key: string): T | undefined;
   metaSet(key: string, value: unknown): void;
@@ -55,6 +59,8 @@ export interface StorageAdapter {
   metaDelete(key: string): void;
   metaDeletePrefix?(prefix: string): void;
   isPurged(atomId: string): boolean;
+  /** Monotonic logical-erasure epoch. Omit to require per-reference revalidation. */
+  purgeGeneration?(): number;
   erase(atomIds: readonly string[]): void;
   blobRange?(blobId: string, start: number, length: number): Uint8Array | undefined;
   /** Retain all immutable revisions at this watermark until the deadline, except explicit purge.

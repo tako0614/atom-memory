@@ -1,16 +1,12 @@
 # Atom Memory
 
-0.7では、Atom自身の本文を検索表現にし、役割・方向の重み付きグラフ伝播と、主体・policy・revisionごとの利用可能性を同じ評価器で扱います。Atomは再帰的・多重所属できる対等な形式ですが、すべての関係を別Atomへ reify する必要はありません。利用可能性の規則はホストが `AvailabilityModel` として選び、LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.7への移行](https://atom-memory.takos.jp/migration)を参照してください。
+> 内容と関係を版付きで保存し、文脈と受理された利用から一つの規則で活性を計算し、必要な条件を欠かさない本文集合を予算内で返す。
 
-0.7は、本文・関係・出典を返す既存の保存契約に、利用可能性モデルを追加する更新です。0.6で導入した評価計算の上限はそのまま継続します。利用イベントは信頼されたホストが通知し、モデルへの成功応答後はアプリが自動でackします。読み出しだけでは利用回数を増やしません。既定の `adaptiveUse` は間隔のある利用で半減期を伸ばす有界な実装で、脳の再現や経験的に最適なパラメータを主張しません。合成評価器のSchur実装は研究資料として残し、実行時の既定評価器には使いません。公開版と対応ソースは[リリース記録](https://atom-memory.takos.jp/release)で確認できます。
+v0.8は、単一Atomと五つの通常API、v0.7の活性式・AvailabilityModel・own-body embeddingを維持します。取得、表示、生成入力、現在性watch、成功ackを版付きmanifestで区別し、ホストが確認した独立生成を同じeditで保存できます。readはrequired閉包と共有引用の表示費用を使い、同じ活性による有界な集合選択を行います。
 
-Give your agent something to remember.
+通常linksと生成依存は別契約です。旧データと入力未観測のagent editには従来の保守的な消去依存を残します。モデル呼出し、Writer、費用、ジョブ、後継採用はアプリが所有します。選択用の代理目的Uは正答率や新規性の証明ではありません。
 
-Atom Memory is a TypeScript library for saving notes, finding relevant information, and bringing it back into an agent's context. Start with a sentence. Connect related notes. Update them when things change.
-
-```sh
-npm install atom-memory
-```
+意味の正本は [規範仕様](docs/specification.md)、変更手順は [移行](docs/migration.md)、実行結果は [v0.8検証記録](validation/v0.8.0.md) です。npm公開・サイト更新の記録とは区別しています。
 
 ## Hello, Memory
 

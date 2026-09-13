@@ -70,14 +70,18 @@ for (const adapter of ['memory', 'sqlite']) {
     const a = await extractor.write(left, {
       sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(left) }],
     });
-    await extractor.write(left.slice(0, -1), {
+    const overlap = await extractor.write(left.slice(0, -1), {
       sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(left.slice(0, -1)) }],
     });
     const start = Buffer.byteLength(left + omitted);
-    await extractor.write(right, {
+    const other = await extractor.write(right, {
       sources: [{ ref: source.ref, start, end: start + Buffer.byteLength(right) }],
     });
-    const result = await m.read({ query: '認証' }, { ...readOptions, limit: 3 });
+    await m.write({
+      text: 'range_fixture',
+      links: { when: [a.ref, overlap.ref, other.ref].map((ref) => ({ ref, required: true })) },
+    });
+    const result = await m.read({ query: 'range_fixture' }, { ...readOptions, depth: 0, limit: 4 });
     const ranges = JSON.parse(result.text).evidence[0].ranges;
     assert.deepEqual(
       ranges.map((r) => r.text),

@@ -1,0 +1,140 @@
+✖ memory V08-22 acquisition and presentation are distinct (15.934473ms)
+✖ memory V08-24 independent generations share a commit only (1.273525ms)
+✖ memory V08-28 forged token is refused (0.895865ms)
+✖ memory V08-31 independent source survives ordinary relation purge (2.013627ms)
+✖ memory V08-33 unavailable required blocks read but permits inspect (1.113075ms)
+✖ sqlite V08-22 acquisition and presentation are distinct (18.050952ms)
+✖ sqlite V08-24 independent generations share a commit only (3.25519ms)
+✖ sqlite V08-28 forged token is refused (1.438411ms)
+✖ sqlite V08-31 independent source survives ordinary relation purge (2.958345ms)
+✖ sqlite V08-33 unavailable required blocks read but permits inspect (2.792531ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 0
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.845029
+
+✖ failing tests:
+
+test at test/v08.test.mjs:19:3
+✖ memory V08-22 acquisition and presentation are distinct (15.934473ms)
+  TypeError: f.host.manifest is not a function
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:23:22)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+
+test at test/v08.test.mjs:29:3
+✖ memory V08-24 independent generations share a commit only (1.273525ms)
+  TypeError: f.host.observe is not a function
+      at observed (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:17:19)
+      at async TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:33:20)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at test/v08.test.mjs:41:3
+✖ memory V08-28 forged token is refused (0.895865ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:43:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at test/v08.test.mjs:45:3
+✖ memory V08-31 independent source survives ordinary relation purge (2.013627ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - true
+  
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:51:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/v08.test.mjs:57:3
+✖ memory V08-33 unavailable required blocks read but permits inspect (1.113075ms)
+  Error [AtomMemoryError]: ACCESS_DENIED
+      at fail (file:///root/dev/github/sakana/subprojects/atom-memory/dist/core/util.js:11:11)
+      at Engine.resolve (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/engine.js:261:13)
+      at MemoryClient.inspect (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:345:35)
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:62:39)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    code: 'ACCESS_DENIED'
+  }
+
+test at test/v08.test.mjs:19:3
+✖ sqlite V08-22 acquisition and presentation are distinct (18.050952ms)
+  TypeError: f.host.manifest is not a function
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:23:22)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at test/v08.test.mjs:29:3
+✖ sqlite V08-24 independent generations share a commit only (3.25519ms)
+  TypeError: f.host.observe is not a function
+      at observed (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:17:19)
+      at async TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:33:20)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at test/v08.test.mjs:41:3
+✖ sqlite V08-28 forged token is refused (1.438411ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:43:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at test/v08.test.mjs:45:3
+✖ sqlite V08-31 independent source survives ordinary relation purge (2.958345ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - true
+  
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:51:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/v08.test.mjs:57:3
+✖ sqlite V08-33 unavailable required blocks read but permits inspect (2.792531ms)
+  Error [AtomMemoryError]: ACCESS_DENIED
+      at fail (file:///root/dev/github/sakana/subprojects/atom-memory/dist/core/util.js:11:11)
+      at Engine.resolve (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/engine.js:261:13)
+      at MemoryClient.inspect (file:///root/dev/github/sakana/subprojects/atom-memory/dist/client/memory.js:345:35)
+      at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:62:39)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    code: 'ACCESS_DENIED'
+  }

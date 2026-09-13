@@ -276,7 +276,7 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
     await drain(f.host, foreignBinding, 8);
     const source = await f.memory.write('orchard');
     const parent = await f.memory.write('garden');
-    const relation = await f.memory.write({
+    const relation = await f.host.connect({ ...f.binding, actor: { type: 'agent' } }).write({
       text: 'location relation',
       links: { group: parent.ref, member: source.ref },
     });

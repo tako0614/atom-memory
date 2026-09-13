@@ -42,3 +42,6 @@ export {
 } from './core/candidates.js';
 
 export { RetryableCommitError } from './client/engine.js';
+
+export type { ReceiptManifest, PresentationUnit, AcquiredRange } from './core/store.js';
+export type { PurgeOptions, PurgeResult } from './core/purge.js';
