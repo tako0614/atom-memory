@@ -45,7 +45,7 @@ npm install atom-memory
 
 ## 小さなメモから、頼れる文脈へ。
 
-Atom Memory は、エージェントのための TypeScript メモリライブラリです。ユーザーの好み、運用ルール、作業で分かったことを保存し、今の問いに必要な資料をモデルへ渡します。
+Atom Memory は、エージェントのための TypeScript メモリライブラリです。ユーザーの好み、運用ルール、作業で分かったことを保存し、現在の文脈に合う記憶を取り出します。
 
 </div>
 <div class="memory-features">
@@ -56,7 +56,7 @@ Atom Memory は、エージェントのための TypeScript メモリライブ�
 </div>
 <div>
 <h3><span class="memory-feature-number">02</span> 今に合わせて思い出す</h3>
-<p>質問や作業の文脈を <code>read</code> へ。予算に収まる資料を選び、モデルに渡す記憶を組み立てます。</p>
+<p>会話や作業の現在の文脈を <code>read</code> へ。予算に収まる資料を選び、モデルに渡す記憶を組み立てます。</p>
 <a href="/runtime">エージェントにつなぐ →</a>
 </div>
 <div>

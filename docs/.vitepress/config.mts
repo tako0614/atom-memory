@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   lang: 'ja-JP',
   title: 'Atom Memory',
-  description: 'メモと関係を保存し、今の問いに必要な記憶をモデルへ渡す TypeScript ライブラリ。',
+  description: 'メモと関係を保存し、現在の文脈から記憶を読み出す TypeScript ライブラリ。',
   cleanUrls: true,
   head: [
     ['link', { rel: 'icon', href: 'data:,' }],

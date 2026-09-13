@@ -1,37 +1,23 @@
 # リリース
 
-**atom-memory 0.7.0は作業ツリー上の次期版で、npm・Docsへの公開前です。** 公開物のcommit・tag・integrity・サイトの読戻しは公開確認後に別の公開記録へ追加します。本番アプリの更新は含みません。
+**atom-memory 0.7.0をnpmへ公開しました。** 利用の頻度と間隔を扱う `adaptiveUse()` と、状態の更新・評価を差し替える `AvailabilityModel` を追加しました。本文・関係・版・出典を保持し、既存の活性伝播と評価予算をそのまま使います。
 
-## v0.7で受け入れる変更
+npmのバージョン・integrity・対応commitは[公開manifest](/release.json)、サイトのデプロイと読戻しは[0.7.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.7.0.json)で確認できます。設定変更は[移行](/migration)を参照してください。
 
-- `AvailabilityModel<S extends Json>` と `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` を公開します。`activation.model` の既定は `adaptiveUse()` です。`update` / `value` は同期的で、JSON状態は1 KiB以下、値は非負有限です。
-- 既定の状態は `{ mass, updatedAt, halfLifeMs }` です。受理イベントでは減衰したmassへ1を加えて1,000,000で上限を設け、保持率に応じて半減期を伸ばします。初期7日・最大365日は既定値で、脳の再現や経験的に最適なパラメータを主張しません。
-- モデルの `id` は設定identityです。意味やパラメータが変わるID不一致は `STATE_INVALIDATED` となり、対象scopeの `resetUse` を要求します。ライブラリがscope、atomicity、dedup、purgeを所有し、callbackへquery・context・score・graph・全履歴を渡しません。
-- 0.6のlegacy利用状態は読み出し時に正確にdecodeし、readやイベント再送で書き換えません。新しい受理イベントでだけadaptiveUse形式へrewriteします。旧半減期が365日を超えていても短くしません。v3のown-bodyベクトルは再エンコードしません。
-- 自動readは利用を記録せず、成功したモデル応答後のhost ackだけを `recordUse` として受理します。Schur合成・adaptive graph・削除依存の縮小は引き続き研究／将来検討で、0.7の公開契約には含めません。
+## 0.7の変更
 
-0.7.0の検証は、型・Memory/SQLite・状態上限・callback失敗伝播・モデルID失効・legacy遅延変換・旧cursor失効・ドキュメント例を対象にします。移行確認には `ATOM_V06_PACKAGE=/path/to/published-0.6.0-package node scripts/check-v06-migration.mjs` を使います。npm公開やサイトデプロイの状態はこのページから推測しません。
+- 標準モデルは、利用されるたびに現在の想起しやすさを上げ、間隔を空けた再利用で半減期を伸ばします。初期7日・最大365日は工学的な既定値で、脳の再現や最適値という主張ではありません。
+- `activation.model` で同期的な `update` / `value` を選べます。状態はJSON 1 KiB以下、値は非負有限です。ライブラリが時刻、主体・policy・revisionの隔離、重複抑止、原子的な保存を扱います。
+- モデルは利用による初期活性の増幅だけに関与します。埋め込み80%・語彙20%の本文一致と、一つの活性伝播規則は維持します。古さを理由に本文一致そのものを減衰させません。
+- 0.6の利用状態はreadや再送で書き換えず、次の新しい利用イベントで移行します。旧半減期が新しい上限を超えていても短くしません。モデルIDを変える場合は対象scopeの `resetUse` が必要です。
 
-**atom-memory 0.6.0をnpmへ公開しました。** v0.5の本文・版・出典・receipt・v3ベクトルと保存データを維持し、宣言的な `activation` / `retrieval`、利用ack、単一の線形評価器へ更新しています。設定と候補providerには破壊的変更があります。移行手順は[移行](/migration)を参照してください。
+`read` / `search` だけでは利用を加算しません。アプリが実際にモデルへ渡した記憶を、成功応答後にホストへ通知します。モデル実行・Writer・ジョブ・費用管理は引き続きアプリ側です。Schur合成は研究用で、既定の検索経路には含めません。
 
-npmのバージョン・integrity・対応commitは[公開manifest](/release.json)、サイトのデプロイと読戻しは[0.6.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.6.0.json)で確認できます。[0.5.1](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)・[0.5.0](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
+## 検証
 
-## v0.6で受け入れた変更（履歴）
+155件のテスト、16件の研究用テスト、16件の実行可能なドキュメント例と7件の出力照合が合格しました。Node 22・24のCIと、梱包したtarballおよび空キャッシュからのnpmインストールで、ESM・TypeScript・SQLite・独自モデル・状態の失効とリセットを確認しています。
 
-- `HostOptions.activation`（既定は半減期7日、最大増幅0.3、伝播0.5）と `HostOptions.retrieval` を追加しました。候補providerは `PinnedRef[]` だけを返し、Coreが保存本文を再読して評価します。
-- `host.recordUse(refs, binding, { eventId })` と `host.resetUse(binding)` を追加しました。成功したモデル応答後のackだけが主体・policy・revisionごとの利用集計を更新し、read/searchだけでは増えません。
-- 評価器は `a = D(h)m + Tᵀa` の一つに固定し、`maxEvaluationWork` で数値計算を制限します。Schur合成と凍結した参照実装は研究資料に残します。
-- v3保存・索引、freshness、認可、削除依存は維持します。半減期変更は `STATE_INVALIDATED` として明示的なresetを要求し、`maxBoost`変更だけではリセットしません。
-
-モデル実行・Writer・履歴運用は引き続きアプリ側です。アプリがモデルへ返したrefsを成功として受理した後、ホストが利用ackを発行します。利用イベントをモデルのツールや人の承認に待たせません。
-
-## 0.6.0の検証
-
-134件のテスト、16件の研究用テスト、16件の実行可能なドキュメント例と7件の出力照合が合格しました。Node 22・24のCI、梱包したtarballと空のキャッシュからのnpmインストールで、ESM・型・SQLite・利用の隔離と重複抑止を確認しています。
-
-公開済み0.5.1の保存データからの移行試験では、3件の版と観測refを維持し、3件のv3ベクトルを再エンコード・フィード再生なしで再利用しました。古いcursorは失効します。数値誤差の保証は取得済みの固定グラフに対するもので、全資料の検索完全性や実モデルの意味品質を保証しません。
-
-再検証には次を使います。
+公開済み0.6.0からの移行試験では、3件の版と観測ref、3件のv3ベクトルを保持し、切替時の利用スコア差は0でした。リセット済み状態の再送による復活、旧半減期の短縮、readによる状態の書換えはありません。0.5.1・0.4.0からの移行試験も通っています。
 
 ```sh
 npm ci
@@ -40,16 +26,14 @@ npm run example
 npm run example:writer
 npm run example:history
 npm run format:check
-ATOM_V05_PACKAGE=/path/to/published-0.5.1-package node scripts/check-v05-migration.mjs
+ATOM_V06_PACKAGE=/path/to/published-0.6.0-package node scripts/check-v06-migration.mjs
 npm pack
 ```
 
-作ったtarballを空のプロジェクトへインストールし、公開export・型・SQLite・古い記憶の通知と明示改訂を確認します。npm公開とサイトのデプロイは通常のcheckに含めません。
+これらはソースリポジトリで実行する検証です。移行スクリプトは一時SQLite fixtureを使い、利用者の既存DBを書き換えません。数値誤差の保証は取得済みの固定グラフを対象とし、全資料の検索完全性や実モデルの回答品質・費用削減を示すものではありません。
 
-新しい公開物のcommit・tag・integrity・サイトの状態を確認してから、公開記録を更新します。過去の検証記録を新しい版の実績として上書きしません。
+## Sakanaと公開範囲
 
-## 公開判定
+Sakanaのソースは、自動想起を現在の可視文脈へ合わせ、`memory_focus` を次の成功したモデル要求への補助情報として扱う形に更新しました。全体のprecheckと、通信失敗・再開・利用通知の重複抑止を確認しています。**稼働中Botへの本番反映は、このリリースに含めません。**
 
-公開前には、owned docsのformatと実行可能例、型・SQLite・stale除外・明示Writer改訂、v3索引移行のfocused testsを確認します。索引の意味検索準備は、提供する全policy scopeをそれぞれのcurrent-head走査または変更フィードの終端までdrainし、各scopeの永続checkpointを確認してから判定します。一つの呼出しやchannelの `pending: false`、`complete`、`approximate` は全体のreadinessを証明しません。
-
-実モデルの品質、paid-model gain、公開npm/siteの状態は、ローカル検証やこの文書から推測しません。検証途中の件数・外部結果は、実測記録が追加されるまで未確定として扱います。
+過去の実測は、[0.6.0](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.6.0.json)・[0.5.1](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)・[0.5.0](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)の記録に保持しています。

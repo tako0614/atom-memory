@@ -1,6 +1,6 @@
 # 検証記録
 
-**0.7.0は作業ツリー上の次期版で、npm・Docsの公開前です。** 公開された0.6.0の対応commit・integrity・移行試験・サイトのデプロイと読戻しは[0.6.0の公開記録](release-v0.6.0.json)を参照してください。0.7の実装検証は、AvailabilityModelの同期callback・JSON状態上限・model ID失効、既定 `adaptiveUse` の間隔更新、0.6状態の遅延変換、旧cursor失効を追加対象にします。npm公開、サイトデプロイ、Sakana Bot本番切替はこの記録からは主張しません。
+**0.7.0をnpmへ公開しました。** 対応commit・integrity・移行試験は[0.7.0の公開記録](release-v0.7.0.json)を参照してください。155件のテスト、16件の研究用テスト、16件のドキュメント例と7件の出力照合、Node 22・24のCI、梱包物と公開npmからのインストールを確認しました。サイトのデプロイと読戻しは同記録へ追記します。Sakanaはソース更新とprecheckまでで、本番Botへは反映していません。
 
 v0.5・v0.6のnpm・Docs公開状態は、それぞれ[公開記録](release-v0.5.0.json)、[0.5.1の記録](release-v0.5.1.json)、[0.6.0の記録](release-v0.6.0.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)はv0.5公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存は過去版のベースラインとして保持しています。
 
