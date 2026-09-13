@@ -1,8 +1,8 @@
 # リリース
 
-このドキュメントは **atom-memory 0.6 (upcoming)** の受入方針です。v0.5の本文・版・出典・receipt・v3ベクトルと保存データを維持し、宣言的な `activation` / `retrieval`、利用ack、単一の線形評価器を追加します。npm公開済みとは扱わず、公開版・integrity・対応commitは公開manifestが更新されるまで未確定です。移行手順は[移行](/migration)を参照してください。
+**atom-memory 0.6.0をnpmへ公開しました。** v0.5の本文・版・出典・receipt・v3ベクトルと保存データを維持し、宣言的な `activation` / `retrieval`、利用ack、単一の線形評価器へ更新しています。設定と候補providerには破壊的変更があります。移行手順は[移行](/migration)を参照してください。
 
-npmの過去版のバージョン・integrity・対応commitは[公開manifest](/release.json)と[0.5.1の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)で確認できます。これらは v0.5 の履歴であり、v0.6の公開を示しません。[0.5.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
+npmのバージョン・integrity・対応commitは[公開manifest](/release.json)、サイトのデプロイと読戻しは[0.6.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.6.0.json)で確認できます。[0.5.1](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)・[0.5.0](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
 
 ## v0.6で受け入れる変更
 
@@ -13,7 +13,13 @@ npmの過去版のバージョン・integrity・対応commitは[公開manifest](
 
 モデル実行・Writer・履歴運用は引き続きアプリ側です。アプリがモデルへ返したrefsを成功として受理した後、ホストが利用ackを発行します。利用イベントをモデルのツールや人の承認に待たせません。
 
-## 公開前の検証
+## 0.6.0の検証
+
+134件のテスト、16件の研究用テスト、16件の実行可能なドキュメント例と7件の出力照合が合格しました。Node 22・24のCI、梱包したtarballと空のキャッシュからのnpmインストールで、ESM・型・SQLite・利用の隔離と重複抑止を確認しています。
+
+公開済み0.5.1の保存データからの移行試験では、3件の版と観測refを維持し、3件のv3ベクトルを再エンコード・フィード再生なしで再利用しました。古いcursorは失効します。数値誤差の保証は取得済みの固定グラフに対するもので、全資料の検索完全性や実モデルの意味品質を保証しません。
+
+再検証には次を使います。
 
 ```sh
 npm ci

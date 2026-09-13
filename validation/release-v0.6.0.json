@@ -76,5 +76,19 @@
     "newEvaluation": false,
     "paidCalls": 0,
     "note": "Release checks do not establish semantic quality or billed cost."
-  }
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "worker": "atom-memory-docs",
+    "published": false,
+    "readback": "pending"
+  },
+  "sakana": {
+    "sourceIntegration": "implemented in local working tree",
+    "productionDeployed": false,
+    "precheck": "passed",
+    "autoUse": "final model-visible memory and evidence acknowledged after successful provider response with durable replay",
+    "regressions": "same-event chunked acknowledgement beyond 256 refs; partial acknowledgement retry; invocation-only usage charging passed"
+  },
+  "scope": "npm library and documentation publication; no Sakana production cutover"
 }
