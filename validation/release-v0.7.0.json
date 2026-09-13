@@ -105,8 +105,215 @@
   "site": {
     "url": "https://atom-memory.takos.jp",
     "worker": "atom-memory-docs",
-    "published": false,
-    "readback": "pending"
+    "published": true,
+    "verifiedAt": "2026-09-13T12:47:05.289590+00:00",
+    "sourceCommit": "6a91fc5c73ac9f7a69f1067f2595c1b647413d83",
+    "deploymentId": "19e8241e-3951-49d2-a141-fa35a2df3424",
+    "versionId": "792d4cae-b9dc-48fe-b9e9-1251f2a64201",
+    "createdOn": "2026-09-13T12:46:06.861373Z",
+    "readback": "SHA-256 matches built HTML and release.json on both domains",
+    "customDomain": {
+      "url": "https://atom-memory.takos.jp",
+      "pages": [
+        {
+          "path": "/acceptance",
+          "verified": true,
+          "sha256": "9f069572e83ba87846ffc8571083224009212fef03e02cc1104cf21dbcdf51a5"
+        },
+        {
+          "path": "/adapters",
+          "verified": true,
+          "sha256": "70df674668b53fe6a430fd56161bbc9129d39497b74c0e5bfa40d43f265bd37f"
+        },
+        {
+          "path": "/api",
+          "verified": true,
+          "sha256": "3ad939e5a35f39bf5f4831921abab1729cd2a9033b2e1e67706f608e0829bec6"
+        },
+        {
+          "path": "/composition",
+          "verified": true,
+          "sha256": "4c0ae944d40ff002f6ef2bc36b67668d7087fafe08879f7470811beacbbfde8b"
+        },
+        {
+          "path": "/concepts",
+          "verified": true,
+          "sha256": "1166a925674eab92983c9659f7c349ba78cacea8ea18c8f20402d640817bdf5f"
+        },
+        {
+          "path": "/contracts",
+          "verified": true,
+          "sha256": "355fe6dbd930421024f951df020c9ee715a0572411dad05344469136ddf62998"
+        },
+        {
+          "path": "/design-review",
+          "verified": true,
+          "sha256": "611b51757cf1529fd19c551cccaba658d33db2a3e74b2714f7f0b7aa6e074baa"
+        },
+        {
+          "path": "/examples",
+          "verified": true,
+          "sha256": "95907b1ffb5de6c347cf07cc12923fb881e684a9703f7a3a876e5a8e8e749056"
+        },
+        {
+          "path": "/guide",
+          "verified": true,
+          "sha256": "116eab14cde2569de5d84b864ebf94c8c1b9a898e5c0bc58342a2f4c7d38fadc"
+        },
+        {
+          "path": "/history",
+          "verified": true,
+          "sha256": "d97313be9301f3859acda241d08ea4c039b17b561f62e3a81cb91b0babe8a582"
+        },
+        {
+          "path": "/",
+          "verified": true,
+          "sha256": "9f0997cbb4500387ff517c55ad4d8beab49bad0209316289c466a2b2e3390fa7"
+        },
+        {
+          "path": "/migration-architecture",
+          "verified": true,
+          "sha256": "03ac9d9aa11bb5fc396a95856f51bafa3ecc78a62ef2acd8287d611564b13827"
+        },
+        {
+          "path": "/migration",
+          "verified": true,
+          "sha256": "61b96488c15ca4c1bc5f32f431204a3c09848766beb2827fb83aa3e42499a627"
+        },
+        {
+          "path": "/ranking",
+          "verified": true,
+          "sha256": "efb01920cce4340e09e0234c0c188b1549b6119ddbd69bce9ecbaa6c7907f078"
+        },
+        {
+          "path": "/release",
+          "verified": true,
+          "sha256": "adf00b23bc46cd53042648cf9ce583671b711876b2cab64475bd9b90504b3573"
+        },
+        {
+          "path": "/runtime",
+          "verified": true,
+          "sha256": "5c4632925ef99340bf39738d6f9ec1e9175e6c592ad515ba75d098430bfe22bf"
+        },
+        {
+          "path": "/setup",
+          "verified": true,
+          "sha256": "66a9ace3bc61f1da73eae2f0ab134c65fbba817a36c6fe17215b9024be658bb2"
+        },
+        {
+          "path": "/specification",
+          "verified": true,
+          "sha256": "be7a31da9d30633896f3235aa6f67b9e9282f625040342cf992b6712b5d5004b"
+        },
+        {
+          "path": "/release.json",
+          "verified": true,
+          "sha256": "f9186fb28c8ea3334e97d27a14dd9c4ac4a210886fa89d8a3f9a2e2acd9b0b77"
+        }
+      ],
+      "passed": true
+    },
+    "workersDomain": {
+      "url": "https://atom-memory-docs.shoutatomiyama0614.workers.dev",
+      "pages": [
+        {
+          "path": "/acceptance",
+          "verified": true,
+          "sha256": "9f069572e83ba87846ffc8571083224009212fef03e02cc1104cf21dbcdf51a5"
+        },
+        {
+          "path": "/adapters",
+          "verified": true,
+          "sha256": "70df674668b53fe6a430fd56161bbc9129d39497b74c0e5bfa40d43f265bd37f"
+        },
+        {
+          "path": "/api",
+          "verified": true,
+          "sha256": "3ad939e5a35f39bf5f4831921abab1729cd2a9033b2e1e67706f608e0829bec6"
+        },
+        {
+          "path": "/composition",
+          "verified": true,
+          "sha256": "4c0ae944d40ff002f6ef2bc36b67668d7087fafe08879f7470811beacbbfde8b"
+        },
+        {
+          "path": "/concepts",
+          "verified": true,
+          "sha256": "1166a925674eab92983c9659f7c349ba78cacea8ea18c8f20402d640817bdf5f"
+        },
+        {
+          "path": "/contracts",
+          "verified": true,
+          "sha256": "355fe6dbd930421024f951df020c9ee715a0572411dad05344469136ddf62998"
+        },
+        {
+          "path": "/design-review",
+          "verified": true,
+          "sha256": "611b51757cf1529fd19c551cccaba658d33db2a3e74b2714f7f0b7aa6e074baa"
+        },
+        {
+          "path": "/examples",
+          "verified": true,
+          "sha256": "95907b1ffb5de6c347cf07cc12923fb881e684a9703f7a3a876e5a8e8e749056"
+        },
+        {
+          "path": "/guide",
+          "verified": true,
+          "sha256": "116eab14cde2569de5d84b864ebf94c8c1b9a898e5c0bc58342a2f4c7d38fadc"
+        },
+        {
+          "path": "/history",
+          "verified": true,
+          "sha256": "d97313be9301f3859acda241d08ea4c039b17b561f62e3a81cb91b0babe8a582"
+        },
+        {
+          "path": "/",
+          "verified": true,
+          "sha256": "9f0997cbb4500387ff517c55ad4d8beab49bad0209316289c466a2b2e3390fa7"
+        },
+        {
+          "path": "/migration-architecture",
+          "verified": true,
+          "sha256": "03ac9d9aa11bb5fc396a95856f51bafa3ecc78a62ef2acd8287d611564b13827"
+        },
+        {
+          "path": "/migration",
+          "verified": true,
+          "sha256": "61b96488c15ca4c1bc5f32f431204a3c09848766beb2827fb83aa3e42499a627"
+        },
+        {
+          "path": "/ranking",
+          "verified": true,
+          "sha256": "efb01920cce4340e09e0234c0c188b1549b6119ddbd69bce9ecbaa6c7907f078"
+        },
+        {
+          "path": "/release",
+          "verified": true,
+          "sha256": "adf00b23bc46cd53042648cf9ce583671b711876b2cab64475bd9b90504b3573"
+        },
+        {
+          "path": "/runtime",
+          "verified": true,
+          "sha256": "5c4632925ef99340bf39738d6f9ec1e9175e6c592ad515ba75d098430bfe22bf"
+        },
+        {
+          "path": "/setup",
+          "verified": true,
+          "sha256": "66a9ace3bc61f1da73eae2f0ab134c65fbba817a36c6fe17215b9024be658bb2"
+        },
+        {
+          "path": "/specification",
+          "verified": true,
+          "sha256": "be7a31da9d30633896f3235aa6f67b9e9282f625040342cf992b6712b5d5004b"
+        },
+        {
+          "path": "/release.json",
+          "verified": true,
+          "sha256": "f9186fb28c8ea3334e97d27a14dd9c4ac4a210886fa89d8a3f9a2e2acd9b0b77"
+        }
+      ],
+      "passed": true
+    }
   },
   "sakana": {
     "sourceIntegration": "implemented in local working tree",
