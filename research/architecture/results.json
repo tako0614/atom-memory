@@ -1,0 +1,58 @@
+{
+  "scope": "Deterministic local contract examples; no model, embedding, or semantic-quality claim.",
+  "sourceSha256": {
+    "src/contracts.ts": "c3b712eb3a9abb8780b314873638dd491be46c487ba9f15a587643096d58c43d",
+    "src/index.ts": "c386273877e0292dc4272a21cb98da3c348a9c978656e11223205f8ebbb63a7c",
+    "src/client/types.ts": "a32025e85e6af06c812b1aa28a50a4f4f91c6dcf740827c4d9586490af2e7846",
+    "src/core/store.ts": "739cad028e1fe5ec1e0cbd1fd4597497cf43e5170b29379df4f649970fe2dfee",
+    "src/client/memory.ts": "3d4935863103d2dca29523c87231b065d3516914ed790e579bd04ab127455706",
+    "src/client/engine.ts": "a4333b7e08302cee41e50a90e2a5e156755bf0c1fc91c22805f7dab2b07abeb7",
+    "src/client/retrieval.ts": "7a0dc7e9cc199137954ed20939d447df9c65e80448af77bd416e428c80878b86",
+    "src/client/ranking.ts": "8513f224656ca59a7817f2fdf606543970efabba64e805cbe559d0382dd572ce",
+    "src/core/ranking.ts": "fd94c0d7504a3467328871df066e123d5b9ebf0d5c9eb89fc5cefc4e59070d00",
+    "src/adapters/memory.ts": "6422b73437633b69f5bd9e8c0a12fb28daeb36ed965ca8244f9d806a5a782fc1",
+    "src/adapters/sqlite.ts": "c0ce2f6590caacdf20af955fe71203963478f8c7d4bcc270a4ba7538aa704108",
+    "research/architecture/evaluate.mjs": "ef2ca19c93fec2bb1b963a37077e093ea00ef6586ad4d07369e05e9d9c5b2a0c",
+    "test/boundary.test.mjs": "1470636f573f075f04a1bbae8c9af6dc545120435d3af2aaab3bf5a644dc33fb"
+  },
+  "results": [
+    {
+      "adapter": "memory",
+      "ordinaryLinkPurge": {
+        "erased": ["B", "P", "Q", "R"],
+        "surviving": ["U"]
+      },
+      "oneEdit": {
+        "stale": ["alpha conclusion", "beta conclusion"],
+        "returned": []
+      },
+      "separateWrites": {
+        "stale": ["alpha conclusion"],
+        "returned": ["beta conclusion"]
+      },
+      "retrievalDependencies": {
+        "returnedBodies": 1,
+        "recordedRevisions": 12
+      }
+    },
+    {
+      "adapter": "sqlite",
+      "ordinaryLinkPurge": {
+        "erased": ["B", "P", "Q", "R"],
+        "surviving": ["U"]
+      },
+      "oneEdit": {
+        "stale": ["alpha conclusion", "beta conclusion"],
+        "returned": []
+      },
+      "separateWrites": {
+        "stale": ["alpha conclusion"],
+        "returned": ["beta conclusion"]
+      },
+      "retrievalDependencies": {
+        "returnedBodies": 1,
+        "recordedRevisions": 12
+      }
+    }
+  ]
+}

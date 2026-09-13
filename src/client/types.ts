@@ -1,8 +1,20 @@
 import type { AuthContext, AtomRevision, Budget, Json } from '../contracts.js';
 import type { Authorizer } from '../core/authority.js';
-import type { EmbeddingProvider } from '../core/store.js';
 import type { BudgetLedger, Resource, Tokenizer } from '../core/budget.js';
 import type { StorageAdapter } from '../adapters/storage.js';
+
+/** Host-supplied text encoding for retrieval and indexing, outside atomic storage. */
+export interface EmbeddingProvider {
+  readonly id: string;
+  readonly dimensions: number;
+  readonly tokenizer: Tokenizer;
+  readonly networkCallsPerCall: number;
+  embed(
+    texts: readonly string[],
+    signal: AbortSignal,
+    purpose?: 'query' | 'document',
+  ): Promise<readonly (readonly number[])[]>;
+}
 
 declare const referenceBrand: unique symbol;
 /** A host-registered observed reference. The brand is not authorization. */

@@ -118,8 +118,6 @@ export class Engine {
       authority: options.authority!,
       storage: options.storage,
       limits: options.limits,
-      embedding: options.embedding,
-      tokenizer: options.tokenizer,
     });
     this.provider =
       options.candidateProvider ??
@@ -129,10 +127,10 @@ export class Engine {
     return this.kernel.storage;
   }
   get tokenizer() {
-    return this.options.tokenizer ?? this.kernel.tokenizer ?? utf8Tokenizer;
+    return this.options.tokenizer ?? utf8Tokenizer;
   }
   get embedding() {
-    return this.options.embedding ?? this.kernel.embedding;
+    return this.options.embedding;
   }
   get legacyConfig() {
     return digest(
@@ -480,9 +478,6 @@ export class Engine {
     return {
       receipt: {
         receiptId: trace.id,
-        consistency: 'snapshot',
-        snapshotToken: trace.id,
-        policyValidationToken: p.generation,
       },
       subject: p.subject,
       authBinding: bindingKey(binding.auth),
@@ -496,13 +491,11 @@ export class Engine {
         ? []
         : trace.queries.map((q) => ({
             observationId: uid('observation'),
-            selector: { kind: 'search', query: 'host-observation' },
             watermark: trace.at,
             query: q.query,
             revisionIds: q.revisions,
           })),
       expiresAt: Date.now() + 3600000,
-      tokenizerId: this.tokenizer.id,
     };
   }
   bridge(trace: Trace, binding: ClientBinding, historical = false): string {

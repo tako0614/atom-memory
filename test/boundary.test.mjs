@@ -35,6 +35,64 @@ test('host-owned model execution still cannot forge sources, references or revok
 });
 
 for (const adapter of ['memory', 'sqlite']) {
+  test(`${adapter}: one durable dependency manifest preserves freshness, conflicts and purge`, async (t) => {
+    const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new api.MemoryStorage();
+    t.after(() => storage.close());
+    const { memory, writer, host } = fixture({ storage });
+    const source = await memory.write('manifest original evidence');
+    const receiptsBeforeReadOnlyEdit = storage.metaEntries('receipt:').length;
+    const inspected = await writer.edit((draft) => draft.inspect(source.ref, { depth: 0 }));
+    assert.equal(inspected.value.atom.text, 'manifest original evidence');
+    assert.deepEqual(inspected.changes, []);
+    assert.equal(storage.metaEntries('receipt:').length, receiptsBeforeReadOnlyEdit);
+    const inputSnapshot = storage.watermark();
+    const generated = await writer.edit(async (draft) => {
+      await draft.inspect(source.ref, { version: 'latest', depth: 0 });
+      return draft.write('manifest interpretation', { sources: [{ ref: source.ref }] });
+    });
+    const sourceEntry = storage.metaGet(`sdk:ref:${source.ref}`);
+    const generatedEntry = storage.metaGet(`sdk:ref:${generated.value.ref}`);
+    const revision = storage.get(generatedEntry.target, storage.watermark());
+    const key = `receipt:${revision.provenance.inputReceiptId}`;
+    const manifest = storage.metaGet(key);
+    assert.equal(manifest.watermark, inputSnapshot, 'retain the actual observed storage position');
+    assert.ok(manifest.reads.some((r) => r.revisionId === sourceEntry.target.revisionId));
+    assert.equal(storage.metaGet(`sdk:trace:${revision.provenance.inputReceiptId}`), undefined);
+    assert.ok(
+      (await writer.search('interpretation')).items.some((i) => i.ref === generated.value.ref),
+    );
+
+    // Existing stored manifests may still have old descriptive fields. They do
+    // not decide currentness; actual observed revisions and ranges do.
+    storage.metaSet(key, {
+      ...manifest,
+      tokenizerId: 'old-tokenizer',
+      receipt: {
+        ...manifest.receipt,
+        consistency: 'snapshot',
+        snapshotToken: 'old',
+        policyValidationToken: 'old',
+      },
+    });
+    const updated = await memory.edit((draft) =>
+      draft.revise(source.ref, 'manifest updated evidence'),
+    );
+    const stale = await writer.search('interpretation', { depth: 0 });
+    assert.deepEqual(stale.items, []);
+    assert.ok(stale.stale.includes(generated.value.ref));
+    await assert.rejects(
+      writer.edit(async (draft) => {
+        await draft.search('empty_observation', { depth: 0 });
+        await draft.write('conclusion from absence');
+        await memory.write('empty_observation appeared');
+      }),
+      { code: 'REVISION_CONFLICT' },
+    );
+    assert.equal((await memory.inspect(updated.value.ref)).atom.text, 'manifest updated evidence');
+    host.purge(sourceEntry.target.atomId);
+    await assert.rejects(writer.inspect(generated.value.ref), { code: 'ACCESS_DENIED' });
+  });
+
   test(`${adapter}: stale candidates never lend their rank to current sources`, async (t) => {
     const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new api.MemoryStorage();
     t.after(() => storage.close());

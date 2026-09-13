@@ -12,7 +12,6 @@ export type {
   ErrorCode,
   ProposedRevision,
 } from './contracts.js';
-export type { EmbeddingProvider } from './core/store.js';
 export { LocalAuthority, type Authorizer, type Principal } from './core/authority.js';
 export { AtomMemoryError } from './core/util.js';
 export {

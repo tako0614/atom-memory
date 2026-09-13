@@ -1,0 +1,41 @@
+{
+  "baseline": "1225b95",
+  "checks": {
+    "npm run check": {
+      "libraryTests": 103,
+      "researchTests": 16,
+      "failures": 0,
+      "docExamples": 15,
+      "documentedOutputs": 7,
+      "docsBuild": "passed"
+    },
+    "node22.23.2": {
+      "tests": 119,
+      "failures": 0
+    },
+    "architectureCases": "Memory and SQLite agree on purge, shared edit dependencies, and retrieval trace scope",
+    "regressionBaseline": "New durable-manifest assertions failed on 1225b95 for both adapters; see baseline-red.log",
+    "Sakana": ["writer passed", "refresh passed", "index passed"],
+    "artifactSourceHashes": "matched",
+    "npmResearchAndTestFiles": 0
+  },
+  "changes": [
+    "Remove unused legacy read types and descriptive receipt fields",
+    "Keep actual observed watermarks, current reads, query ranges, authority and purge dependencies",
+    "Persist the commit dependency manifest once; no durable manifest for read-only edits",
+    "Keep embedding and tokenizer configuration in retrieval, outside atomic storage"
+  ],
+  "unchanged": [
+    "Public five-operation API and root EmbeddingProvider type",
+    "Ranking and greedy output selection",
+    "Conservative purge and shared edit dependency semantics"
+  ],
+  "publication": {
+    "npm": false,
+    "onlineDocs": false,
+    "botDeployment": false
+  },
+  "artifacts": {
+    "results.json": "3a0752420709f465fdce69f255e27d128c26765e6eb0dd6e851cc29d82cbe057"
+  }
+}

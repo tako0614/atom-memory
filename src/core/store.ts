@@ -3,16 +3,13 @@ import type {
   AuthContext,
   PinnedRef,
   ProposedRevision,
-  ReadReceipt,
   Ref,
-  Selector,
   WriteRequest,
   WriteResult,
 } from '../contracts.js';
 import type { Authorizer, Principal } from './authority.js';
 import type { StorageAdapter, ScanQuery } from '../adapters/storage.js';
 import { MemoryStorage } from '../adapters/memory.js';
-import { utf8Tokenizer, type Tokenizer } from './budget.js';
 import { canonical, clone, digest, fail, uid, validId } from './util.js';
 import {
   defaultLimits,
@@ -22,23 +19,13 @@ import {
   type Limits,
 } from './validation.js';
 
-export interface EmbeddingProvider {
-  readonly id: string;
-  readonly dimensions: number;
-  readonly tokenizer: Tokenizer;
-  readonly networkCallsPerCall: number;
-  embed(
-    texts: readonly string[],
-    signal: AbortSignal,
-    purpose?: 'query' | 'document',
-  ): Promise<readonly (readonly number[])[]>;
-}
 export interface ReceiptManifest {
-  receipt: ReadReceipt;
+  receipt: { receiptId: string };
   subject: string;
   authBinding: string;
   generation: string;
   policies: string[];
+  /** Observed storage position for audit; not a retained-snapshot token. */
   watermark: number;
   reads: PinnedRef[];
   /** Optional explicit currentness preconditions, distinct from the complete audit. */
@@ -48,18 +35,11 @@ export interface ReceiptManifest {
   historicalInputs?: boolean;
   observations: {
     observationId: string;
-    selector: Selector;
     watermark: number;
     query: ScanQuery;
     revisionIds: string[];
   }[];
   expiresAt: number;
-  tokenizerId: string;
-}
-interface Overlay {
-  authBinding: string;
-  watermark: number;
-  revisions: readonly ProposedRevision[];
 }
 interface BlobRecord {
   bytes: string;
@@ -70,8 +50,6 @@ interface BlobRecord {
 export interface StoreOptions {
   storage?: StorageAdapter;
   authority: Authorizer;
-  tokenizer?: Tokenizer;
-  embedding?: EmbeddingProvider;
   limits?: Partial<Limits>;
 }
 const pinned = (r: AtomRevision): PinnedRef => ({
@@ -85,22 +63,18 @@ const authBinding = (auth: AuthContext) => digest(auth.authorizationHandle);
 export class AtomicStore {
   readonly storage: StorageAdapter;
   readonly authority: Authorizer;
-  readonly tokenizer: Tokenizer;
   readonly limits: Limits;
-  readonly embedding?: EmbeddingProvider;
   constructor(options: StoreOptions) {
     this.storage = options.storage ?? new MemoryStorage();
     this.authority = options.authority;
-    this.tokenizer = options.tokenizer ?? utf8Tokenizer;
-    this.embedding = options.embedding;
     this.limits = { ...defaultLimits, ...options.limits };
   }
   #principal(auth: AuthContext): Principal {
     return this.authority.resolve(auth);
   }
-  #manifest(id: string, auth: AuthContext, p: Principal, allowExpired = false): ReceiptManifest {
+  #manifest(id: string, auth: AuthContext, p: Principal): ReceiptManifest {
     const m = this.storage.metaGet<ReceiptManifest>(`receipt:${id}`);
-    if (!m || (!allowExpired && Date.now() > m.expiresAt)) fail('CURSOR_EXPIRED');
+    if (!m || Date.now() > m.expiresAt) fail('CURSOR_EXPIRED');
     if (
       m.authBinding !== authBinding(auth) ||
       m.subject !== p.subject ||
@@ -111,7 +85,11 @@ export class AtomicStore {
     if (m.reads.some((r) => this.storage.isPurged(r.atomId))) fail('ACCESS_DENIED');
     return m;
   }
-  #currentDependency(m: ReceiptManifest, at: number, overlay?: Overlay): boolean {
+  #currentDependency(
+    m: ReceiptManifest,
+    at: number,
+    proposals: readonly ProposedRevision[],
+  ): boolean {
     if (
       m.observations.some(
         (o) =>
@@ -127,7 +105,7 @@ export class AtomicStore {
       (ref) =>
         this.storage.get({ kind: 'logical', atomId: ref.atomId }, at)?.revisionId ===
           ref.revisionId ||
-        overlay?.revisions.some((r) => r.atomId === ref.atomId && r.revisionId === ref.revisionId),
+        proposals.some((r) => r.atomId === ref.atomId && r.revisionId === ref.revisionId),
     );
   }
   #blob(id: string): BlobRecord | undefined {
@@ -186,11 +164,7 @@ export class AtomicStore {
       const validated = new Set<string>();
       const currentDependency = (manifest: ReceiptManifest): boolean => {
         if (validated.has(manifest.receipt.receiptId)) return true;
-        const current = this.#currentDependency(manifest, at, {
-          authBinding: authBinding(auth),
-          watermark: at,
-          revisions: input.revisions,
-        });
+        const current = this.#currentDependency(manifest, at, input.revisions);
         if (current) validated.add(manifest.receipt.receiptId);
         return current;
       };
@@ -293,7 +267,7 @@ export class AtomicStore {
           );
           if (!observation) fail('GUARD_VALIDATION_UNAVAILABLE');
           const manifest = this.#manifest(observation.receiptId, auth, p);
-          if (!this.#currentDependency(manifest, at))
+          if (!this.#currentDependency(manifest, at, []))
             fail('REVISION_CONFLICT', 'Query range changed');
         } else fail('INVALID_SCHEMA');
       }

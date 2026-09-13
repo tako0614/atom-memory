@@ -662,7 +662,6 @@ export class MemoryClient implements MemoryAPI {
     const traces = [...(this.execution?.traces ?? []), s.trace];
     const combined = this.engine.merge(traces, this.binding, s.at);
     if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
-    this.engine.storage.metaSet(`sdk:trace:${combined.id}`, combined);
     this.engine.bridge(combined, this.binding, this.binding.actor.type !== 'agent');
     const withProvenance = {
       ...content,
@@ -824,11 +823,17 @@ export class MemoryClient implements MemoryAPI {
     try {
       const value = await cancellable(() => Promise.resolve(callback(draft)), s.signal);
       this.engine.check(s);
+      if (!overlay.revisions.size)
+        return {
+          value,
+          changes: [],
+          operationId: uid('empty-edit'),
+          resolve: (ref: AtomRef) => ref,
+        };
       const combined = this.engine.merge([...scope.traces, ...overlay.traces], this.binding, s.at);
       if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
       // Tentative inputs are audit records, never CAS preconditions against uncommitted heads.
       combined.current = combined.current.filter((r) => !overlay.revisions.has(r.atomId));
-      this.engine.storage.metaSet(`sdk:trace:${combined.id}`, combined);
       this.engine.bridge(combined, this.binding, options.basis === 'historical');
       const proposals = [...overlay.revisions.values()].map((p) => ({
         ...p,
@@ -837,8 +842,6 @@ export class MemoryClient implements MemoryAPI {
           provenance: { ...p.content.provenance, inputReceiptId: combined.id },
         },
       }));
-      if (!proposals.length)
-        return { value, changes: [], operationId: uid('empty-edit'), resolve: (ref) => ref };
       const mapping = new Map<AtomRef, AtomRef>();
       const changes: AtomView[] = [];
       const result = await this.engine.commit(

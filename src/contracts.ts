@@ -77,11 +77,6 @@ export interface AuthContext {
   readonly authorizationHandle: Id; // Trusted host-issued identity/capabilities.
 }
 
-export type Consistency =
-  | { readonly mode: 'snapshot'; readonly snapshotToken?: Id }
-  | { readonly mode: 'version-pinned'; readonly receiptId?: Id };
-
-
 export interface Budget {
   readonly maxAtoms: number;
   readonly maxCandidates: number;
@@ -92,27 +87,6 @@ export interface Budget {
   readonly maxContextTokens: number;
   readonly deadline?: string;
 }
-
-export type Selector =
-  | { readonly kind: 'refs'; readonly refs: readonly Ref[] }
-  | { readonly kind: 'relations'; readonly target: Ref;
-      readonly role?: string; readonly schema?: string }
-  | { readonly kind: 'search'; readonly query: string;
-      readonly context?: string; readonly reasoningState?: string;
-      readonly schemaFilter?: readonly string[] };
-
-
-
-
-export interface ReadReceipt {
-  readonly receiptId: Id; // Host-managed trace, possibly paged internally.
-  readonly consistency: Consistency['mode'];
-  readonly snapshotToken?: Id;
-  readonly policyValidationToken: Id;
-  // Identifies versions, head resolutions, query ranges, empty searches,
-  // index watermarks and operator/model versions in the host-held manifest.
-}
-
 
 export interface ProposedRevision {
   readonly atomId: Id;
