@@ -2,13 +2,13 @@
 // candidate, graph and packing paths; does not replace public read/search.
 import { MemoryHost, LocalAuthority, utf8Tokenizer } from '../../dist/index.js';
 import { Engine } from '../../dist/client/engine.js';
-import { startRanking, collectRanking, finishRanking } from '../../dist/client/ranking.js';
+import { startRanking, collectRanking } from '../../dist/client/ranking.js';
 import { pack, validateMemory } from '../../dist/client/retrieval.js';
-import { rankingOptions } from '../../dist/core/ranking.js';
+import { rankingOptions, propagate } from './reference-ranking.mjs';
 import { compileComposition } from './evaluator.mjs';
 
 // Mirrors numeric graph construction at the RFC baseline commit; compared
-// against finishRanking in every adapter test. Production source is unchanged.
+// against the frozen v0.5 PPR reference. Production 0.6 uses signed residual evaluation.
 function rankingGraph(state, options) {
   const config = rankingOptions(options);
   const indices = new Map(state.nodes.map((c, i) => [c.revision.revisionId, i]));
@@ -72,16 +72,12 @@ export async function atomFixture(storage, count = 4, width = 6, embedding) {
           return [0.1 + (hash % 997) / 997, 0.1 + ((hash >>> 10) % 991) / 991];
         }),
     },
-    ranking: {
+    activation: { propagation: 0.65 },
+    retrieval: {
       maxSeeds: 512,
       maxNodes: 512,
       maxEdges: 10000,
-      semantic: 1,
-      lexical: 0,
       depth: 4,
-      propagation: 0.65,
-      maxIterations: 1000,
-      tolerance: 1e-13,
     },
   };
   const host = new MemoryHost(options),
@@ -121,7 +117,15 @@ export async function atomFixture(storage, count = 4, width = 6, embedding) {
     host,
     memory,
     engine,
-    options,
+    options: {
+      ...options,
+      ranking: rankingOptions({
+        ...options.retrieval,
+        ...options.activation,
+        maxIterations: 1000,
+        tolerance: 1e-13,
+      }),
+    },
     binding,
     groups,
     leaves,
@@ -135,7 +139,7 @@ export async function acquire(f, context = 'initial context') {
   const session = f.engine.session(f.binding, { budget });
   const found = await f.engine.candidates({ context }, session);
   const eligible = found.candidates.filter((c) => validateMemory(f.engine, c.revision, session));
-  const state = startRanking(eligible, 4, f.options.ranking);
+  const state = startRanking(eligible, 4, f.options.retrieval);
   if (!collectRanking(f.engine, session, state) || state.truncated)
     throw Error('Fixture graph is incomplete');
   // Canonicalize the same graph for query-independent reuse. Revision IDs are
@@ -164,7 +168,10 @@ export async function comparePacked(f, graph, cache, tokens = 2000000, limit = 5
       scoreBreakdown: { direct, structural: scores[i] - direct },
     };
   });
-  const iterative = finishRanking(f.engine, graph.session, graph.state);
+  const evaluated = propagate(graph.seeds, graph.edges, f.options.ranking);
+  const iterative = graph.state.nodes
+    .map((candidate, i) => ({ ...candidate, score: evaluated.scores[i] }))
+    .filter((c) => c.score > 0);
   const reference = await pack(
     f.engine,
     f.engine.session(f.binding, { budget }),

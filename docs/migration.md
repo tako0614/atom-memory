@@ -1,56 +1,46 @@
-# v0.5への移行
+# v0.6への移行
 
-0.5はモデル実行と履歴運用をアプリへ分離し、検索表現をAtom自身の本文へ切り替える破壊的変更です。Atomの本文・ID・revision・出典・receipt・linksは保持します。ベクトルは再生成可能なv3索引投影であり、0.4の全ベクトルや進捗をそのまま現行として扱いません。
+v0.6は v0.5 からの公開契約の更新です。Atomの本文・ID・revision・出典・receipt・links、v3のown-bodyベクトルと保存データは保持します。認証・policyを含む既存の保存を消去して移行する必要はありません。cursorは評価設定に束縛されるため、版の更新時に失効させて取り直します。
 
-## 公開APIの変更
+## まず確認すること
 
-| 0.4まで                                                           | 0.5での扱い                                                                     |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `MemoryHarness`、HarnessModel、ModelAction、ModelMutation         | 削除。アプリの既存Agentループから `read` / `search` / `inspect` / `edit` を呼ぶ |
-| `HostOptions.generator`、read時の再取得計画と一時生成cache        | 削除。`stale` を受けたアプリが入力を選び、モデルを呼び、明示的に改訂する        |
-| `Draft.supersede`、`InspectOptions.successor/history/composition` | 削除。通常のリンク・revise・retireとアプリの採用・保持方針で表す                |
-| `SearchOptions.historical` / `ReadOptions.historical`             | 削除。旧版を調べる操作は観測参照の `inspect`                                    |
-| `historyRetentionMs` / `historyMaxAtoms`                          | 削除。保存の保持期間はホストが指定する                                          |
-| `Budget.maxModelOutputTokens` / `maxHops`                         | 削除。生成出力の予算はアプリ、探索深さはranking/readのdepth                     |
-| `Trace` / `AcquisitionPlan` のroot export                         | 削除。入力記録は内部の保存・監査データ                                          |
-| `derived: regenerated`、`read.text` の `temporary`                | 削除。永続化したAtomと原資料を返す                                              |
+バックアップを取り、旧版と新版のプロセスを同じ保存先へ同時に書き込まないでください。移行後は次を実行して、旧0.5設定・型・候補providerの差分を確認します。
 
-五つの操作は継続し、戻り値のMemoryPageに `stale: AtomRef[]` を追加しました。独自のMemoryAPI adapterやテスト用実装もこのフィールドを返してください。廃止設定・inspectオプションは無視せず `INVALID_INPUT` で通知します。
+```sh
+ATOM_V05_PACKAGE=/path/to/published-0.5.1-package node scripts/check-v05-migration.mjs
+```
 
-## 古い生成物と保存データ
+このスクリプトは保存データを書き換えません。公開npmのmanifestや過去の検証記録は、このローカル移行結果から更新しません。
 
-旧receiptは鮮度・認可・削除の監査に引き続き使います。旧取得計画と生成cacheは再実行せず、現在の原資料を確認したWriterが新しい版を確定します。元の生成文は観測参照のinspectで調査できます。
+## 公開APIと設定の変更
 
-古い生成候補は `search` / `read` の `items` と `text` から省き、`stale` に参照だけを返します。古い候補のsourceを現在版へ差し替えて、古いscore・順位・ページ位置を借用することはありません。現在版が結果へ入るには、通常の本文候補取得または構造展開で独立に見つかる必要があります。
+| v0.5の利用                                     | v0.6での扱い                                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `RankingOptions` / `ScoreBreakdown`            | 削除。`activation` と `retrieval` を宣言し、Coreの単一評価器が順位を計算する                             |
+| `HostOptions.ranking` / トップレベル `maxScan` | 削除。候補・グラフ上限は `HostOptions.retrieval.maxScan` などへ移す                                      |
+| providerが返す score・本文・関係重み           | 削除。`CandidateProvider` は `PinnedRef[]` だけを返し、Coreが保存本文を再読して採点する                  |
+| 独自のscore callback・任意decay callback       | 削除。本文一致、利用活性、`Tᵀ` 伝播を `a = D(h)m + Tᵀa` で評価する                                       |
+| 候補取得の設定                                 | `retrieval: { maxSeeds, maxNodes, maxEdges, maxScan, depth }` へ移す                                     |
+| 利用イベントの外部補正                         | `host.recordUse(refs, binding, { eventId })` を成功したモデル応答後に呼ぶ。read/searchだけでは加算しない |
 
-旧 `supersede` を使ったアプリでは、更新前に採用状態をアプリの関係へ移し、検索から外したい旧Atomを明示的にretireしてください。0.5は `sdk:successor:*` / `sdk:history:*` を読んで採用・保持を実行しません。旧Atomがactiveなら、新版では通常の検索候補になり得ます。旧版の厳密な構成閲覧が必要なら、そのmanifestやsnapshotをアプリ側で扱う必要があります。Sakanaの既存経路は旧supersedeを使っていません。
+`recordUse` の戻り値は `{ acceptedAt, recorded, repeated }` です。利用状態は認証主体・policy・revisionごとに隔離され、同じ `eventId` の再送は一度だけ反映します。`host.resetUse(binding)` は現在の主体と許可policyの集計を消しますが、重複防止マーカーは残します。半減期を変更して `STATE_INVALIDATED` になった場合は、明示的に `resetUse` を呼んでから読み直してください。`maxBoost` の変更だけではリセットしません。
 
-旧版と新版のプロセスで同時に書き込まず、移行前に保存データをバックアップしてください。0.4のcursorは設定世代の変更で失効します。旧観測参照・不変版・receiptは継続しますが、旧ベクトルはv3の意味検索準備が完了するまで現行索引の証拠になりません。
+アプリのモデル実行ループは引き続きアプリが所有します。モデルproviderから成功応答を受けた経路が、モデルへ渡したrefsを自動でackします。モデルのツール呼び出しや人の承認を利用イベントとして待つAPIはありません。
 
-## Sakana
+## 保存・索引の扱い
 
-Sakanaの `runAgent` を唯一のモデル実行ループとして使い、`stale` から既存のMemory Writerキューへ再処理を要求します。入力の取得、モデルの選択、費用上限、再試行、完了の記録はSakana側です。同じ入力でも再整理要求は新しい仕事として識別し、同じ古いバッチからの要求は重複させません。
+v3の表現は各Atom自身の本文から作られ、既存の互換なベクトル行は保持できます。encoder、dimensions、policy、own-body hashが一致する行だけを再利用し、旧形式の混在やconfigだけの書き換えは行いません。既存のstorage adapterは本文、版、出典、入力記録、v3索引を同じ境界で扱います。
 
-## 0.3以前から
+索引を使うhostは、提供する全policy scopeの `prepareIndex` / `updateIndex` を再開し、各scopeのcheckpointを終端までdrainしてから意味検索をreadyと扱います。一つの `pending: false` やproviderの `complete` は全体の準備完了を示しません。移行で設定世代が変わったcursorは `CURSOR_EXPIRED` として新しい検索から開始します。
 
-0.4で導入した構造ランキングは維持しますが、候補表現は `representationVersion: 3` としてAtom自身の本文だけを使います。`indexConfig` はencoder ID・dimensionsとv3を含み、旧設定の識別子と一致しません。
+`MemoryHarness`、モデル実行、再取得計画、一時生成cache、旧 `supersede` の自動採用は v0.5 から引き続きライブラリにありません。`stale` を受けたアプリが入力を選び直し、通常の `edit` で改訂します。`basis: 'historical'`、観測版、不変版、receipt、明示的な `retainSnapshot` / `retainedSnapshot` は継続します。
 
-既知のv2設定は、公開された0.3のExact provider固定IDと、別の0.4 IDとして認識します。新しい既定がHybridになっても、これらのlegacy IDは変わりません。一つのrevisionの旧行をv3へ再利用できるのは、(a) 旧設定がその既知ID、(b) encoderとdimensionsが一致、(c) policyが一致、(d) 旧hashが新しいown-body hashと一致、(e) vectorsが存在する場合だけです。リンク先本文を混ぜた旧行は通常hashが一致せず、再埋め込みします。「0.4のベクトルを全部再利用する」「旧行をconfigだけ書き換える」移行はしません。実装の `legacyConfig` getter がこの0.3固定IDを表します。
+## v0.5の研究・移行データを残す範囲
 
-v3の `prepareIndex` はcursorでcurrent headをscopeごとに走査します。`updateIndex` だけが変更フィードのsequence 0からscopeごとに進みます。旧checkpointをコピーせず、旧cursorは受け付けません。再起動や `limit: 1` でも同じv3 checkpointから続けます。提供する全policy scopeを `pending: false` までdrainし、各scopeの終端を確認して初めて意味検索の準備完了を宣言します。旧索引メタデータが互換しない候補を調べた場合、その操作は `pending` を報告します。一つの呼出し、channel、候補providerの `complete` は全体readinessやコーパス網羅性を示しません。
+v0.5で行った own-body v3、stale除外、既定候補入口、Writer入力依存の検証記録は歴史的なベースラインとして保持します。v0.5のSchur合成評価、PPRの比較、保存済み埋め込みの意味評価は研究資料であり、v0.6 runtimeの実装や公開品質の証明ではありません。過去のJSON・release manifest・検証結果を v0.6 の実績として上書きしないでください。
 
-`StorageAdapter.indexEntries` や旧 `sdk:index:*` 行を外部adapterの永続契約として新規実装することは、0.5の現行動作では要求しません。旧行や古いvector bucketは、クエリが正確なv3 configを要求する限り互換投影として無視できます。削除に伴う外部adapter型の破壊は、利用者が明示的に移行する境界です。
+0.4以前からの移行で必要だった本文表現v3、既知のlegacy vector設定、旧checkpointの扱いは v0.5 の検証記録で確認します。既知のlegacy行をv3へ再利用できるのは、旧設定ID・encoder・dimensions・policy・own-body hash・vectorsが一致する場合だけです。リンク先本文を混ぜた旧行は再埋め込みし、旧cursor/checkpointをコピーしません。v3の `prepareIndex` はcurrent headを、`updateIndex` はsequence 0からの変更feedをscopeごとにdrainします。v0.6ではこの保存・索引境界を引き継ぎ、評価設定と利用状態だけを追加します。
 
-## 低水準契約の整理
+## Sakanaとの接続
 
-0.5では実装されていない `SearchSignal.inputKind: 'mapped-state'` を受け付けず、検索入力は `text` 系へ限定します。`WriteResult.indexState` は削除しましたが、receipt契約は削除していません。削除したのは未使用だった `ReceiptManifest.encoderConfigId` / `indexWatermark` / `overlayHandle` です。呼出し元は公開 `WriteOutcome.indexing` と `MemoryReceipt` を使います。`MemoryHost.engine` はTypeScript上privateです。索引準備は `host.indexAtoms()` / `host.prepareIndex()` / `host.updateIndex()`、複数操作のreceipt・budget共有は `MemoryClient.forExecution(...)` を使ってください。
-
-`basis: 'historical'` による編集、通常のstorage history、adapterが明示する任意の `retainSnapshot` / `retainedSnapshot` は継続します。これらを削除するには別の公開API・保存データ移行として判断します。
-
-旧Kernelのreadと旧Harnessの互換実装はありません。既知のPinnedRefは、信頼されたホストから `host.reference(pinnedRef, binding)` で解決します。保存契約に残るincludeやvalidTime等の旧フィールドを、新しい公開操作の機能と混同しないでください。過去の設計は[歴史資料](/migration-architecture)、現在の責務は[アーキテクチャ](/specification)を参照してください。
-
-## 0.5.1の内部整理
-
-2026-09-13の[設計レビュー](/design-review)で、未使用の旧 `Selector/Consistency/ReadReceipt` と、入力manifestの未使用のsnapshot・selector・tokenizer属性を除きました。確定出力用の入力記録を `sdk:trace:` と `receipt:` の両方へ保存する処理も除いています。実際に観測した版、query範囲、認可、期限、削除依存は維持し、既存manifestの余分な属性は読み飛ばせます。出力のないeditから未使用の永続manifestを作る処理も除きました。既存保存行の一括削除はしていません。
-
-`EmbeddingProvider` の型定義を検索側へ移し、内部の原子的な保存層にあった未使用のembedding/tokenizer設定を削除しました。パッケージ直下からの型import、`MemoryHost` の設定、五つの公開操作は変わりません。0.5.0からの更新に、新しい保存データや索引の移行は不要です。
+Sakanaの `runAgent` はモデル実行、入力選択、費用、再試行、完了記録を所有します。`memory.read` の結果をモデルへ届けて成功した後、同じbindingで `host.recordUse(deliveredRefs, binding, { eventId })` を呼びます。`deliveredRefs` はSakanaの最終フィルタ後の本文・引用の参照で、取得結果全体の `recalled.refs` とは限りません。Sakanaが現在性を再検証し、失敗した要求、stale・非認可・purge済みの入力を利用へ加算しません。ライブラリのhost-only通知は、現在も読取可能な保存済みの旧観測版を受理できますが、その利用を後継版へ移しません。

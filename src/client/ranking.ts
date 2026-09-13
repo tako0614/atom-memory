@@ -1,9 +1,11 @@
 import type { AtomRevision, PinnedRef } from '../contracts.js';
-import type { Candidate, RankingOptions } from './types.js';
-import { type Engine, type Session, pinRevision } from './engine.js';
+import type { Candidate, RetrievalOptions, RetrievalSignal } from './types.js';
+import { type Engine, type Session, pinRevision, bindingKey } from './engine.js';
 import { validateMemory } from './retrieval.js';
-import { AtomMemoryError, canonical } from '../core/util.js';
-import { propagate, rankingOptions } from '../core/ranking.js';
+import { AtomMemoryError, canonical, digest } from '../core/util.js';
+import { activationOptions, retrievalOptions, seedScore } from '../core/ranking.js';
+import { evaluateActivation } from '../core/evaluation.js';
+import { snapshotUse } from './activation.js';
 
 interface Task {
   ref: PinnedRef;
@@ -22,9 +24,9 @@ export interface RankingState {
 export function startRanking(
   candidates: readonly Candidate[],
   depth: number,
-  options?: RankingOptions,
+  options?: RetrievalOptions,
 ): RankingState {
-  const config = rankingOptions(options);
+  const config = retrievalOptions(options);
   const nodes = [...candidates]
     .sort((a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'))
     .slice(0, config.maxSeeds);
@@ -44,7 +46,8 @@ export function startRanking(
 /** Collect every discovered edge, including paths to an already visited node.
  * Cursor acquisition finishes before any rank is exposed to a caller. */
 export function collectRanking(engine: Engine, s: Session, state: RankingState): boolean {
-  const config = rankingOptions(engine.options.ranking);
+  const config = retrievalOptions(engine.options.retrieval);
+  const activation = activationOptions(engine.options.activation);
   const nodes = new Set(state.nodes.map((c) => c.revision.revisionId));
   const edges = new Set(state.edges.map((e) => canonical(e)));
   const addNode = (r: AtomRevision, depth: number): boolean => {
@@ -88,8 +91,8 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
           state.tasks.shift();
           continue;
         }
-        const weights = Object.hasOwn(config.relations, slot.role)
-          ? config.relations[slot.role]
+        const weights = Object.hasOwn(activation.relations, slot.role)
+          ? activation.relations[slot.role]
           : undefined;
         if (!weights || weights.forward || weights.reverse) {
           const target = engine.get(slot.target, s, slot.target.kind === 'logical');
@@ -115,8 +118,8 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
         }
         engine.get(pinRevision(incoming), s, true);
         for (const slot of incoming.slots) {
-          const weights = Object.hasOwn(config.relations, slot.role)
-            ? config.relations[slot.role]
+          const weights = Object.hasOwn(activation.relations, slot.role)
+            ? activation.relations[slot.role]
             : undefined;
           if (weights && !weights.forward && !weights.reverse) continue;
           if (
@@ -144,8 +147,16 @@ export function collectRanking(engine: Engine, s: Session, state: RankingState):
   }
   return true;
 }
-export function finishRanking(engine: Engine, s: Session, state: RankingState): Candidate[] {
-  const config = rankingOptions(engine.options.ranking);
+export function finishRanking(
+  engine: Engine,
+  s: Session,
+  state: RankingState,
+  signals: readonly RetrievalSignal[],
+): {
+  candidates: Candidate[];
+  evaluation: NonNullable<import('./engine.js').QueryState['evaluation']>;
+} {
+  const config = activationOptions(engine.options.activation);
   const indices = new Map(state.nodes.map((c, i) => [c.revision.revisionId, i]));
   const edges = state.edges.flatMap((edge) => {
     const from = indices.get(edge.from)!,
@@ -158,25 +169,82 @@ export function finishRanking(engine: Engine, s: Session, state: RankingState): 
       { from: to, to: from, weight: weights.reverse },
     ];
   });
-  const result = propagate(
-    state.nodes.map((c) => c.score),
-    edges,
-    config,
-    () => engine.check(s),
+  // Freeze usage only after content-based acquisition and freshness validation.
+  const usage = snapshotUse(
+    engine,
+    s,
+    state.nodes.map((c) => c.revision),
   );
-  state.truncated ||= !result.converged;
-  return state.nodes
-    .map((candidate, i) => ({
-      ...candidate,
-      score: result.scores[i]!,
-      scoreBreakdown: result.breakdown[i]!,
-    }))
-    .filter((candidate) => candidate.score > 0)
-    .sort(
-      (a, b) =>
-        b.score - a.score ||
-        Buffer.byteLength(canonical(a.revision.body)) -
-          Buffer.byteLength(canonical(b.revision.body)) ||
-        a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
-    );
+  const seeds = state.nodes.map((c, i) => {
+    const body = engine.indexedBody(c.revision);
+    return seedScore(body.text, body.vectors, signals) * usage.boosts[i]!;
+  });
+  const cacheKey = digest(
+    canonical([
+      bindingKey(s.binding.auth),
+      s.principal.subject,
+      s.principal.generation,
+      s.trace.policies,
+      engine.config,
+    ]),
+  );
+  const capacity = engine.options.cacheMaxEntries ?? 512;
+  const ttl = engine.options.cacheTtlMs ?? 300000;
+  const now = Date.now();
+  for (const [key, value] of engine.evaluations)
+    if (value.expires <= now) engine.evaluations.delete(key);
+  let cached = !s.overlay && capacity > 0 && ttl > 0 ? engine.evaluations.get(cacheKey) : undefined;
+  if (
+    cached &&
+    [...cached.values.values()].some(
+      (v) => engine.storage.isPurged(v.atomId) || !Number.isFinite(v.value) || v.value < 0,
+    )
+  ) {
+    engine.evaluations.delete(cacheKey);
+    cached = undefined;
+  }
+  const result = evaluateActivation(seeds, edges, {
+    propagation: config.propagation,
+    ledger: s.ledger,
+    ids: state.nodes.map((c) => c.revision.revisionId),
+    ...(cached
+      ? { initial: state.nodes.map((c) => cached!.values.get(c.revision.revisionId)?.value ?? 0) }
+      : {}),
+    check: () => engine.check(s),
+  });
+  if (!s.overlay && capacity > 0 && ttl > 0) {
+    engine.evaluations.delete(cacheKey);
+    engine.evaluations.set(cacheKey, {
+      expires: now + ttl,
+      values: new Map(
+        state.nodes.map((c, i) => [
+          c.revision.revisionId,
+          {
+            atomId: c.revision.atomId,
+            value: result.activation[i]!,
+          },
+        ]),
+      ),
+    });
+    while (engine.evaluations.size > capacity)
+      engine.evaluations.delete(engine.evaluations.keys().next().value!);
+  }
+  state.truncated ||= !result.diagnostics.converged;
+  return {
+    evaluation: {
+      evaluatedAt: usage.at,
+      evaluationConverged: result.diagnostics.converged,
+      numericErrorL1Upper: result.diagnostics.errorL1Upper,
+    },
+    candidates: state.nodes
+      .map((candidate, i) => ({ ...candidate, score: result.scores[i]! }))
+      .filter((candidate) => candidate.score > 0)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          Buffer.byteLength(canonical(a.revision.body)) -
+            Buffer.byteLength(canonical(b.revision.body)) ||
+          a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
+      ),
+  };
 }

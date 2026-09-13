@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { propagate } from '../../dist/core/ranking.js';
+import { propagate } from '../composition/reference-ranking.mjs';
 const normalize = (values) => {
   const sum = values.reduce((a, b) => a + b, 0);
   return values.map((value) => (sum ? value / sum : 0));

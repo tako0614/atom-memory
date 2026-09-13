@@ -1,5 +1,5 @@
 import type { Trace } from './internal.js';
-import { rankingOptions } from '../core/ranking.js';
+import { activationOptions, retrievalOptions, seedScore } from '../core/ranking.js';
 import type { RetrievalSignal } from './types.js';
 import { indexRevision } from './indexing.js';
 import type {
@@ -15,7 +15,7 @@ import { AtomicStore, type ReceiptManifest } from '../core/store.js';
 import type { Principal } from '../core/authority.js';
 import { BudgetLedger, utf8Tokenizer } from '../core/budget.js';
 import { HybridCandidateProvider, LexicalCandidateProvider } from '../core/candidates.js';
-import { canonical, clone, digest, fail, textOf, uid } from '../core/util.js';
+import { canonical, clone, digest, fail, textOf, uid, AtomMemoryError } from '../core/util.js';
 import type { ScanQuery } from '../adapters/storage.js';
 import type {
   AtomRef,
@@ -89,6 +89,7 @@ export interface QueryState {
   graph?: GraphState;
   root?: PinnedRef;
   blobOffset?: number;
+  evaluation?: { evaluatedAt: number; evaluationConverged: boolean; numericErrorL1Upper: number };
 }
 export interface GraphTask {
   ref: PinnedRef;
@@ -109,10 +110,27 @@ export class Engine {
   readonly provider: NonNullable<HostOptions['candidateProvider']>;
   readonly overlays = new Map<string, OverlayState>();
   readonly signals = new WeakSet<object>();
+  /** Disposable, process-local numeric starting points. Never authority or knowledge. */
+  readonly evaluations = new Map<
+    string,
+    {
+      expires: number;
+      values: Map<string, { atomId: string; value: number }>;
+    }
+  >();
   constructor(options: HostOptions) {
     if (['generator', 'historyRetentionMs', 'historyMaxAtoms'].some((key) => key in options))
       fail('INVALID_INPUT', 'Generation and history retention belong to the host application');
-    this.options = { ...options, ranking: rankingOptions(options.ranking) };
+    for (const key of ['cacheMaxEntries', 'cacheTtlMs'] as const)
+      if (options[key] !== undefined && (!Number.isSafeInteger(options[key]) || options[key]! < 0))
+        fail('INVALID_INPUT', `Invalid ${key}`);
+    if ('ranking' in options || 'maxScan' in options)
+      fail('INVALID_INPUT', 'Use activation and retrieval options in 0.6');
+    this.options = {
+      ...options,
+      activation: activationOptions(options.activation),
+      retrieval: retrievalOptions(options.retrieval),
+    };
     if (!options.authority) fail('INVALID_INPUT', 'A trusted authorizer is required');
     this.kernel = new AtomicStore({
       authority: options.authority!,
@@ -168,8 +186,9 @@ export class Engine {
         index: this.indexConfig,
         provider: this.provider.id,
         tokenizer: this.tokenizer.id,
-        ranking: this.options.ranking,
-        version: 5,
+        activation: this.options.activation,
+        retrieval: this.options.retrieval,
+        version: 6,
       }),
     );
   }
@@ -382,7 +401,7 @@ export class Engine {
   text(r: AtomRevision): string {
     return r.body.kind === 'inline' ? textOf(r.body.value) : '';
   }
-  private indexedBody(r: AtomRevision): {
+  indexedBody(r: AtomRevision): {
     text: string;
     vectors?: readonly (readonly number[])[];
   } {
@@ -660,7 +679,7 @@ export class Engine {
     state: MemoryState,
     s: Session,
     after?: string,
-    maxScan = this.options.maxScan ?? 10000,
+    maxScan = this.options.retrieval!.maxScan!,
   ): Promise<{
     candidates: Candidate[];
     scanned: number;
@@ -668,6 +687,7 @@ export class Engine {
     pending: boolean;
     approximate: boolean;
     signalDigest: string;
+    signals: readonly RetrievalSignal[];
     after?: string;
   }> {
     const signals = await this.signalsFor(state, s);
@@ -676,7 +696,6 @@ export class Engine {
       texts: signals.texts,
       vectors: signals.vectors,
       signals: signals.signals,
-      ranking: this.options.ranking,
       maxScan,
       after,
       ledger: s.ledger,
@@ -704,18 +723,52 @@ export class Engine {
             s,
             true,
           ),
-        representation: (r) => this.indexedBody(r),
+        representation: (r) => this.indexedBody(this.get(pinRevision(r), s, false, false)),
       },
     });
     this.check(s);
+    if (!Array.isArray(result.candidates) || result.candidates.length > maxScan)
+      fail('INVALID_INPUT', 'Candidate provider exceeded the acquisition bound');
+    const candidates: Candidate[] = [];
+    const seen = new Set<string>();
+    let exhausted = false;
+    let pending = result.pending;
+    for (const ref of result.candidates) {
+      if (
+        !ref ||
+        ref.kind !== 'pinned' ||
+        typeof ref.atomId !== 'string' ||
+        typeof ref.revisionId !== 'string'
+      )
+        fail('INVALID_INPUT', 'Candidate providers return pinned references, not scores or bodies');
+      if (seen.has(ref.revisionId)) continue;
+      seen.add(ref.revisionId);
+      try {
+        // Always reread the authoritative snapshot. Provider data never sets a score.
+        const revision = this.get(ref, s, false, false);
+        const current = this.raw({ kind: 'logical', atomId: revision.atomId }, s);
+        if (revision.state !== 'active' || current?.revisionId !== revision.revisionId) continue;
+        const body = this.indexedBody(revision);
+        pending ||= !!this.embedding && !body.vectors;
+        const score = seedScore(body.text, body.vectors, signals.signals);
+        if (score > 0) candidates.push({ revision, score });
+      } catch (error) {
+        if (!(error instanceof AtomMemoryError && error.code === 'BUDGET_EXHAUSTED')) throw error;
+        exhausted = true;
+        break;
+      }
+    }
     return {
       ...result,
+      candidates,
+      complete: result.complete && !exhausted,
+      approximate: result.approximate || exhausted,
       signalDigest: signals.digest,
-      pending:
-        result.pending ||
-        (!!this.embedding && result.candidates.some((c) => !this.indexedBody(c.revision).vectors)),
+      signals: signals.signals,
+      pending,
     };
   }
+
   saveCursor(state: Omit<QueryState, 'id' | 'expires'>): string {
     const id = uid('cursor');
     this.storage.metaSet(`sdk:cursor:${id}`, {

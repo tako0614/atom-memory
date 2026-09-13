@@ -61,7 +61,7 @@ export default defineConfig({
         text: '移行',
         collapsed: true,
         items: [
-          { text: 'v0.5 への移行', link: '/migration' },
+          { text: 'v0.6 への移行', link: '/migration' },
           { text: '歴史資料：設計 v1.0', link: '/migration-architecture' },
         ],
       },

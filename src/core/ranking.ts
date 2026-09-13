@@ -1,167 +1,168 @@
-import type { RankingOptions, RetrievalSignal, ScoreBreakdown } from '../client/types.js';
+import type { ActivationOptions, RetrievalOptions, RetrievalSignal } from '../client/types.js';
 import { fail } from './util.js';
-export function rankingOptions(options: RankingOptions = {}) {
-  const nonnegative = (value: number) => {
-    if (!Number.isFinite(value) || value < 0)
-      fail('INVALID_INPUT', 'Ranking weights must be finite and nonnegative');
-    return value;
-  };
-  const integer = (value: number, max: number) => {
-    if (!Number.isSafeInteger(value) || value < 1 || value > max)
-      fail('INVALID_INPUT', 'Invalid ranking bound');
-    return value;
-  };
-  const signals = {
-    query: 1,
-    context: 1,
-    thought: 1,
-    observations: 1,
-    signal: 1,
-    ...options.signals,
-  };
-  Object.values(signals).forEach(nonnegative);
-  if (!Object.values(signals).some(Boolean)) fail('INVALID_INPUT');
-  const semantic = nonnegative(options.semantic ?? 0.8),
-    lexical = nonnegative(options.lexical ?? 0.2);
-  if (!(semantic + lexical > 0)) fail('INVALID_INPUT');
-  const propagation = nonnegative(options.propagation ?? 0.5);
-  if (propagation >= 1) fail('INVALID_INPUT', 'Propagation must be below one');
-  const relations = Object.fromEntries(
-    Object.entries(options.relations ?? {}).map(([role, value]) => [
-      role,
-      { forward: nonnegative(value.forward ?? 1), reverse: nonnegative(value.reverse ?? 1) },
-    ]),
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function record(value: unknown, label: string): void {
+  if (value === null || typeof value !== 'object' || Array.isArray(value))
+    fail('INVALID_INPUT', `Invalid ${label}`);
+}
+
+function known(value: Record<string, unknown>, allowed: readonly string[], label: string): void {
+  if (Reflect.ownKeys(value).some((key) => typeof key !== 'string' || !allowed.includes(key)))
+    fail('INVALID_INPUT', `Unknown ${label} option`);
+}
+
+function nonnegative(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+    fail('INVALID_INPUT', `${label} must be finite and nonnegative`);
+  return value;
+}
+
+function integer(value: unknown, maximum: number, label: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1 || value > maximum)
+    fail('INVALID_INPUT', `Invalid ${label}`);
+  return value;
+}
+
+export function activationOptions(options: ActivationOptions = {}) {
+  record(options, 'activation options');
+  known(
+    options as Record<string, unknown>,
+    ['halfLifeMs', 'maxBoost', 'propagation', 'relations'],
+    'activation',
   );
-  const depth = options.depth ?? 2;
-  if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
-  const tolerance = nonnegative(options.tolerance ?? 1e-6);
-  if (!tolerance) fail('INVALID_INPUT');
-  const maxNodes = integer(options.maxNodes ?? 512, 10000);
+  const halfLifeMs = nonnegative(options.halfLifeMs ?? 7 * DAY_MS, 'Half-life');
+  if (halfLifeMs === 0) fail('INVALID_INPUT', 'Half-life must be positive');
+  const propagation = nonnegative(options.propagation ?? 0.5, 'Propagation');
+  if (propagation >= 1) fail('INVALID_INPUT', 'Propagation must be below one');
+  const relationInput = options.relations ?? {};
+  record(relationInput, 'relation options');
+  const relations: Record<string, { forward: number; reverse: number }> = {};
+  for (const [role, value] of Object.entries(relationInput)) {
+    if (!role.length) fail('INVALID_INPUT', 'Relation roles must be nonempty');
+    record(value, `relation ${role}`);
+    known(value, ['forward', 'reverse'], 'relation');
+    Object.defineProperty(relations, role, {
+      value: {
+        forward: nonnegative(value.forward ?? 1, 'Forward relation weight'),
+        reverse: nonnegative(value.reverse ?? 1, 'Reverse relation weight'),
+      },
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+  }
   return {
-    signals,
-    semantic,
-    lexical,
+    halfLifeMs,
+    maxBoost: nonnegative(options.maxBoost ?? 0.3, 'Maximum boost'),
     propagation,
     relations,
-    depth,
-    tolerance,
-    maxSeeds: Math.min(integer(options.maxSeeds ?? 64, 10000), maxNodes),
-    maxNodes,
-    maxEdges: integer(options.maxEdges ?? 4096, 100000),
-    maxIterations: integer(options.maxIterations ?? 32, 1000),
   };
 }
+
+export function retrievalOptions(options: RetrievalOptions = {}) {
+  record(options, 'retrieval options');
+  known(
+    options as Record<string, unknown>,
+    ['depth', 'maxSeeds', 'maxNodes', 'maxEdges', 'maxScan'],
+    'retrieval',
+  );
+  const depth = options.depth ?? 2;
+  if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32)
+    fail('INVALID_INPUT', 'Invalid retrieval depth');
+  const maxNodes = integer(options.maxNodes ?? 512, 10_000, 'node bound');
+  return {
+    depth,
+    maxSeeds: Math.min(integer(options.maxSeeds ?? 64, 10_000, 'seed bound'), maxNodes),
+    maxNodes,
+    maxEdges: integer(options.maxEdges ?? 4096, 100_000, 'edge bound'),
+    maxScan: integer(options.maxScan ?? 10_000, 10_000, 'scan bound'),
+  };
+}
+
+/** Fixed local match rule: 0.8 semantic + 0.2 lexical, averaged per signal kind. */
 export function seedScore(
   text: string,
   vectors: readonly (readonly number[])[] | undefined,
   signals: readonly RetrievalSignal[],
-  options: RankingOptions = {},
 ): number {
-  const weights = rankingOptions(options);
   const groups = new Map<string, number[]>();
   for (const signal of signals) {
-    const semantic =
-      signal.vector && vectors?.length
-        ? Math.max(0, ...vectors.map((v) => cosine(signal.vector!, v)))
-        : undefined;
+    let semantic: number | undefined;
+    if (signal.vector && vectors?.length) {
+      semantic = 0;
+      for (const vector of vectors) semantic = Math.max(semantic, cosine(signal.vector, vector));
+    }
     const lexical = signal.text ? lexicalScore(text, [signal.text]) : undefined;
-    const denominator =
-      (semantic === undefined ? 0 : weights.semantic) +
-      (lexical === undefined ? 0 : weights.lexical);
-    const score = denominator
-      ? ((semantic ?? 0) * weights.semantic + (lexical ?? 0) * weights.lexical) / denominator
-      : 0;
+    const denominator = (semantic === undefined ? 0 : 0.8) + (lexical === undefined ? 0 : 0.2);
+    const score = denominator ? ((semantic ?? 0) * 0.8 + (lexical ?? 0) * 0.2) / denominator : 0;
+    if (!Number.isFinite(score)) fail('INVALID_INPUT', 'Nonfinite seed score');
     const entries = groups.get(signal.kind) ?? [];
     entries.push(score);
     groups.set(signal.kind, entries);
   }
-  let sum = 0,
-    total = 0;
-  for (const [kind, entries] of groups) {
-    const weight = weights.signals[kind as keyof typeof weights.signals];
-    sum += (weight * entries.reduce((a, b) => a + b, 0)) / entries.length;
-    total += weight;
-  }
-  return total ? sum / total : 0;
+  let sum = 0;
+  for (const entries of groups.values())
+    sum += entries.reduce((group, value) => group + value, 0) / entries.length;
+  const score = groups.size ? sum / groups.size : 0;
+  if (!Number.isFinite(score)) fail('INVALID_INPUT', 'Nonfinite seed score');
+  return score;
 }
-/** Personalized weighted propagation on an already authorized, bounded graph. */
-export function propagate(
-  seeds: readonly number[],
-  edges: readonly { from: number; to: number; weight: number }[],
-  options: RankingOptions = {},
-  check = () => {},
-): { scores: number[]; breakdown: ScoreBreakdown[]; iterations: number; converged: boolean } {
-  const config = rankingOptions(options),
-    total = seeds.reduce((a, b) => a + b, 0);
-  if (seeds.some((n) => !Number.isFinite(n) || n < 0)) fail('INVALID_INPUT');
-  const start = seeds.map((n) => (total ? n / total : 0));
-  const outgoing = seeds.map(() => 0);
-  for (const edge of edges) {
-    if (
-      !Number.isSafeInteger(edge.from) ||
-      !Number.isSafeInteger(edge.to) ||
-      edge.from < 0 ||
-      edge.to < 0 ||
-      edge.from >= seeds.length ||
-      edge.to >= seeds.length ||
-      !Number.isFinite(edge.weight) ||
-      edge.weight < 0
-    )
-      fail('INVALID_INPUT');
-    outgoing[edge.from]! += edge.weight;
-  }
-  let scores = [...start],
-    iterations = 0,
-    converged = !total;
-  let breakdown = start.map((direct) => ({ direct, structural: 0 }));
-  while (!converged && iterations < config.maxIterations) {
-    check();
-    const transfer = seeds.map(() => 0);
-    for (const edge of edges)
-      if (outgoing[edge.from])
-        transfer[edge.to]! += (scores[edge.from]! * edge.weight) / outgoing[edge.from]!;
-    const dangling = scores.reduce((sum, value, i) => sum + (outgoing[i] ? 0 : value), 0);
-    breakdown = start.map((value, i) => ({
-      direct: (1 - config.propagation) * value,
-      structural: config.propagation * (transfer[i]! + dangling * value),
-    }));
-    const next = breakdown.map((value) => value.direct + value.structural);
-    converged =
-      next.reduce((sum, value, i) => sum + Math.abs(value - scores[i]!), 0) <= config.tolerance;
-    scores = next;
-    iterations++;
-  }
-  return { scores, breakdown, iterations, converged };
-}
+
 const segmenter = new Intl.Segmenter('ja', { granularity: 'word' });
 export function words(text: string): string[] {
   return [
     ...new Set(
       [...segmenter.segment(text.normalize('NFKC').toLowerCase())]
-        .filter((s) => s.isWordLike)
-        .map((s) => s.segment),
+        .filter((segment) => segment.isWordLike)
+        .map((segment) => segment.segment),
     ),
   ];
 }
+
 export function lexicalScore(text: string, signals: readonly string[]): number {
   const haystack = text.normalize('NFKC').toLowerCase();
-  return Math.max(
-    0,
-    ...signals.map((signal) => {
-      const tokens = words(signal);
-      if (!tokens.length) return 0;
-      return tokens.filter((token) => haystack.includes(token)).length / tokens.length;
-    }),
-  );
+  let best = 0;
+  for (const signal of signals) {
+    const tokens = words(signal);
+    if (tokens.length)
+      best = Math.max(
+        best,
+        tokens.filter((token) => haystack.includes(token)).length / tokens.length,
+      );
+  }
+  return best;
 }
+
 export function cosine(a: readonly number[], b: readonly number[]): number {
   if (
     a.length !== b.length ||
-    a.some((n) => !Number.isFinite(n)) ||
-    b.some((n) => !Number.isFinite(n))
+    a.some((value) => !Number.isFinite(value)) ||
+    b.some((value) => !Number.isFinite(value))
   )
     fail('MODEL_SPACE_MISMATCH');
-  const norm =
-    Math.sqrt(a.reduce((n, x) => n + x * x, 0)) * Math.sqrt(b.reduce((n, x) => n + x * x, 0));
-  return norm ? Math.max(0, a.reduce((n, x, i) => n + x * b[i]!, 0) / norm) : 0;
+  let scaleA = 0,
+    scaleB = 0,
+    identical = true;
+  for (let index = 0; index < a.length; index++) {
+    scaleA = Math.max(scaleA, Math.abs(a[index]!));
+    scaleB = Math.max(scaleB, Math.abs(b[index]!));
+    identical &&= a[index] === b[index];
+  }
+  if (!scaleA || !scaleB) return 0;
+  if (identical) return 1;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
+  for (let index = 0; index < a.length; index++) {
+    const left = a[index]! / scaleA,
+      right = b[index]! / scaleB;
+    dot += left * right;
+    normA += left * left;
+    normB += right * right;
+  }
+  const result = dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  if (!Number.isFinite(result)) fail('MODEL_SPACE_MISMATCH');
+  return Math.max(0, Math.min(1, result));
 }

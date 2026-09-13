@@ -1,19 +1,17 @@
 # リリース
 
-このドキュメントは **atom-memory 0.5.1** に対応します。0.5.0の公開API・保存形式・本文だけの検索表現v3を維持し、結果のパッキングと内部の入力記録を整理した更新です。0.5.0から新しいデータ・索引移行は不要です。0.4以前からの更新は[移行](/migration)を参照してください。
+このドキュメントは **atom-memory 0.6 (upcoming)** の受入方針です。v0.5の本文・版・出典・receipt・v3ベクトルと保存データを維持し、宣言的な `activation` / `retrieval`、利用ack、単一の線形評価器を追加します。npm公開済みとは扱わず、公開版・integrity・対応commitは公開manifestが更新されるまで未確定です。移行手順は[移行](/migration)を参照してください。
 
-npmのバージョン・integrity・対応commitは[公開manifest](/release.json)、公開後の読戻し結果は[0.5.1の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)で確認できます。[0.5.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
+npmの過去版のバージョン・integrity・対応commitは[公開manifest](/release.json)と[0.5.1の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)で確認できます。これらは v0.5 の履歴であり、v0.6の公開を示しません。[0.5.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
 
-## 0.5.1の変更
+## v0.6で受け入れる変更
 
-- 結果のパッキングを内部で段階的に評価できる形へ整理しました。通常のreadは従来の順位と予算・必須条件・出典の規則を維持します。
-- 確定出力の入力記録の重複保存と、出力のないeditが作る未使用の永続記録を除きました。観測版・鮮度・認可・削除依存は維持します。
-- 未使用の内部型・設定を整理しました。EmbeddingProviderのパッケージ直下からの型importは継続します。
-- [設計レビュー](/design-review)と[合成評価の検証](/composition)を追加しました。既知の限界と、通常の検索へ採用していない研究結果を示します。
+- `HostOptions.activation`（既定は半減期7日、最大増幅0.3、伝播0.5）と `HostOptions.retrieval` を追加しました。候補providerは `PinnedRef[]` だけを返し、Coreが保存本文を再読して評価します。
+- `host.recordUse(refs, binding, { eventId })` と `host.resetUse(binding)` を追加しました。成功したモデル応答後のackだけが主体・policy・revisionごとの利用集計を更新し、read/searchだけでは増えません。
+- 評価器は `a = D(h)m + Tᵀa` の一つに固定し、`maxEvaluationWork` で数値計算を制限します。Schur合成と凍結した参照実装は研究資料に残します。
+- v3保存・索引、freshness、認可、削除依存は維持します。半減期変更は `STATE_INVALIDATED` として明示的なresetを要求し、`maxBoost`変更だけではリセットしません。
 
-目指す設計は、**活性の与え方をカスタマイズできる、合成可能な記憶の読み出しライブラリ**です。設定は初期活性の作り方を変え、その先は同じAtom構造の伝播と本文・関係・出典の返却規則にそろえます。
-
-ただし、**受理された利用イベントの集計・時間減衰・初期活性への接続は、0.5.1には未実装です。** 合成評価器も研究用であり、既定検索へ採用していません。モデル実行・Writer・履歴運用は引き続きアプリ側です。
+モデル実行・Writer・履歴運用は引き続きアプリ側です。アプリがモデルへ返したrefsを成功として受理した後、ホストが利用ackを発行します。利用イベントをモデルのツールや人の承認に待たせません。
 
 ## 公開前の検証
 
@@ -24,7 +22,7 @@ npm run example
 npm run example:writer
 npm run example:history
 npm run format:check
-ATOM_V04_PACKAGE=/path/to/published-0.4.0-package node scripts/check-v04-migration.mjs
+ATOM_V05_PACKAGE=/path/to/published-0.5.1-package node scripts/check-v05-migration.mjs
 npm pack
 ```
 

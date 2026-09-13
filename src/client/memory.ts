@@ -1,3 +1,4 @@
+import { recordUse, resetUse } from './activation.js';
 import type { Trace } from './internal.js';
 import { collectRanking, finishRanking, startRanking } from './ranking.js';
 import { updateIndex, indexRevision } from './indexing.js';
@@ -36,6 +37,7 @@ import type {
   WriteOptions,
   WriteOutcome,
   Candidate,
+  UseResult,
 } from './types.js';
 import {
   Engine,
@@ -67,6 +69,20 @@ export class MemoryHost {
   reference(ref: PinnedRef, binding: ClientBinding): AtomRef {
     const s = this.engine.session(binding);
     return this.engine.issue(this.engine.get(ref, s), s);
+  }
+  /** Acknowledge bodies actually delivered to a successful model request. */
+  recordUse(
+    refs: readonly AtomRef[],
+    binding: ClientBinding,
+    options: { eventId: string },
+  ): UseResult {
+    if (!options || Object.keys(options).some((key) => key !== 'eventId')) fail('INVALID_INPUT');
+    return recordUse(this.engine, refs, binding, options.eventId);
+  }
+  /** Reset scoped use aggregates; durable retry markers remain valid. */
+  resetUse(binding: ClientBinding): void {
+    resetUse(this.engine, binding);
+    this.engine.evaluations.clear();
   }
   signal(
     values: readonly number[],
@@ -128,7 +144,9 @@ export class MemoryHost {
     return this.connect(binding).hostWriteBody(body);
   }
   purge(atomId: string) {
-    return this.engine.kernel.purge(atomId);
+    const result = this.engine.kernel.purge(atomId);
+    this.engine.evaluations.clear();
+    return result;
   }
 }
 export function createMemory(options: HostOptions & ClientBinding): MemoryClient {
@@ -203,7 +221,7 @@ export class MemoryClient implements MemoryAPI {
       approximate: false,
       trace: s.trace,
     };
-    const maximum = this.engine.options.maxScan ?? 10000;
+    const maximum = this.engine.options.retrieval!.maxScan!;
     // Leave resources for relation acquisition and returning memory in this call.
     // A finite acquisition is frozen before pagination; it never scans the full
     // corpus by repeatedly returning empty pages to an automatic caller.
@@ -230,7 +248,7 @@ export class MemoryClient implements MemoryAPI {
     const seeds = [...seen.values()].sort(
       (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
     );
-    const maxSeeds = this.engine.options.ranking!.maxSeeds!;
+    const maxSeeds = this.engine.options.retrieval!.maxSeeds!;
     q.approximate ||= seeds.length > maxSeeds || found.approximate;
     q.scanned = found.scanned;
     q.pending ||= found.pending;
@@ -259,15 +277,17 @@ export class MemoryClient implements MemoryAPI {
       }
       ranking = startRanking(
         eligible,
-        options.depth ?? this.engine.options.ranking!.depth!,
-        this.engine.options.ranking,
+        options.depth ?? this.engine.options.retrieval!.depth!,
+        this.engine.options.retrieval,
       );
       ranking.truncated ||= exhausted;
       if (!collectRanking(this.engine, s, ranking)) ranking.truncated = true;
     } finally {
       s.ledger = ledger;
     }
-    q.candidates = finishRanking(this.engine, s, ranking);
+    const evaluated = finishRanking(this.engine, s, ranking, found.signals);
+    q.candidates = evaluated.candidates;
+    q.evaluation = evaluated.evaluation;
     q.approximate ||= ranking.truncated || ranking.depth > 0;
     q.complete = true;
     return { s, state: q };
@@ -276,7 +296,7 @@ export class MemoryClient implements MemoryAPI {
     if (typeof query !== 'string' || !query.trim())
       fail('INVALID_INPUT', 'Search query must not be empty');
     const limit = positive(options.limit, 10);
-    const depth = options.depth ?? this.engine.options.ranking!.depth!;
+    const depth = options.depth ?? this.engine.options.retrieval!.depth!;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
     const key = this.key('search', query, { depth });
     const { s, state } = await this.retrieve('search', { query }, options, key);
@@ -292,7 +312,7 @@ export class MemoryClient implements MemoryAPI {
         if (!s.ledger.can({ maxAtoms: 1 })) break;
         const view = this.engine.view(candidate.revision, s, true);
         s.ledger.charge({ maxAtoms: 1 });
-        items.push({ ...view, score: candidate.score, scoreBreakdown: candidate.scoreBreakdown });
+        items.push({ ...view, score: candidate.score });
         state.offset++;
       } catch (error) {
         if (error instanceof AtomMemoryError && error.code === 'BUDGET_EXHAUSTED') break;
@@ -312,9 +332,15 @@ export class MemoryClient implements MemoryAPI {
       diagnostics: {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
+        ...state.evaluation,
         derived: s.pendingDerived ? 'pending' : s.derived,
         ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
-        stop: more ? 'page-limit' : 'completed',
+        stop:
+          state.evaluation?.evaluationConverged === false
+            ? 'numeric-budget'
+            : more
+              ? 'page-limit'
+              : 'completed',
       },
       usage: s.ledger.usage(),
     };
@@ -323,7 +349,7 @@ export class MemoryClient implements MemoryAPI {
     if (!input || typeof input !== 'object') fail('INVALID_INPUT');
     const limit = positive(options.limit, 24);
     const tokens = positive(options.tokens, 4096, 1000000);
-    const depth = options.depth ?? this.engine.options.ranking!.depth!;
+    const depth = options.depth ?? this.engine.options.retrieval!.depth!;
     if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
     const key = this.key('read', input, { depth });
     const { s, state } = await this.retrieve(
@@ -362,9 +388,15 @@ export class MemoryClient implements MemoryAPI {
       diagnostics: {
         ...this.engine.diagnostics(state.scanned, !more, state.pending),
         approximate: state.approximate,
+        ...state.evaluation,
         derived: s.pendingDerived ? 'pending' : s.derived,
         ...(s.derivedReason ? { derivedReason: s.derivedReason } : {}),
-        stop: more ? 'budget' : 'completed',
+        stop:
+          state.evaluation?.evaluationConverged === false
+            ? 'numeric-budget'
+            : more
+              ? 'budget'
+              : 'completed',
         ...(packed.minimumTokens ? { minimumTokens: packed.minimumTokens } : {}),
       },
       usage: s.ledger.usage(),

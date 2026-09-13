@@ -2,12 +2,14 @@
 
 ホストの設定で、保存先・検索表現・予算を選べます。アプリから使う `write`、`search`、`inspect`、`read`、`edit` の流れは共通です。
 
-| 設定したいこと               | 選択肢                 |
-| ---------------------------- | ---------------------- |
-| まず動かす、テストで使う     | 既定の `MemoryStorage` |
-| ローカルのファイルに残す     | `SqliteStorage`        |
-| ベクトルによる候補も取得する | `embedding`            |
-| 候補取得の方式を実装する     | `candidateProvider`    |
+| 設定したいこと                   | 選択肢                 |
+| -------------------------------- | ---------------------- |
+| まず動かす、テストで使う         | 既定の `MemoryStorage` |
+| ローカルのファイルに残す         | `SqliteStorage`        |
+| ベクトルによる候補も取得する     | `embedding`            |
+| 候補取得の方式を実装する         | `candidateProvider`    |
+| 利用活性の半減期・増幅・関係重み | `activation`           |
+| 候補・グラフ・探索の上限         | `retrieval`            |
 
 ## SQLite に保存する
 
@@ -85,15 +87,15 @@ const page = await memory.search('招待リンクの期限');
 
 ## 候補の探し方と規模
 
-埋め込みなしの既定は `local-body-lexical-v1`、埋め込みありの既定は `local-hybrid-buckets-v1` です。どちらもAtom自身の本文を入口にし、走査・候補の範囲を採点してから関連度順にページを返します。`local-exact-lexical-vector-v1` は明示した場合だけ使う有限走査の基準です。
+埋め込みなしの既定は本文語彙を使うprovider、埋め込みありの既定は語彙とベクトルを組み合わせるproviderです。providerは認可済みの保存内容から候補の `PinnedRef` を返すだけで、候補の最終スコアや構造伝播は行いません。`ExactCandidateProvider` は明示した場合だけ使う有限走査の基準です。
 
-取得上限のmaxScanは既定10,000件です。操作予算の一部を候補取得に割り当てるため、既定の候補予算では5,000件で止まる場合もあります。候補は結果返却前に固定し、cursorはその結果の次ページです。未探索領域の続きではありません。`approximate` と `scanned` を確認し、大量のデータには語彙・ベクトルで候補を絞るproviderを選びます。`complete` は全コーパスの網羅を保証しません。
+取得上限の `maxScan` は `HostOptions.retrieval` で設定し、候補providerへ渡します。操作予算の一部を候補取得と評価計算に割り当てるため、上限に達したところで停止することがあります。候補は結果返却前に固定し、cursorはその結果の次ページです。未探索領域の続きではありません。`approximate` と `scanned` を確認し、大量のデータには語彙・ベクトルで候補を絞るproviderを選びます。`complete` は全コーパスの網羅を保証しません。
 
 `candidateProvider` に独自の `CandidateProvider` を渡すと、同じ取得処理を search・read・Writer で共有できます。プロバイダーには許可された資料への `CandidateAccess`、共有予算、キャンセル信号が渡されます。
 
-大量の原文をローカルDBで扱う場合は、`candidateProvider: new LexicalCandidateProvider()` を選べます。本文の語彙一致を保存層で絞ってから有限の候補を採点するため、無関係な先頭IDだけで走査予算を使い切ることを避けます。認可と読取snapshotは同じhostの `CandidateAccess.page` を通ります。本文を入口にする近似方式なので、関係先の本文だけが一致する候補まで完全に拾う保証はなく、`approximate=true` を返します。埋め込みがある場合の既定は `HybridCandidateProvider` です。
+大量の原文をローカルDBで扱う場合は、本文の語彙一致を保存層で絞るproviderを選べます。保存層は認可済みの候補参照だけを返し、Engineが各revisionを再読して本文・鮮度・policyを検証します。本文を入口にする近似方式なので、関係先の本文だけが一致する候補まで完全に拾う保証はなく、`approximate=true` を返します。埋め込みがある場合は語彙候補とベクトル候補をCoreの同じ評価規則へ渡します。
 
-`LexicalCandidateProvider` は埋め込みなしの既定です。埋め込みを設定すると `HybridCandidateProvider` が既定になり、語彙候補とベクトル候補を合わせてから同じ本文スコアと構造ランキングを適用します。`ExactCandidateProvider` は有限の全走査を行う明示的な基準実装です。大規模な ANN やリモート索引を導入する場合は、取得品質、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。`StorageAdapter` 自体は同期ローカル保存の契約です。
+組み込みproviderは埋め込みの有無に応じて語彙または語彙＋ベクトルの候補参照を返します。`ExactCandidateProvider` は有限の全走査を行う明示的な基準実装です。大規模な ANN やリモート索引を導入する場合は、参照の正確さ、認可、通信の計数、読取状態の整合性をそのアダプターで検証します。providerが返す score や本文は採用されません。`StorageAdapter` 自体は同期ローカル保存の契約です。
 
 ## 古い生成物を更新する
 
@@ -174,13 +176,15 @@ console.log(progress.indexed, progress.processed, progress.pending);
 
 エンコーダーは `embed(texts, signal, purpose)` の第三引数で `'document'` と `'query'` を区別できます。第三引数を使わない既存の実装も動きます。文脈・`thought`・観測はquery側、Atomの検索表現はdocument側です。空間IDにはモデルの版・前処理・次元を含めてください。
 
-SQLiteでベクトル候補も有限に絞るには `candidateProvider: new HybridCandidateProvider()` を指定します。ベクトルの近似バケットと語彙一致から候補を選び、実ベクトルで採点し、通常の関係探索を行います。非公開policyや過去版は候補の上限を適用する前に除外します。これは近似検索であり、`approximate=true`です。全世界の完全な上位候補や、百万件での応答性能を保証するものではありません。
+SQLiteでベクトル候補も有限に絞る場合は、語彙・ベクトル候補を返すproviderを指定します。Coreは実ベクトルと保存本文を再読して初期活性を計算し、通常の関係探索を行います。非公開policyや過去版は候補の上限を適用する前に除外します。これは近似検索であり、`approximate=true`です。全世界の完全な上位候補や、百万件での応答性能を保証するものではありません。
 
 ## 候補とベクトルの設定を分ける
 
-候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。組み込みproviderは入力種類の重み付き類似度でseedを採点します。`maxScan` と操作予算で候補取得を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。独自providerは `signals`・`ranking` を受け取れます。
+候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。providerの返却値は `PinnedRef[]` であり、スコア・本文・関係の重みを返す契約ではありません。Coreは保存層からrevisionを再読し、本文80%・語彙20%（利用活性を含む初期活性）と関係伝播を評価します。`maxScan`、`maxNodes`、`maxEdges` と `maxEvaluationWork` で候補取得・グラフ評価を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。
 
-ベクトルの設定は順位の設定から独立しています。0.5の表現v3への移行、既知のv2設定に対するハッシュ検証付きの一行再利用、`StorageAdapter` の旧 `indexEntries` 境界は[移行](/migration)を参照してください。
+利用活性は `HostOptions.activation` で宣言します。既定は半減期7日、最大増幅0.3、伝播0.5です。主体・policy・revisionごとの利用状態は、成功したモデル応答後にホストが `recordUse(refs, binding, { eventId })` を呼んだときだけ更新されます。`read` や候補探索だけでは増えません。設定を変える場合は[移行](/migration)の状態失効規則を確認してください。
+
+ベクトルの設定は評価規則から独立しています。v3の表現とStorageの再利用条件、`StorageAdapter` の旧 `indexEntries` 境界は[移行](/migration)を参照してください。
 
 ### 索引の準備状態
 

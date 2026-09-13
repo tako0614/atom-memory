@@ -28,7 +28,7 @@ await memory.write('招待リンクの有効期限は24時間です。');
 
 同じホストから複数のクライアントを発行できるので、入力アダプターと Writer は同じ記憶を扱えます。[Writer の例](/runtime#writerに整理を任せる)を参照してください。
 
-embeddingを指定しないhostの候補providerは `LexicalCandidateProvider`、指定したhostは `HybridCandidateProvider` です。`ExactCandidateProvider` は小規模な有限走査の基準として必要な箇所で明示します。providerの候補取得は本文だけを入口にし、リンクは構造ランキングで扱います。
+候補providerは `PinnedRef[]` だけを返し、保存本文の再読、スコア、構造伝播はCoreが担当します。embeddingの有無に応じて語彙または語彙＋ベクトルの候補入口を選びます。`ExactCandidateProvider` は小規模な有限走査の基準として必要な箇所で明示します。取得の上限は `retrieval`、利用活性の半減期・増幅・関係重みは `activation` に設定します。
 
 ## アプリの認証につなぐ
 
@@ -36,8 +36,10 @@ embeddingを指定しないhostの候補providerは `LexicalCandidateProvider`�
 
 この初期化を一度済ませたら、アプリは [保存・検索・読取](/guide)を内容だけで呼べます。
 
-## 検索順位と保存上限
+## 検索評価と保存上限
 
-`MemoryHost` の `ranking` で入力・関係・方向の重みを設定します。[構造ランキング](/ranking)を参照してください。保存処理の上限は `limits` で指定します。低水準Kernelを注入する設定はありません。
+`MemoryHost` の `activation` で利用活性の半減期・最大増幅・関係ごとの方向重みを、`retrieval` で候補・グラフ探索の上限を設定します。[構造ランキング](/ranking)を参照してください。保存処理の上限は `limits` で指定します。低水準Kernelを注入する設定はありません。
+
+モデルへ返した結果をアプリが成功として受理したら、ホストは `host.recordUse(recalled.refs, binding, { eventId })` を自動で呼びます。read・searchの実行やモデルのツール、人の承認だけでは利用を記録しません。集計を現在の主体・policyから消すときは `host.resetUse(binding)` を使います。
 
 embeddingを使う本番hostは、`prepareIndex` / `updateIndex` を提供する全policy scopeでdrainし、各scopeのcheckpointを確認してから意味検索をreadyと扱います。一つのchannelや一回の呼出しの `pending: false` は全体の準備完了ではありません。

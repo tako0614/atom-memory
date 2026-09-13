@@ -126,7 +126,9 @@ for (const adapter of ['memory', 'sqlite'])
     const storage =
       adapter === 'sqlite' ? new SqliteStorage(join(dir, 'atom.sqlite')) : new MemoryStorage();
     try {
-      const f = setup(storage, { ranking: { relations: { ignored: { forward: 0, reverse: 0 } } } });
+      const f = setup(storage, {
+        activation: { relations: { ignored: { forward: 0, reverse: 0 } } },
+      });
       const target = await f.memory.write('orchard fruit');
       const parent = await f.memory.write({
         text: 'unrelated parent',
@@ -255,7 +257,7 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
   const dir = mkdtempSync(join(tmpdir(), 'atom-vector-'));
   const storage = new SqliteStorage(join(dir, 'atom.sqlite'));
   try {
-    const f = setup(storage, { maxScan: 16 });
+    const f = setup(storage, { retrieval: { maxScan: 16 } });
     const unrelated = await f.memory.write('unrelated stone 0');
     for (let i = 1; i < 35; i++) await f.memory.write(`unrelated stone ${i}`);
     const foreignAuth = f.options.authority.issue({

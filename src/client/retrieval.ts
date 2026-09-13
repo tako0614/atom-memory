@@ -238,11 +238,7 @@ export function createPacking(
       }
     return canonical({
       memory: views.map((item) => {
-        const {
-          score: _score,
-          scoreBreakdown: _breakdown,
-          ...view
-        } = item as AtomView & { score?: number; scoreBreakdown?: unknown };
+        const { score: _score, ...view } = item as AtomView & { score?: number };
         const span = spans.get(view.ref);
         if (!span || !shared.has(key(span))) return view;
         const { text: _text, ...metadata } = view;
@@ -294,7 +290,6 @@ export function createPacking(
         const view = {
           ...engine.view(r, s, true),
           score: scored?.score ?? 0,
-          scoreBreakdown: scored?.scoreBreakdown ?? { direct: 0, structural: 0 },
         };
         if (span) {
           const source = engine.get(span.source, s);

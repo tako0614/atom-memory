@@ -29,7 +29,6 @@ for (const variant of ['correct', 'none', 'damaged']) {
     storage,
     authority,
     embedding,
-    ranking: { semantic: 1, lexical: 0 },
   });
   const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
   const memory = host.connect(binding);

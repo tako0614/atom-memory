@@ -85,6 +85,7 @@ export interface Budget {
   readonly maxModelCalls: number;
   readonly maxModelInputTokens: number;
   readonly maxContextTokens: number;
+  readonly maxEvaluationWork: number;
   readonly deadline?: string;
 }
 

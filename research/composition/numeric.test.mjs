@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compileComposition, CompositionCache } from './evaluator.mjs';
-import { propagate } from '../../dist/core/ranking.js';
+import { propagate } from './reference-ranking.mjs';
 
 const error = (a, b) => Math.max(0, ...a.map((v, i) => Math.abs(v - b[i])));
 const reference = (seeds, edges, propagation) => {

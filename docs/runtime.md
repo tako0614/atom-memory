@@ -22,6 +22,8 @@ export async function answer(
 
 モデル入力の全体長、応答予算、タイムアウト、ツールの権限、モデル呼出し中の入力変更、再開用チェックポイントはアプリが管理します。Atomの操作予算は、その中で記憶を取得・編集する費用を制限します。
 
+モデル応答が成功したら、アプリの配信経路は同じ `binding` で `host.recordUse(recalled.refs, binding, { eventId })` を自動でackします。readやsearchで候補に触れただけでは利用を記録せず、モデルのツール呼び出しや人の承認を待ちません。ackは主体・policy・revisionごとの指数減衰状態へ原子的に反映され、同じeventの再送は重複として扱われます。
+
 ## Writerに整理を任せる
 
 Writerはモデルの結果を検証し、`write` / `edit` を呼ぶアプリ側のAgentです。次の例は、原資料の変更で古い整理が通知され、ホストが明示的に再生成して同じAtomを改訂する流れです。

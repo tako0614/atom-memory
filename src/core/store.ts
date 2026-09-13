@@ -18,6 +18,7 @@ import {
   validateOrigin,
   type Limits,
 } from './validation.js';
+import { purgeUse } from './use-state.js';
 
 export interface ReceiptManifest {
   receipt: { receiptId: string };
@@ -358,6 +359,13 @@ export class AtomicStore {
       for (const r of all)
         if (erased.has(r.atomId) && r.body.kind === 'blob')
           this.storage.metaDelete(`blob:${r.body.blobId}`);
+      // Use aggregates, reverse indexes, and deduplication markers are part of
+      // the same purge transaction as the revision closure. Reset deliberately
+      // retains markers; only purge removes them.
+      purgeUse(
+        this.storage,
+        all.filter((revision) => erased.has(revision.atomId)),
+      );
       this.storage.erase([...erased]);
       const clear = (prefix: string) => {
         if (this.storage.metaDeletePrefix) this.storage.metaDeletePrefix(prefix);

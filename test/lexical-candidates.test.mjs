@@ -68,7 +68,7 @@ test('lexical ingress finds late matches within a small scan budget and preserve
     const host = new MemoryHost({
       storage,
       authority,
-      maxScan: 2,
+      retrieval: { maxScan: 2 },
       candidateProvider: new LexicalCandidateProvider(),
     });
     const connect = (scope) =>

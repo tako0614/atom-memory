@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { MemoryStorage } from '../../dist/index.js';
 import { SqliteStorage } from '../../dist/adapters/sqlite.js';
 import { compileComposition, CompositionCache } from './evaluator.mjs';
-import { propagate, seedScore } from '../../dist/core/ranking.js';
+import { propagate, seedScore } from './reference-ranking.mjs';
 import { atomFixture, acquire, comparePacked, prepare } from './fixture.mjs';
 
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];

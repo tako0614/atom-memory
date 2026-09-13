@@ -1,8 +1,8 @@
 # Atom Memory
 
-0.5.1では、Atom自身の本文を検索表現にし、役割・方向の重み付きグラフ伝播を別の層で適用します。Atomは再帰的・多重所属できる対等な形式ですが、すべての関係を別Atomへ reify する必要はありません。LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.5への移行](https://atom-memory.takos.jp/migration)を参照してください。
+0.6では、Atom自身の本文を検索表現にし、役割・方向の重み付きグラフ伝播と、主体・policy・revisionごとの利用活性を同じ評価器で扱います。Atomは再帰的・多重所属できる対等な形式ですが、すべての関係を別Atomへ reify する必要はありません。LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.6への移行](https://atom-memory.takos.jp/migration)を参照してください。
 
-0.5.1は公開APIを維持し、結果のパッキングと入力記録の内部実装を整理した版です。[設計レビュー](https://atom-memory.takos.jp/design-review)では「活性の与え方をカスタマイズできる、合成可能な記憶の読み出しライブラリ」という次の設計方針を示します。利用イベント・時間減衰の検索への接続は未実装で、合成評価器は研究段階です。
+0.6は、本文・関係・出典を返す既存の保存契約に、指数減衰する利用活性と評価計算の上限を加えた更新です。利用イベントは信頼されたホストが通知し、モデルへの成功応答後はアプリが自動でackします。読み出しだけでは利用回数を増やしません。合成評価器のSchur実装は研究資料として残し、実行時の既定評価器には使いません。公開された版と対応ソースは[リリース記録](https://atom-memory.takos.jp/release)で確認できます。
 
 Give your agent something to remember.
 
@@ -44,7 +44,7 @@ Your application selects bounded periods, invokes its model and validates an edi
 
 `read` / `search` exclude stale generated content and return its references in `stale`. The application decides whether to queue another Writer pass. Reads never generate replacement prose. Immutable revisions, source provenance, scope authorization and dependency validation remain in the library.
 
-After writes, `host.indexAtoms()` can prioritize new vectors and `host.updateIndex()` consumes the revision feed. A changed Atom is indexed from its own body; changing a linked target does not re-encode an unchanged parent. In 0.5, the default candidate provider is `HybridCandidateProvider` when an embedding is configured and `LexicalCandidateProvider` otherwise. `ExactCandidateProvider` remains an explicit finite-scan reference. SQLite supports scoped candidate retrieval followed by relationship expansion.
+After writes, `host.indexAtoms()` can prioritize new vectors and `host.updateIndex()` consumes the revision feed. A changed Atom is indexed from its own body; changing a linked target does not re-encode an unchanged parent. Candidate providers return `PinnedRef` values only; the core rereads authoritative stored revisions and computes the score and graph propagation. Retrieval bounds live under `retrieval` (including `maxScan`), while `activation` controls scoped use decay and propagation. SQLite supports scoped candidate retrieval followed by relationship expansion.
 
 Index metadata is a disposable v3 projection. A host must drain every served policy scope before calling semantic retrieval ready; `pending: false` from one call or channel is not a corpus-wide readiness certificate. Approximate diagnostics never certify corpus completeness.
 

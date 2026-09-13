@@ -9,9 +9,12 @@ import {
   MemoryStorage,
   LexicalCandidateProvider,
   utf8Tokenizer,
+  BudgetLedger,
+  defaultBudget,
 } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { propagate, seedScore, rankingOptions } from '../dist/core/ranking.js';
+import { seedScore, activationOptions } from '../dist/core/ranking.js';
+import { evaluateActivation } from '../dist/core/evaluation.js';
 import { collectRanking, startRanking } from '../dist/client/ranking.js';
 const budget = { maxCandidates: 4000, maxBytes: 4000000, maxAtoms: 100, maxContextTokens: 40000 };
 
@@ -21,7 +24,7 @@ function collectFrom(f, ref, options = {}, operationBudget = budget) {
   const state = startRanking(
     [{ revision: root, score: 1 }],
     options.depth ?? 2,
-    f.host.engine.options.ranking,
+    f.host.engine.options.retrieval,
   );
   const complete = collectRanking(f.host.engine, session, state);
   return { complete, session, state };
@@ -33,10 +36,6 @@ test('signal kinds keep their weights; repeated observations cannot drown out co
     { kind: 'thought', text: 'beta', vector: [0, 1] },
   ];
   assert.equal(seedScore('alpha', [[1, 0]], signals), 0.5);
-  assert.equal(
-    seedScore('alpha', [[1, 0]], signals, { signals: { context: 3, thought: 1 } }),
-    0.75,
-  );
   const a = [
     { kind: 'context', text: 'alpha' },
     { kind: 'observations', text: 'beta' },
@@ -46,25 +45,30 @@ test('signal kinds keep their weights; repeated observations cannot drown out co
     seedScore('alpha', undefined, [...a, ...a.slice(1)]),
   );
   for (const value of [-1, NaN, Infinity])
-    assert.throws(() => rankingOptions({ propagation: value }), { code: 'INVALID_INPUT' });
-  assert.throws(() => rankingOptions({ propagation: 1 }), { code: 'INVALID_INPUT' });
+    assert.throws(() => activationOptions({ propagation: value }), { code: 'INVALID_INPUT' });
+  assert.throws(() => activationOptions({ propagation: 1 }), { code: 'INVALID_INPUT' });
 });
+function evaluate(seeds, edges, options = {}) {
+  return evaluateActivation(seeds, edges, {
+    propagation: 0.5,
+    ...options,
+    ids: seeds.map((_, i) => String(i)),
+    ledger: new BudgetLedger(defaultBudget),
+  });
+}
 test('weighted propagation conserves mass, joins paths, and handles cycles and dangling nodes', () => {
   const graph = [
     { from: 0, to: 2, weight: 1 },
     { from: 1, to: 2, weight: 1 },
     { from: 2, to: 0, weight: 1 },
   ];
-  const result = propagate([1, 1, 0, 0], graph);
-  assert.ok(result.converged);
+  const result = evaluate([1, 1, 0, 0], graph);
+  assert.ok(result.diagnostics.converged);
   assert.ok(Math.abs(result.scores.reduce((a, b) => a + b, 0) - 1) < 1e-10);
   assert.ok(result.scores[2] > result.scores[1]);
   assert.equal(result.scores[3], 0);
-  result.breakdown.forEach((value, i) =>
-    assert.equal(value.direct + value.structural, result.scores[i]),
-  );
-  assert.deepEqual(propagate([1, 1, 0], graph, { propagation: 0 }).scores, [0.5, 0.5, 0]);
-  assert.deepEqual(propagate([0, 0], []).scores, [0, 0]);
+  assert.deepEqual(evaluate([1, 1, 0], graph, { propagation: 0 }).scores, [0.5, 0.5, 0]);
+  assert.deepEqual(evaluate([0, 0], []).scores, [0, 0]);
 });
 for (const adapter of ['memory', 'sqlite']) {
   const setup = (t, options = {}) => {
@@ -78,7 +82,7 @@ for (const adapter of ['memory', 'sqlite']) {
     return fixture({ storage, ...options });
   };
   test(`${adapter}: an exact node cap still collects every edge among admitted nodes`, async (t) => {
-    const f = setup(t, { ranking: { maxNodes: 3, maxSeeds: 1 } });
+    const f = setup(t, { retrieval: { maxNodes: 3, maxSeeds: 1 } });
     const c = await f.memory.write('C');
     const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
     const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
@@ -89,7 +93,7 @@ for (const adapter of ['memory', 'sqlite']) {
     assert.equal(state.truncated, false);
   });
   test(`${adapter}: rejected nodes do not stop edges between already admitted nodes`, async (t) => {
-    const f = setup(t, { ranking: { maxNodes: 2, maxSeeds: 1 } });
+    const f = setup(t, { retrieval: { maxNodes: 2, maxSeeds: 1 } });
     const a = await f.memory.write('A');
     const c = await f.memory.write('C');
     const b = await f.memory.write({
@@ -157,7 +161,7 @@ for (const adapter of ['memory', 'sqlite']) {
     assert.ok(result.stale.includes(bridge.ref));
   });
   test(`${adapter}: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks`, async (t) => {
-    const f = setup(t, { ranking: { relations: { condition: { forward: 2, reverse: 0 } } } });
+    const f = setup(t, { activation: { relations: { condition: { forward: 2, reverse: 0 } } } });
     const condition = await f.memory.write('Only after an administrator signs.');
     const first = await f.memory.write({
       text: 'launch alpha',
@@ -167,8 +171,8 @@ for (const adapter of ['memory', 'sqlite']) {
     await f.memory.write('irrelevant huge hub');
     const all = await f.memory.search('launch', { limit: 20, budget });
     const target = all.items.find((i) => i.ref === condition.ref);
-    assert.ok(target?.scoreBreakdown.structural > 0);
-    assert.equal(target.scoreBreakdown.direct, 0);
+    assert.ok(target?.score > 0);
+    assert.equal(seedScore(condition.text, undefined, [{ kind: 'query', text: 'launch' }]), 0);
     assert.ok(!all.items.some((i) => i.text === 'irrelevant huge hub'));
     const seen = [];
     let page;
@@ -177,9 +181,11 @@ for (const adapter of ['memory', 'sqlite']) {
       seen.push(...page.items.map((i) => [i.ref, i.score]));
     } while (page.cursor);
     assert.deepEqual(
-      seen,
-      all.items.map((i) => [i.ref, i.score]),
+      seen.map(([ref]) => ref),
+      all.items.map((i) => i.ref),
     );
+    for (const [ref, score] of seen)
+      assert.ok(Math.abs(score - all.items.find((i) => i.ref === ref).score) <= 2e-6);
     await f.memory.edit((d) =>
       d.revise(first.ref, {
         text: 'launch alpha',
@@ -188,7 +194,7 @@ for (const adapter of ['memory', 'sqlite']) {
     );
     const repeated = await f.memory.search('launch', { limit: 20, budget });
     assert.ok(
-      Math.abs(repeated.items.find((i) => i.ref === condition.ref).score - target.score) < 1e-10,
+      Math.abs(repeated.items.find((i) => i.ref === condition.ref).score - target.score) < 1e-6,
     );
   });
   test(`${adapter}: graph differences, not extra embeddings, cause related evidence recall`, async (t) => {
@@ -199,7 +205,7 @@ for (const adapter of ['memory', 'sqlite']) {
       networkCallsPerCall: 0,
       embed: async (texts) => texts.map((text) => (text.startsWith('launch') ? [1, 0] : [0, 1])),
     };
-    const f = setup(t, { embedding, ranking: { lexical: 0, semantic: 1 } });
+    const f = setup(t, { embedding });
     const evidence = await f.memory.write('a separate prerequisite');
     await f.memory.write({ text: 'launch topic', links: { evidence: evidence.ref } });
     await f.host.prepareIndex(f.binding, { budget });
@@ -240,7 +246,7 @@ for (const adapter of ['memory', 'sqlite']) {
     assert.equal(documents, 0);
     const next = new MemoryHost({
       ...engine.options,
-      ranking: { signals: { context: 3 }, propagation: 0.7 },
+      activation: { propagation: 0.7 },
     });
     await next.prepareIndex(f.binding, { budget });
     assert.equal(documents, 0);
@@ -250,7 +256,7 @@ for (const adapter of ['memory', 'sqlite']) {
     );
   });
   test(`${adapter}: role direction and grant boundaries also apply to inverse expansion`, async (t) => {
-    const f = setup(t, { ranking: { relations: { hidden: { forward: 0, reverse: 0 } } } });
+    const f = setup(t, { activation: { relations: { hidden: { forward: 0, reverse: 0 } } } });
     const target = await f.memory.write('unrelated content');
     await f.memory.write({ text: 'visible needle', links: { hidden: target.ref } });
     const page = await f.memory.search('visible needle', { budget });
@@ -272,7 +278,7 @@ for (const adapter of ['memory', 'sqlite']) {
 }
 
 test('edge budget bounds graph collection after the node cap is reached', async (t) => {
-  const f = fixture({ ranking: { maxNodes: 3, maxSeeds: 1, maxEdges: 2 } });
+  const f = fixture({ retrieval: { maxNodes: 3, maxSeeds: 1, maxEdges: 2 } });
   t.after(() => f.storage.close());
   const c = await f.memory.write('C');
   const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
@@ -285,7 +291,7 @@ test('edge budget bounds graph collection after the node cap is reached', async 
 });
 
 test('candidate budget exhaustion leaves ranking tasks resumable', async (t) => {
-  const f = fixture({ ranking: { maxNodes: 3, maxSeeds: 1 } });
+  const f = fixture({ retrieval: { maxNodes: 3, maxSeeds: 1 } });
   t.after(() => f.storage.close());
   const c = await f.memory.write('C');
   const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
@@ -337,7 +343,7 @@ test('automatic recall returns useful memory from a large corpus within the defa
 test('disabled inverse roles cannot add a parent; arbitrary role names remain ordinary roles', async () => {
   const f = fixture({
     candidateProvider: new LexicalCandidateProvider(),
-    ranking: { relations: { hidden: { forward: 0, reverse: 0 } } },
+    activation: { relations: { hidden: { forward: 0, reverse: 0 } } },
   });
   const target = await f.memory.write('needle');
   await f.memory.write({ text: 'unrelated parent', links: { hidden: target.ref } });

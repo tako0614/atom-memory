@@ -1,4 +1,4 @@
-import type { AuthContext, AtomRevision, Budget, Json } from '../contracts.js';
+import type { AuthContext, AtomRevision, Budget, Json, PinnedRef } from '../contracts.js';
 import type { Authorizer } from '../core/authority.js';
 import type { BudgetLedger, Resource, Tokenizer } from '../core/budget.js';
 import type { StorageAdapter } from '../adapters/storage.js';
@@ -102,7 +102,11 @@ export interface Diagnostics {
   readonly index: 'ready' | 'pending' | 'unavailable';
   readonly derived: 'ready' | 'pending' | 'unused';
   readonly derivedReason?: 'dependency-stale';
-  readonly stop: 'completed' | 'page-limit' | 'budget' | 'deadline';
+  readonly stop: 'completed' | 'page-limit' | 'budget' | 'deadline' | 'numeric-budget';
+  readonly evaluatedAt?: number;
+  readonly evaluationConverged?: boolean;
+  /** Normalized L1 numerical error on the acquired graph only. */
+  readonly numericErrorL1Upper?: number;
   readonly minimumTokens?: number;
   readonly minimumBytes?: number;
   readonly coverageCertified: false;
@@ -117,7 +121,6 @@ export interface MemoryPage {
   readonly stale: readonly AtomRef[];
   readonly items: readonly (AtomView & {
     readonly score?: number;
-    readonly scoreBreakdown?: ScoreBreakdown;
   })[];
   readonly receipt: MemoryReceipt;
   readonly cursor?: string;
@@ -186,9 +189,9 @@ export interface HostOptions {
   readonly tokenizer?: Tokenizer;
   readonly embedding?: EmbeddingProvider;
   readonly candidateProvider?: CandidateProvider;
-  readonly ranking?: RankingOptions;
+  readonly activation?: ActivationOptions;
+  readonly retrieval?: RetrievalOptions;
   readonly defaults?: Partial<Budget>;
-  readonly maxScan?: number;
   readonly cursorTtlMs?: number;
   readonly cacheMaxEntries?: number;
   readonly cacheTtlMs?: number;
@@ -199,27 +202,29 @@ export interface HostOptions {
 export interface Candidate {
   readonly revision: AtomRevision;
   readonly score: number;
-  readonly scoreBreakdown?: ScoreBreakdown;
-}
-export interface ScoreBreakdown {
-  readonly direct: number;
-  readonly structural: number;
 }
 export type SignalKind = 'query' | 'context' | 'thought' | 'observations' | 'signal';
-export interface RankingOptions {
-  readonly signals?: Partial<Record<SignalKind, number>>;
-  readonly semantic?: number;
-  readonly lexical?: number;
+/** Declarative inputs to one activation rule; no custom scoring callbacks. */
+export interface ActivationOptions {
+  readonly halfLifeMs?: number;
+  readonly maxBoost?: number;
   readonly propagation?: number;
   readonly relations?: Readonly<
     Record<string, { readonly forward?: number; readonly reverse?: number }>
   >;
+}
+/** Bounds on acquisition, independent of use activation. */
+export interface RetrievalOptions {
   readonly maxSeeds?: number;
   readonly maxNodes?: number;
   readonly maxEdges?: number;
-  readonly maxIterations?: number;
-  readonly tolerance?: number;
+  readonly maxScan?: number;
   readonly depth?: number;
+}
+export interface UseResult {
+  readonly acceptedAt: number;
+  readonly recorded: number;
+  readonly repeated: number;
 }
 export interface RetrievalSignal {
   readonly kind: SignalKind;
@@ -245,14 +250,13 @@ export interface CandidateProvider {
     readonly texts: readonly string[];
     readonly vectors: readonly (readonly number[])[];
     readonly signals?: readonly RetrievalSignal[];
-    readonly ranking?: RankingOptions;
     readonly maxScan: number;
     readonly after?: string;
     readonly access: CandidateAccess;
     readonly ledger: BudgetLedger;
     readonly signal: AbortSignal;
   }): Promise<{
-    candidates: Candidate[];
+    candidates: PinnedRef[];
     scanned: number;
     complete: boolean;
     after?: string;

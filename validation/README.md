@@ -1,8 +1,10 @@
 # 検証記録
 
-0.5のnpm・Docs公開状態は[公開記録](release-v0.5.0.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)は公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存を確認しています。
+v0.6は公開前のローカル検証段階です。npm公開済みとは扱わず、公開版・integrity・対応commitは公開manifestが更新されるまで未確定です。v0.5のnpm・Docs公開状態は[公開記録](release-v0.5.0.json)と[0.5.1の記録](release-v0.5.1.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)はv0.5公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存はv0.5のベースラインとして保持しています。
 
-[初回の責務分離の検証](boundary-v0.5.0.json)は、本文表現をv3へ切り替える前のソースhashに対応する記録です。そこでのベクトル再利用結果を現在の移行条件に読み替えません。モデルを使う評価はAgent側が所有します。以下は0.4以前の実行記録であり、現行コードの説明や公開済み0.5の実績ではありません。
+[初回の責務分離の検証](boundary-v0.5.0.json)は、本文表現をv3へ切り替える前のソースhashに対応するv0.5記録です。そこでのベクトル再利用結果をv0.6の移行条件に読み替えません。モデルを使う評価はAgent側が所有します。以下は0.4以前またはv0.5の実行記録であり、v0.6の公開実績ではありません。
+
+v0.6では `test/evaluation.test.mjs` が `a = D(h)m + Tᵀa` の残差評価、丸め誤差上限、`maxEvaluationWork`、near-unit伝播の拒否を確認します。`test/activation.test.mjs` と `test/activation-integration.test.mjs` は、主体・policy・revisionの隔離、重複イベント、半減期、reset、時計後退、purge、Memory/SQLiteの原子性を確認します。候補providerの返却値は `PinnedRef[]` だけで、Coreが保存本文を再読して採点します。
 
 ## 過去の検証記録
 

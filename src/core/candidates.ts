@@ -1,8 +1,8 @@
 import type { CandidateProvider } from '../client/types.js';
 import { fail } from './util.js';
-import { words, seedScore } from './ranking.js';
+import { words } from './ranking.js';
 export { words, lexicalScore, cosine } from './ranking.js';
-/** Exhaustive local reference ranking within an explicit scan budget. Not ANN. */
+/** Exhaustive reference acquisition within an explicit scan budget. Not ANN. */
 export class ExactCandidateProvider implements CandidateProvider {
   readonly id = 'local-exact-lexical-vector-v1';
   async retrieve(
@@ -27,25 +27,20 @@ export class ExactCandidateProvider implements CandidateProvider {
             return { candidates, scanned, complete: false, after, pending, approximate: true };
           throw error;
         }
-        const bytes = Buffer.byteLength(repr.text);
-        if (!input.ledger.can({ maxCandidates: 1, maxBytes: bytes }))
-          return { candidates, scanned, complete: false, after, pending, approximate: true };
-        input.ledger.charge({ maxCandidates: 1, maxBytes: bytes });
         scanned++;
         after = revision.atomId;
         if (input.vectors.length && !repr.vectors) pending = true;
-        const score = scoreRepresentation(input, repr);
-        if (score > 0) candidates.push({ revision, score });
+        candidates.push({
+          kind: 'pinned',
+          atomId: revision.atomId,
+          revisionId: revision.revisionId,
+        });
       }
       if (page.length < count) {
         complete = true;
         break;
       }
     }
-    // Relevance first across the scanned scope, then stable IDs only for exact ties.
-    candidates.sort(
-      (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId, 'en'),
-    );
     return { candidates, scanned, complete, after, pending, approximate: !complete };
   }
 }
@@ -72,8 +67,8 @@ export class LexicalCandidateProvider implements CandidateProvider {
   }
 }
 
-/** Bucket-based semantic ingress plus lexical candidates. Final scoring uses
- * actual vectors; graph expansion and permissions remain in the memory client. */
+/** Bucket-based semantic ingress plus lexical candidates. Core scoring uses
+ * authoritative body vectors; graph expansion and permissions remain in the memory client. */
 export class HybridCandidateProvider implements CandidateProvider {
   readonly id = 'local-hybrid-buckets-v1';
   async retrieve(
@@ -99,42 +94,26 @@ export class HybridCandidateProvider implements CandidateProvider {
           if (error instanceof Error && 'code' in error && error.code === 'BUDGET_EXHAUSTED') break;
           throw error;
         }
-        const bytes = Buffer.byteLength(representation.text);
-        if (!input.ledger.can({ maxCandidates: 1, maxBytes: bytes })) break;
-        input.ledger.charge({ maxCandidates: 1, maxBytes: bytes });
         if (!representation.vectors) pending = true;
-        const score = scoreRepresentation(input, representation);
-        if (score > 0) candidates.push({ revision, score });
+        candidates.push({
+          kind: 'pinned',
+          atomId: revision.atomId,
+          revisionId: revision.revisionId,
+        });
       }
     const lexical = await new LexicalCandidateProvider().retrieve({
       ...input,
       vectors: [],
       maxScan: Math.max(0, input.maxScan - candidates.length),
     });
-    const merged = new Map(candidates.map((c) => [c.revision.revisionId, c]));
-    for (const candidate of lexical.candidates) {
-      const old = merged.get(candidate.revision.revisionId);
-      if (!old || candidate.score > old.score) merged.set(candidate.revision.revisionId, candidate);
-    }
+    const merged = new Map(candidates.map((c) => [c.revisionId, c]));
+    for (const candidate of lexical.candidates) merged.set(candidate.revisionId, candidate);
     return {
       ...lexical,
-      candidates: [...merged.values()].sort(
-        (a, b) => b.score - a.score || a.revision.atomId.localeCompare(b.revision.atomId),
-      ),
+      candidates: [...merged.values()],
       scanned: lexical.scanned + candidates.length,
       pending: pending || lexical.pending,
       approximate: true,
     };
   }
-}
-
-function scoreRepresentation(
-  input: Parameters<CandidateProvider['retrieve']>[0],
-  representation: { text: string; vectors?: readonly (readonly number[])[] },
-) {
-  const signals = input.signals ?? [
-    ...input.texts.map((text) => ({ kind: 'query' as const, text })),
-    ...input.vectors.map((vector) => ({ kind: 'signal' as const, vector })),
-  ];
-  return seedScore(representation.text, representation.vectors, signals, input.ranking);
 }

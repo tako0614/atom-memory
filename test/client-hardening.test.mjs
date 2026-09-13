@@ -141,7 +141,7 @@ test('A08/A32 index preparation advances and index changes expire search cursors
 });
 
 test('A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking', async () => {
-  const { memory: m } = fixture({ maxScan: 5 });
+  const { memory: m } = fixture({ retrieval: { maxScan: 5 } });
   for (let i = 0; i < 14; i++) await m.write(`candidate ${i}`);
   let page = await m.search('candidate', { limit: 2 });
   const seen = new Set(page.items.map((i) => i.ref));
