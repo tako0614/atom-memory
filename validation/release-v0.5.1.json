@@ -56,5 +56,12 @@
     "newEvaluation": false,
     "paidCalls": 0,
     "note": "Release checks do not establish semantic quality or billed cost."
-  }
+  },
+  "site": {
+    "url": "https://atom-memory.takos.jp",
+    "worker": "atom-memory-docs",
+    "published": false,
+    "readback": "pending"
+  },
+  "scope": "npm library and documentation publication; no Sakana production cutover"
 }
