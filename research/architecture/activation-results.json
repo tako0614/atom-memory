@@ -1,0 +1,24 @@
+{
+  "scope": "Algebra and counterexamples, not retrieval quality, biological fidelity, or a new public activation API.",
+  "cases": 120,
+  "maximumPprDifference": 9.342526752220692e-14,
+  "normalizedExample": {
+    "base": [0.5, 0.5],
+    "boosted": [0.5652173913043479, 0.4347826086956522]
+  },
+  "seedTruncationCounterexample": {
+    "m": [1, 0.9],
+    "b": [1, 1.17],
+    "base": [1, 0],
+    "boosted": [0, 1]
+  },
+  "exponentialAggregationDifference": 7.105427357601002e-15,
+  "arbitraryKernelCounterexample": {
+    "now": [1, 1],
+    "later": [0.5, 0.6666666666666666]
+  },
+  "sourceSha256": {
+    "src/core/ranking.ts": "fd94c0d7504a3467328871df066e123d5b9ebf0d5c9eb89fc5cefc4e59070d00",
+    "research/architecture/activation.mjs": "7523922ebff9e0f2f2657c9633f2b724622c3674db68803cf410b21ef6da3963"
+  }
+}
