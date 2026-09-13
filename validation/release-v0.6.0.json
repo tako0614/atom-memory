@@ -80,8 +80,116 @@
   "site": {
     "url": "https://atom-memory.takos.jp",
     "worker": "atom-memory-docs",
-    "published": false,
-    "readback": "pending"
+    "published": true,
+    "sourceCommit": "4d2e7b71c806464582d7b920ab768952f3c7927c",
+    "versionId": "160dd8f4-7727-4d5e-a73c-0a65b581ea74",
+    "deploymentId": "d78d7559-c1c4-4de5-a84c-47e0b2eca3d5",
+    "deployedAt": "2026-09-13T10:42:08.531127Z",
+    "build": "passed",
+    "dryRun": "passed",
+    "readback": "passed: 18 HTML pages and release manifest match build on custom domain and workers.dev",
+    "pages": [
+      {
+        "path": "/acceptance",
+        "verified": true,
+        "sha256": "acd9fab3dc880e93ab99200357b2cd1dab94aebb56d7fccffbf1addac1ff9137"
+      },
+      {
+        "path": "/adapters",
+        "verified": true,
+        "sha256": "3d3659985d72619239ebcf91639421b016d29f42bf4f5fb1faf7a234780c4a57"
+      },
+      {
+        "path": "/api",
+        "verified": true,
+        "sha256": "22f28fae2d438adaa7f766e3fff1eb31caf095b270ee14d36d4328dc0305c3b6"
+      },
+      {
+        "path": "/composition",
+        "verified": true,
+        "sha256": "0df9d5485a7e4d49501714a36729f61f018af4118a2085a1a3aa954160529c97"
+      },
+      {
+        "path": "/concepts",
+        "verified": true,
+        "sha256": "2d3e0ee46e313bf140f3e7eedaec709d34b78a93f3a395d1b3dbbccbbe831ab2"
+      },
+      {
+        "path": "/contracts",
+        "verified": true,
+        "sha256": "608330fcba187ffa021e6a4f2cb74eeaa00c98abb3edf2a1d3378aef444ea321"
+      },
+      {
+        "path": "/design-review",
+        "verified": true,
+        "sha256": "cb3996af6acf5f4cf6bdf04ee87204686bb02def8ecedaf5b2295a2bab18e70b"
+      },
+      {
+        "path": "/examples",
+        "verified": true,
+        "sha256": "7bd75d91c7a5d5f18c95252b12c6444de71f9dd96edb315d1e8d98ca0b8ad49e"
+      },
+      {
+        "path": "/guide",
+        "verified": true,
+        "sha256": "e4a8071604afa1f84af992a166279ba04ffc04b71def36219d7cde45e62ad7a8"
+      },
+      {
+        "path": "/history",
+        "verified": true,
+        "sha256": "a461f22f5ba058fe0c0d5906675c20e4c4af95dbef4b8078428ed571242eaa92"
+      },
+      {
+        "path": "/",
+        "verified": true,
+        "sha256": "2f3118b26ec92747ee69f8731f4c2541b452171de75b083e35306ea2c8f79265"
+      },
+      {
+        "path": "/migration-architecture",
+        "verified": true,
+        "sha256": "1b18046f9a5e21a6f93d7d5ccb11e8d9d84c76e0a0d3cd0dbdbad796b2c3dbd9"
+      },
+      {
+        "path": "/migration",
+        "verified": true,
+        "sha256": "2fc7ba2e22e9ad6630a1e330b2e7ecc18b7e3f3bbe371b422fded85a12d5f717"
+      },
+      {
+        "path": "/ranking",
+        "verified": true,
+        "sha256": "3706a0a5f42088b083e0270b7d08641be3216706a0d6ea140004d42ae10fe9cb"
+      },
+      {
+        "path": "/release",
+        "verified": true,
+        "sha256": "c8f90f358d0d958c67bf261b1b4d1d38219cac7d290e849f8b5d9977ea0f8760"
+      },
+      {
+        "path": "/runtime",
+        "verified": true,
+        "sha256": "d2a24f4379cf9bcc022f722e6fc88aa68f5ee287aae5a94ababdaedddd08f063"
+      },
+      {
+        "path": "/setup",
+        "verified": true,
+        "sha256": "1d1cebdb890d8a14a1aa45275df5b9742e221a6d594022f0154ccb2b3f1b2521"
+      },
+      {
+        "path": "/specification",
+        "verified": true,
+        "sha256": "ba007ce47f9ffdec970b7e14d6b9ab9fc889a86b9b85fb7ae4aec7fac037c92a"
+      },
+      {
+        "path": "/release.json",
+        "verified": true,
+        "sha256": "79d7faf5c6097e147bd12e23fac012ff9505fe5d32f310c1fca43ac0b88d75ee"
+      }
+    ],
+    "workersDev": {
+      "url": "https://atom-memory-docs.shoutatomiyama0614.workers.dev",
+      "pagesVerified": 19,
+      "passed": true
+    }
   },
   "sakana": {
     "sourceIntegration": "implemented in local working tree",
@@ -90,5 +198,6 @@
     "autoUse": "final model-visible memory and evidence acknowledged after successful provider response with durable replay",
     "regressions": "same-event chunked acknowledgement beyond 256 refs; partial acknowledgement retry; invocation-only usage charging passed"
   },
-  "scope": "npm library and documentation publication; no Sakana production cutover"
+  "scope": "npm library and documentation publication; no Sakana production cutover",
+  "verifiedAt": "2026-09-13T10:43:34.123664+00:00"
 }
