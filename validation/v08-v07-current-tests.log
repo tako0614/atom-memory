@@ -86,10 +86,10 @@ not ok 6 - memory V08-31 independent source survives ordinary relation purge
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -451,10 +451,10 @@ not ok 39 - memory V08-35 mixed legacy manifests preserve conservative deletion
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -474,10 +474,10 @@ not ok 40 - memory V08-36 failed and budgeted purge blocks reads until explicit 
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - false
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: false
@@ -572,10 +572,10 @@ not ok 47 - sqlite V08-31 independent source survives ordinary relation purge
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -937,10 +937,10 @@ not ok 80 - sqlite V08-35 mixed legacy manifests preserve conservative deletion
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -960,10 +960,10 @@ not ok 81 - sqlite V08-36 failed and budgeted purge blocks reads until explicit 
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + undefined
     - false
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: false

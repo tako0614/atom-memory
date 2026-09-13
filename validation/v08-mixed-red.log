@@ -15,12 +15,12 @@ test at test/v08.test.mjs:635:3
 ✖ memory mixed edit keeps fallback inputs without merging verified generations (20.312989ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
   + actual - expected
-  
+
     [
       'ref:1bff1948-5565-4540-9135-6bdb7ce9f43d',
   +   'ref:db5ab710-f78b-40db-9bb0-7b499efc6101'
     ]
-  
+
       at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:648:12)
       at async Test.run (node:internal/test_runner/test:1313:7)
       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
@@ -36,12 +36,12 @@ test at test/v08.test.mjs:635:3
 ✖ sqlite mixed edit keeps fallback inputs without merging verified generations (14.528773ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
   + actual - expected
-  
+
     [
       'ref:becf8600-2eb9-430e-b93c-47f6071935a2',
   +   'ref:1eaed8a9-21ae-48d5-b4fe-340715854c81'
     ]
-  
+
       at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:648:12)
       at async Test.run (node:internal/test_runner/test:1313:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {

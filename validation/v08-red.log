@@ -52,10 +52,10 @@ test at test/v08.test.mjs:45:3
 ✖ memory V08-31 independent source survives ordinary relation purge (2.013627ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
-  
+
   + undefined
   - true
-  
+
       at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:51:12)
       at async Test.run (node:internal/test_runner/test:1313:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
@@ -112,10 +112,10 @@ test at test/v08.test.mjs:45:3
 ✖ sqlite V08-31 independent source survives ordinary relation purge (2.958345ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
-  
+
   + undefined
   - true
-  
+
       at TestContext.<anonymous> (file:///root/dev/github/sakana/subprojects/atom-memory/test/v08.test.mjs:51:12)
       at async Test.run (node:internal/test_runner/test:1313:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
