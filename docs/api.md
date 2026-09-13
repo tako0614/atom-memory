@@ -57,7 +57,7 @@ if (page.cursor) {
 }
 ```
 
-`items` はAtom自身の本文との類似度と、明示的な役割付きリンクの伝播で並べた候補です。リンク先本文を親の検索表現へ暗黙に連結しません。関係Atomも自分の本文を持つ候補であり、必要なら `inspect` で根拠を調べられます。`score` は今回のqueryへの相対的な順位づけで、事実の信頼度や絶対的重要度を表す確率ではありません。本文一致、利用活性、構造伝播はCoreが一つの評価規則で合成します。[計算と設定](/ranking)を参照してください。
+`items` はAtom自身の本文との類似度と、明示的な役割付きリンクの伝播で並べた候補です。リンク先本文を親の検索表現へ暗黙に連結しません。関係Atomも自分の本文を持つ候補であり、必要なら `inspect` で根拠を調べられます。`score` は今回のqueryへの相対的な順位づけで、事実の信頼度や絶対的重要度を表す確率ではありません。本文一致、モデルの利用可能性、構造伝播はCoreが一つの評価規則で合成します。[計算と設定](/ranking)を参照してください。
 
 | オプション | 既定値 | 意味                                            |
 | ---------- | ------ | ----------------------------------------------- |
@@ -100,7 +100,7 @@ console.log(recalled.text); // モデルへ渡す記憶
 
 入力の `query`、`context`、`thought`、`observations` は任意です。取得できる文脈や観測を渡せば動きます。`thought` は明示的な作業中の推論テキスト、`signal` はホストが設定したエンコーダーからの検索信号です。意味のある入力が一つもなければ `INVALID_INPUT` になります。
 
-`read` は内容で候補を探し、関係を広げ、関連度と長さを見て今回の情報を選びます。同じ証拠への重複経路を整理し、`required` の依存は本文ごと含めます。同じ出典から作った異なる要約や、別人による同文の入力は、出典一致だけでは統合しません。
+`read` は現在の文脈で候補を探し、関係を広げ、関連度と長さを見て今回の情報を選びます。通常の自動readでは、アプリがその時点の可視文脈・観測を `context` / `observations` として渡します。固定した質問で明示的に探す場合は `search(query)` を使います。同じ証拠への重複経路を整理し、`required` の依存は本文ごと含めます。同じ出典から作った異なる要約や、別人による同文の入力は、出典一致だけでは統合しません。
 
 | オプション                 | 既定値   | 意味                                   |
 | -------------------------- | -------- | -------------------------------------- |
@@ -112,11 +112,11 @@ console.log(recalled.text); // モデルへ渡す記憶
 
 `text` は記憶の本文・参照・出典を JSON でシリアライズした領域です。`refs` と `sources` は今回採用した情報、`receipt` は入力と読取状態を追跡する記録です。関連する情報が少なければ短い結果になります。
 
-## 利用活性を記録する
+## 利用可能性を記録する
 
 `MemoryHost.recordUse(refs, binding, { eventId })` は、モデルへ実際に届けて成功したAtom参照を、現在の認証主体・policy・revisionの利用として記録します。`read` や `search` で候補に触れただけでは加算しません。アプリはモデル応答が成功した後にこのackを自動で呼び、モデルのツール呼び出しや人の承認を利用イベントにしません。
 
-戻り値は `{ acceptedAt, recorded, repeated }` です。同じ `eventId` の再送は `repeated` として無害に処理されます。利用量は7日を既定の半減期として減衰し、主体・policy・revisionごとに隔離されます。半減期を変更した保存状態では `STATE_INVALIDATED` になるため、明示的に `host.resetUse(binding)` を呼んで集計を消します。リセット後も重複防止用のイベントマーカーは残ります。`maxBoost` の変更だけではリセットしません。
+戻り値は `{ acceptedAt, recorded, repeated }` です。同じ `eventId` の再送は `repeated` として無害に処理されます。利用状態は選択した `AvailabilityModel` が更新し、主体・policy・revisionごとに隔離されます。既定の `adaptiveUse()` は初期半減期7日、最大半減期365日です。モデルの `id` または意味・パラメータが変わった保存状態では `STATE_INVALIDATED` になるため、明示的に `host.resetUse(binding)` を呼んで集計を消します。リセット後も重複防止用のイベントマーカーは残ります。
 
 ```ts
 const recalled = await memory.read({ context: '招待リンクの期限' });
@@ -125,6 +125,22 @@ if (response.ok) {
   host.recordUse(recalled.refs, binding, { eventId: response.eventId });
 }
 ```
+
+### 利用可能性モデル
+
+`activation.model` には `AvailabilityModel<S extends Json>` を指定できます。公開契約は次の三つだけです。
+
+```ts
+interface AvailabilityModel<S extends Json = Json> {
+  readonly id: string;
+  update(previous: S | undefined, acceptedAt: number): S;
+  value(state: S | undefined, now: number): number;
+}
+```
+
+`update` と `value` は同期的で副作用のない関数にします。状態は正規化JSONで1 KiB以下、戻り値は非負有限値でなければなりません。query、context、最終score、候補graph、全履歴はcallbackへ渡されません。例外、Promise、無効な状態、非有限値は操作を失敗させ、0へフォールバックしません。ライブラリがscope、原子性、dedup、purge、状態保存を所有します。
+
+既定モデルを明示する場合は `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` を使います。既定値は7日と365日です。旧0.6状態は読み出し時に正確に解釈され、readやイベント再送では書き換えられません。次の新しい受理イベントで新しい状態へ書き換えられます。
 
 同じ原資料・同じ版の逐語引用が重なる場合、本文は `evidence[].ranges[].text` に共有します。各 `memory` 項目の `quote: { ref, start, end, unit: 'utf8' }` が元の引用範囲を指します。離れた範囲は別要素と `omittedBefore` で表し、断片を一文に連結しません。`items` と `inspect` は元の内容を保持するため、モデルへは `text` を渡します。`items` 全体を追加すると共有前の引用が再送されます。
 

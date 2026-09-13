@@ -1,10 +1,22 @@
 # リリース
 
+**atom-memory 0.7.0は作業ツリー上の次期版で、npm・Docsへの公開前です。** 公開物のcommit・tag・integrity・サイトの読戻しは公開確認後に別の公開記録へ追加します。本番アプリの更新は含みません。
+
+## v0.7で受け入れる変更
+
+- `AvailabilityModel<S extends Json>` と `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` を公開します。`activation.model` の既定は `adaptiveUse()` です。`update` / `value` は同期的で、JSON状態は1 KiB以下、値は非負有限です。
+- 既定の状態は `{ mass, updatedAt, halfLifeMs }` です。受理イベントでは減衰したmassへ1を加えて1,000,000で上限を設け、保持率に応じて半減期を伸ばします。初期7日・最大365日は既定値で、脳の再現や経験的に最適なパラメータを主張しません。
+- モデルの `id` は設定identityです。意味やパラメータが変わるID不一致は `STATE_INVALIDATED` となり、対象scopeの `resetUse` を要求します。ライブラリがscope、atomicity、dedup、purgeを所有し、callbackへquery・context・score・graph・全履歴を渡しません。
+- 0.6のlegacy利用状態は読み出し時に正確にdecodeし、readやイベント再送で書き換えません。新しい受理イベントでだけadaptiveUse形式へrewriteします。旧半減期が365日を超えていても短くしません。v3のown-bodyベクトルは再エンコードしません。
+- 自動readは利用を記録せず、成功したモデル応答後のhost ackだけを `recordUse` として受理します。Schur合成・adaptive graph・削除依存の縮小は引き続き研究／将来検討で、0.7の公開契約には含めません。
+
+0.7.0の検証は、型・Memory/SQLite・状態上限・callback失敗伝播・モデルID失効・legacy遅延変換・旧cursor失効・ドキュメント例を対象にします。移行確認には `ATOM_V06_PACKAGE=/path/to/published-0.6.0-package node scripts/check-v06-migration.mjs` を使います。npm公開やサイトデプロイの状態はこのページから推測しません。
+
 **atom-memory 0.6.0をnpmへ公開しました。** v0.5の本文・版・出典・receipt・v3ベクトルと保存データを維持し、宣言的な `activation` / `retrieval`、利用ack、単一の線形評価器へ更新しています。設定と候補providerには破壊的変更があります。移行手順は[移行](/migration)を参照してください。
 
 npmのバージョン・integrity・対応commitは[公開manifest](/release.json)、サイトのデプロイと読戻しは[0.6.0の公開記録](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.6.0.json)で確認できます。[0.5.1](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.1.json)・[0.5.0](https://github.com/tako0614/atom-memory/blob/main/validation/release-v0.5.0.json)と、それ以前の記録も保持します。ライブラリとDocsの公開は、利用アプリの本番更新を含みません。
 
-## v0.6で受け入れる変更
+## v0.6で受け入れた変更（履歴）
 
 - `HostOptions.activation`（既定は半減期7日、最大増幅0.3、伝播0.5）と `HostOptions.retrieval` を追加しました。候補providerは `PinnedRef[]` だけを返し、Coreが保存本文を再読して評価します。
 - `host.recordUse(refs, binding, { eventId })` と `host.resetUse(binding)` を追加しました。成功したモデル応答後のackだけが主体・policy・revisionごとの利用集計を更新し、read/searchだけでは増えません。

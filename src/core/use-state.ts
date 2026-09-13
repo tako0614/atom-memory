@@ -1,9 +1,21 @@
-import type { AtomRevision } from '../contracts.js';
+import type { AtomRevision, Json } from '../contracts.js';
 import type { StorageAdapter } from '../adapters/storage.js';
 import { canonical, digest } from './util.js';
 
 /** Durable metadata for one scoped revision's accepted uses. */
 export interface UseStateRecord {
+  readonly format: typeof USE_STATE_FORMAT;
+  readonly subject: string;
+  readonly policy: string;
+  readonly revisionId: string;
+  readonly modelId: string;
+  readonly state: Json;
+  /** Host-owned last accepted transition time, independent of custom state. */
+  readonly updatedAt: number;
+}
+
+/** Published v0.6 fixed-decay aggregate, decoded lazily by adaptiveUse only. */
+export interface LegacyUseStateRecord {
   readonly subject: string;
   readonly policy: string;
   readonly revisionId: string;
@@ -30,6 +42,7 @@ interface UseIndexRecord {
 export const USE_STATE_PREFIX = 'sdk:use:state:';
 export const USE_EVENT_PREFIX = 'sdk:use:event:';
 export const USE_INDEX_PREFIX = 'sdk:use:index:';
+export const USE_STATE_FORMAT = 'atom-memory/use-state/v1' as const;
 
 const scopeDigest = (subject: string, policy: string): string =>
   digest(canonical([subject, policy]));
@@ -101,7 +114,10 @@ export function getUseEvent(
   return storage.metaGet<UseEventRecord>(useEventKey(subject, policy, revisionId, eventId));
 }
 
-export function deleteUseState(storage: StorageAdapter, state: UseStateRecord): void {
+export function deleteUseState(
+  storage: StorageAdapter,
+  state: Pick<UseStateRecord, 'subject' | 'policy' | 'revisionId'>,
+): void {
   const key = useStateKey(state.subject, state.policy, state.revisionId);
   storage.metaDelete(key);
   storage.metaDelete(useStateIndexKey(state.revisionId, key));

@@ -1,12 +1,12 @@
 # 検証記録
 
-**0.6.0はnpm公開済みです。** 対応commit・integrity・移行試験・サイトのデプロイと読戻しは[0.6.0の公開記録](release-v0.6.0.json)を参照してください。134件のテスト、16件の研究用テスト、16件の実行可能なドキュメント例と7件の出力照合、Node 22・24のCI、tarballと空キャッシュからのnpmインストールを確認しました。Sakanaのソース統合とprecheckも完了していますが、Bot本番切替は含みません。
+**0.7.0は作業ツリー上の次期版で、npm・Docsの公開前です。** 公開された0.6.0の対応commit・integrity・移行試験・サイトのデプロイと読戻しは[0.6.0の公開記録](release-v0.6.0.json)を参照してください。0.7の実装検証は、AvailabilityModelの同期callback・JSON状態上限・model ID失効、既定 `adaptiveUse` の間隔更新、0.6状態の遅延変換、旧cursor失効を追加対象にします。npm公開、サイトデプロイ、Sakana Bot本番切替はこの記録からは主張しません。
 
-v0.5のnpm・Docs公開状態は[公開記録](release-v0.5.0.json)と[0.5.1の記録](release-v0.5.1.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)はv0.5公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存はv0.5のベースラインとして保持しています。
+v0.5・v0.6のnpm・Docs公開状態は、それぞれ[公開記録](release-v0.5.0.json)、[0.5.1の記録](release-v0.5.1.json)、[0.6.0の記録](release-v0.6.0.json)を参照してください。[構造の洗練後の検証記録](refinement-v0.5.0.json)はv0.5公開前の検証です。own-body v3索引、staleの除外と伝播禁止、既定候補取得、Writerの入力依存は過去版のベースラインとして保持しています。
 
-[初回の責務分離の検証](boundary-v0.5.0.json)は、本文表現をv3へ切り替える前のソースhashに対応するv0.5記録です。そこでのベクトル再利用結果をv0.6の移行条件に読み替えません。モデルを使う評価はAgent側が所有します。以下は0.4以前またはv0.5の実行記録であり、v0.6の公開実績ではありません。
+[初回の責務分離の検証](boundary-v0.5.0.json)は、本文表現をv3へ切り替える前のソースhashに対応するv0.5記録です。そこでのベクトル再利用結果をv0.7の移行条件に読み替えません。モデルを使う評価はAgent側が所有します。以下は0.4以前またはv0.5の実行記録であり、0.7の公開実績ではありません。
 
-v0.6では `test/evaluation.test.mjs` が `a = D(h)m + Tᵀa` の残差評価、丸め誤差上限、`maxEvaluationWork`、near-unit伝播の拒否を確認します。`test/activation.test.mjs` と `test/activation-integration.test.mjs` は、主体・policy・revisionの隔離、重複イベント、半減期、reset、時計後退、purge、Memory/SQLiteの原子性を確認します。候補providerの返却値は `PinnedRef[]` だけで、Coreが保存本文を再読して採点します。
+0.6で導入した `test/evaluation.test.mjs` の残差評価、丸め誤差上限、`maxEvaluationWork`、near-unit伝播の拒否と、候補providerが `PinnedRef[]` だけを返す契約は継続します。0.7では `test/activation.test.mjs` と `test/activation-integration.test.mjs` に、AvailabilityModelの状態隔離、同期callback、1 KiB JSON上限、非有限値・Promise・例外の失敗、model ID不一致の `STATE_INVALIDATED`、既定 `adaptiveUse` のmass/H更新、0.6状態のread-only遅延decodeと次回recordUse時のrewriteを追加します。これらは公開完了や実モデルの意味品質を証明しません。
 
 ## 過去の検証記録
 

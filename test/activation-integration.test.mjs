@@ -97,7 +97,7 @@ test('warm context and graph corrections agree with cold evaluation within repor
   assert.ok(!warm.items.some((i) => i.ref === a.ref));
 });
 
-test('0.6 rejects retired scoring configuration instead of silently accepting it', (t) => {
+test('0.7 rejects retired scoring configuration instead of silently accepting it', (t) => {
   const f = fixture();
   t.after(() => f.storage.close());
   for (const options of [
@@ -105,6 +105,7 @@ test('0.6 rejects retired scoring configuration instead of silently accepting it
     { maxScan: 3 },
     { activation: { score: () => 1 } },
     { activation: { semantic: 1 } },
+    { activation: { halfLifeMs: 1000 } },
   ])
     assert.throws(() => new MemoryHost({ ...f.host.engine.options, ...options }), {
       code: 'INVALID_INPUT',
@@ -123,6 +124,87 @@ for (const adapter of ['memory', 'sqlite']) {
     });
     assert.equal(f.storage.metaEntries('sdk:use:').length, 0);
     assert.equal(f.host.recordUse([atom.ref], f.binding, { eventId: 'retry' }).recorded, 1);
+  });
+}
+
+test('engine identity uses availability model id without hashing function bodies', (t) => {
+  const f = fixture();
+  t.after(() => f.storage.close());
+  const model = (id, value) => ({ id, update: () => ({ uses: 1 }), value });
+  const first = new MemoryHost({
+    ...f.host.engine.options,
+    activation: { model: model('same-v1', () => 1) },
+  });
+  const second = new MemoryHost({
+    ...f.host.engine.options,
+    activation: { model: model('same-v1', () => 2) },
+  });
+  const changed = new MemoryHost({
+    ...f.host.engine.options,
+    activation: { model: model('other-v1', () => 1) },
+  });
+  assert.equal(first.engine.config, second.engine.config);
+  assert.notEqual(first.engine.config, changed.engine.config);
+  assert.equal(
+    first.engine.indexConfig,
+    changed.engine.indexConfig,
+    'v3 vector identity is unchanged',
+  );
+});
+
+for (const adapter of ['memory', 'sqlite']) {
+  test(`${adapter}: custom value failures are INVALID_INPUT instead of a zero fallback`, async (t) => {
+    const { SqliteStorage } = await import('../dist/adapters/sqlite.js');
+    const f = fixture(
+      adapter === 'sqlite'
+        ? {
+            storage: new SqliteStorage(':memory:'),
+            activation: {
+              model: {
+                id: 'value-boundary-v1',
+                update: () => ({ uses: 1 }),
+                value: (state) => state?.uses ?? 0,
+              },
+              propagation: 0,
+            },
+          }
+        : {
+            activation: {
+              model: {
+                id: 'value-boundary-v1',
+                update: () => ({ uses: 1 }),
+                value: (state) => state?.uses ?? 0,
+              },
+              propagation: 0,
+            },
+          },
+    );
+    t.after(() => f.storage.close());
+    const item = await f.memory.write('value boundary');
+    f.host.recordUse([item.ref], f.binding, { eventId: 'value-state' });
+    for (const value of [
+      () => {
+        throw new Error('value failed');
+      },
+      async () => 1,
+      () => -1,
+      () => Infinity,
+    ]) {
+      const host = new MemoryHost({
+        ...f.host.engine.options,
+        activation: {
+          model: {
+            id: 'value-boundary-v1',
+            update: () => ({ uses: 1 }),
+            value,
+          },
+          propagation: 0,
+        },
+      });
+      await assert.rejects(host.connect(f.binding).search('value boundary', { budget }), {
+        code: 'INVALID_INPUT',
+      });
+    }
   });
 }
 

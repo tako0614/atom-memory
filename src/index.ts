@@ -23,6 +23,7 @@ export {
 } from './core/budget.js';
 export { defaultLimits, type Limits } from './core/validation.js';
 export { logical, pin, origin, sourceCoverage } from './core/helpers.js';
+export { adaptiveUse } from './core/availability.js';
 export { MemoryStorage } from './adapters/memory.js';
 export type {
   StorageAdapter,

@@ -1,29 +1,35 @@
-# v0.6への移行
+# v0.7への移行
 
-v0.6は v0.5 からの公開契約の更新です。Atomの本文・ID・revision・出典・receipt・links、v3のown-bodyベクトルと保存データは保持します。認証・policyを含む既存の保存を消去して移行する必要はありません。cursorは評価設定に束縛されるため、版の更新時に失効させて取り直します。
+v0.7は v0.6 から利用可能性の公開契約を更新します。Atomの本文・ID・revision・出典・receipt・links、v3のown-bodyベクトルと保存データは保持します。認証・policyを含む既存の保存を消去して移行する必要はありません。設定identityが変わるため古いcursorは失効させて取り直します。npmとDocsの公開はこの作業ツリーの検証後に別途確認します。
 
 ## まず確認すること
 
-バックアップを取り、旧版と新版のプロセスを同じ保存先へ同時に書き込まないでください。移行後は次を実行して、旧0.5設定・型・候補providerの差分を確認します。
+バックアップを取り、旧版と新版のプロセスを同じ保存先へ同時に書き込まないでください。移行後は次を実行して、旧0.6設定・型・候補providerの差分を確認します。
 
 ```sh
-ATOM_V05_PACKAGE=/path/to/published-0.5.1-package node scripts/check-v05-migration.mjs
+ATOM_V06_PACKAGE=/path/to/published-0.6.0-package node scripts/check-v06-migration.mjs
 ```
 
-このスクリプトは保存データを書き換えません。公開npmのmanifestや過去の検証記録は、このローカル移行結果から更新しません。
+このスクリプトは利用者の既存DBを書き換えません。公開0.6.0パッケージで一時SQLite fixtureを作成・再オープンし、本文・版・v3ベクトル・legacy利用状態を読み、0.7の状態decodeと次回recordUse時のrewrite、古いcursorの失効を確認します。公開npmのmanifestや過去の検証記録は、このローカル移行結果から更新しません。
 
 ## 公開APIと設定の変更
 
-| v0.5の利用                                     | v0.6での扱い                                                                                             |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `RankingOptions` / `ScoreBreakdown`            | 削除。`activation` と `retrieval` を宣言し、Coreの単一評価器が順位を計算する                             |
-| `HostOptions.ranking` / トップレベル `maxScan` | 削除。候補・グラフ上限は `HostOptions.retrieval.maxScan` などへ移す                                      |
-| providerが返す score・本文・関係重み           | 削除。`CandidateProvider` は `PinnedRef[]` だけを返し、Coreが保存本文を再読して採点する                  |
-| 独自のscore callback・任意decay callback       | 削除。本文一致、利用活性、`Tᵀ` 伝播を `a = D(h)m + Tᵀa` で評価する                                       |
-| 候補取得の設定                                 | `retrieval: { maxSeeds, maxNodes, maxEdges, maxScan, depth }` へ移す                                     |
-| 利用イベントの外部補正                         | `host.recordUse(refs, binding, { eventId })` を成功したモデル応答後に呼ぶ。read/searchだけでは加算しない |
+| v0.6の利用                                                      | v0.7での扱い                                                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `activation.halfLifeMs`                                         | 削除。`activation.model` の既定は `adaptiveUse()`。初期半減期・最大半減期は `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` で設定する |
+| 固定の利用状態 `h` / 半減期                                     | `AvailabilityModel<S extends Json>` の `{ id, update, value }` へ移行する。既定状態はmass・時刻・半減期を持つ                              |
+| 利用状態の互換性                                                | `model.id` を状態の設定identityに含める。同じIDは継続し、異なるIDは `STATE_INVALIDATED` としてscope resetを要求する                        |
+| 0.6のlegacy利用状態                                             | readでは正確にdecodeし、イベント再送では書き換えない。新しいrecordUseでだけadaptiveUse形式へrewriteする                                    |
+| `retrieval`、`PinnedRef[]` provider、埋め込み80%・語彙20%の評価 | 0.6の契約を維持する。`b = m(1 + βu/(1+u))`、`a = b + Tᵀa` の評価境界も維持する                                                             |
+| 旧cursor                                                        | 0.7のmodel/config identityに束縛されるため `CURSOR_EXPIRED`。新しい検索から開始する                                                        |
 
-`recordUse` の戻り値は `{ acceptedAt, recorded, repeated }` です。利用状態は認証主体・policy・revisionごとに隔離され、同じ `eventId` の再送は一度だけ反映します。`host.resetUse(binding)` は現在の主体と許可policyの集計を消しますが、重複防止マーカーは残します。半減期を変更して `STATE_INVALIDATED` になった場合は、明示的に `resetUse` を呼んでから読み直してください。`maxBoost` の変更だけではリセットしません。
+`recordUse` の戻り値は `{ acceptedAt, recorded, repeated }` です。利用状態は認証主体・policy・revisionごとに隔離され、同じ `eventId` の再送は一度だけ反映します。`host.resetUse(binding)` は現在の主体と許可policyの集計を消しますが、重複防止マーカーは残します。モデルの `id` やパラメータを変更して `STATE_INVALIDATED` になった場合は、明示的に `resetUse` を呼んでから読み直してください。`maxBoost` や伝播の変更だけでは利用状態をリセットしませんが、設定identityが変わるためcursorは失効します。
+
+### AvailabilityModelと既定モデル
+
+`activation.model` は `AvailabilityModel<S extends Json>` です。`update(previous, acceptedAt)` と `value(state, now)` は同期的・純粋で、状態は正規化JSON 1 KiB以下、値は非負有限でなければなりません。query・context・score・graph・全履歴はcallbackへ渡されません。例外、Promise、無効な状態、非有限値は操作を失敗させます。ライブラリはscope、atomicity、dedup、purgeとモデルIDの状態照合を所有します。
+
+既定の `adaptiveUse({ initialHalfLifeMs, maxHalfLifeMs })` は、初期7日・最大365日で `{ mass, updatedAt, halfLifeMs }` を保持します。イベント時に減衰したmassへ1を加えて1,000,000で上限を設け、保持率に応じて半減期を伸ばします。legacyの0.6状態は `mass=h`、`updatedAt`、旧半減期を読み出し時に正確に解釈します。旧半減期が新しい上限を超えていても短くしません。readや古いイベントの再送は状態を書き換えず、イベントを再生しません。新しい受理イベントが来たときだけadaptiveUseの形式へ書き換えます。
 
 アプリのモデル実行ループは引き続きアプリが所有します。モデルproviderから成功応答を受けた経路が、モデルへ渡したrefsを自動でackします。モデルのツール呼び出しや人の承認を利用イベントとして待つAPIはありません。
 
@@ -37,9 +43,9 @@ v3の表現は各Atom自身の本文から作られ、既存の互換なベク�
 
 ## v0.5の研究・移行データを残す範囲
 
-v0.5で行った own-body v3、stale除外、既定候補入口、Writer入力依存の検証記録は歴史的なベースラインとして保持します。v0.5のSchur合成評価、PPRの比較、保存済み埋め込みの意味評価は研究資料であり、v0.6 runtimeの実装や公開品質の証明ではありません。過去のJSON・release manifest・検証結果を v0.6 の実績として上書きしないでください。
+v0.5・v0.6で行った own-body v3、stale除外、既定候補入口、Writer入力依存の検証記録は歴史的なベースラインとして保持します。Schur合成評価、PPRの比較、保存済み埋め込みの意味評価は研究資料であり、v0.7 runtimeの実装や公開品質の証明ではありません。過去のJSON・release manifest・検証結果を v0.7 の実績として上書きしないでください。
 
-0.4以前からの移行で必要だった本文表現v3、既知のlegacy vector設定、旧checkpointの扱いは v0.5 の検証記録で確認します。既知のlegacy行をv3へ再利用できるのは、旧設定ID・encoder・dimensions・policy・own-body hash・vectorsが一致する場合だけです。リンク先本文を混ぜた旧行は再埋め込みし、旧cursor/checkpointをコピーしません。v3の `prepareIndex` はcurrent headを、`updateIndex` はsequence 0からの変更feedをscopeごとにdrainします。v0.6ではこの保存・索引境界を引き継ぎ、評価設定と利用状態だけを追加します。
+0.4以前からの移行で必要だった本文表現v3、既知のlegacy vector設定、旧checkpointの扱いは v0.5 の検証記録で確認します。既知のlegacy行をv3へ再利用できるのは、旧設定ID・encoder・dimensions・policy・own-body hash・vectorsが一致する場合だけです。リンク先本文を混ぜた旧行は再埋め込みし、旧cursor/checkpointをコピーしません。v3の `prepareIndex` はcurrent headを、`updateIndex` はsequence 0からの変更feedをscopeごとにdrainします。v0.7ではこの保存・索引境界を引き継ぎ、利用可能性モデルと状態identityだけを追加します。既存v3ベクトルは再エンコードしません。
 
 ## Sakanaとの接続
 

@@ -204,9 +204,24 @@ export interface Candidate {
   readonly score: number;
 }
 export type SignalKind = 'query' | 'context' | 'thought' | 'observations' | 'signal';
-/** Declarative inputs to one activation rule; no custom scoring callbacks. */
+/** Host-owned, synchronous availability state transition and value model. */
+export interface AvailabilityModel<S extends Json = Json> {
+  readonly id: string;
+  update(previous: S | undefined, acceptedAt: number): S;
+  value(state: S | undefined, now: number): number;
+}
+export type AdaptiveUseState = {
+  readonly mass: number;
+  readonly updatedAt: number;
+  readonly halfLifeMs: number;
+};
+export interface AdaptiveUseOptions {
+  readonly initialHalfLifeMs?: number;
+  readonly maxHalfLifeMs?: number;
+}
+/** Declarative activation inputs plus one host-trusted availability model. */
 export interface ActivationOptions {
-  readonly halfLifeMs?: number;
+  readonly model?: AvailabilityModel;
   readonly maxBoost?: number;
   readonly propagation?: number;
   readonly relations?: Readonly<

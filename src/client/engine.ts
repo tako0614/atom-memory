@@ -125,7 +125,7 @@ export class Engine {
       if (options[key] !== undefined && (!Number.isSafeInteger(options[key]) || options[key]! < 0))
         fail('INVALID_INPUT', `Invalid ${key}`);
     if ('ranking' in options || 'maxScan' in options)
-      fail('INVALID_INPUT', 'Use activation and retrieval options in 0.6');
+      fail('INVALID_INPUT', 'Use activation and retrieval options');
     this.options = {
       ...options,
       activation: activationOptions(options.activation),
@@ -181,14 +181,20 @@ export class Engine {
     );
   }
   get config() {
+    const activation = activationOptions(this.options.activation);
     return digest(
       canonical({
         index: this.indexConfig,
         provider: this.provider.id,
         tokenizer: this.tokenizer.id,
-        activation: this.options.activation,
+        activation: {
+          model: activation.model.id,
+          maxBoost: activation.maxBoost,
+          propagation: activation.propagation,
+          relations: activation.relations,
+        },
         retrieval: this.options.retrieval,
-        version: 6,
+        version: 7,
       }),
     );
   }

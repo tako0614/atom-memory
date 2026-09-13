@@ -1,7 +1,6 @@
 import type { ActivationOptions, RetrievalOptions, RetrievalSignal } from '../client/types.js';
+import { adaptiveUse, normalizeAvailabilityModel } from './availability.js';
 import { fail } from './util.js';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function record(value: unknown, label: string): void {
   if (value === null || typeof value !== 'object' || Array.isArray(value))
@@ -29,11 +28,9 @@ export function activationOptions(options: ActivationOptions = {}) {
   record(options, 'activation options');
   known(
     options as Record<string, unknown>,
-    ['halfLifeMs', 'maxBoost', 'propagation', 'relations'],
+    ['model', 'maxBoost', 'propagation', 'relations'],
     'activation',
   );
-  const halfLifeMs = nonnegative(options.halfLifeMs ?? 7 * DAY_MS, 'Half-life');
-  if (halfLifeMs === 0) fail('INVALID_INPUT', 'Half-life must be positive');
   const propagation = nonnegative(options.propagation ?? 0.5, 'Propagation');
   if (propagation >= 1) fail('INVALID_INPUT', 'Propagation must be below one');
   const relationInput = options.relations ?? {};
@@ -54,7 +51,7 @@ export function activationOptions(options: ActivationOptions = {}) {
     });
   }
   return {
-    halfLifeMs,
+    model: normalizeAvailabilityModel(options.model ?? adaptiveUse()),
     maxBoost: nonnegative(options.maxBoost ?? 0.3, 'Maximum boost'),
     propagation,
     relations,

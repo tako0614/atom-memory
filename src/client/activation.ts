@@ -1,8 +1,14 @@
-import type { AtomRevision } from '../contracts.js';
-import type { ClientBinding, AtomRef, UseResult } from './types.js';
+import type { AtomRevision, Json } from '../contracts.js';
+import type { AvailabilityModel, ClientBinding, AtomRef, UseResult } from './types.js';
 import type { Session, Engine, RefEntry } from './engine.js';
 import type { Principal } from '../core/authority.js';
 import { activationOptions } from '../core/ranking.js';
+import {
+  availabilityState,
+  isAdaptiveUse,
+  updateAvailability,
+  valueAvailability,
+} from '../core/availability.js';
 import { canonical, fail, validId } from '../core/util.js';
 import {
   deleteUseState,
@@ -10,84 +16,158 @@ import {
   getUseState,
   putUseEvent,
   putUseState,
+  USE_STATE_FORMAT,
+  type LegacyUseStateRecord,
   type UseEventRecord,
   type UseStateRecord,
   useScopePrefix,
 } from '../core/use-state.js';
 
-function stateRecord(value: unknown): UseStateRecord | undefined {
+type StoredUseState =
+  | { readonly kind: 'current'; readonly record: UseStateRecord }
+  | { readonly kind: 'legacy'; readonly record: LegacyUseStateRecord };
+
+function invalidState(message = 'Invalid use state'): never {
+  return fail('STATE_INVALIDATED', message);
+}
+
+/** Copy a metadata record without invoking accessors or `toJSON`. */
+function dataRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) invalidState();
+  let prototype: object | null;
+  let keys: readonly PropertyKey[];
+  let descriptors: PropertyDescriptorMap;
+  try {
+    prototype = Object.getPrototypeOf(value);
+    keys = Reflect.ownKeys(value);
+    descriptors = Object.getOwnPropertyDescriptors(value);
+  } catch {
+    return invalidState();
+  }
+  if (prototype !== Object.prototype && prototype !== null) invalidState();
+  const output: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (typeof key !== 'string') invalidState();
+    const descriptor = descriptors[key];
+    if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) invalidState();
+    Object.defineProperty(output, key, {
+      value: descriptor.value,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+  }
+  return output;
+}
+
+function identifier(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && Buffer.byteLength(value) <= 512;
+}
+
+function timestamp(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function stateRecord(value: unknown): StoredUseState | undefined {
   if (value === undefined) return undefined;
-  if (!value || typeof value !== 'object') fail('STATE_INVALIDATED');
-  const state = value as Partial<UseStateRecord>;
-  const halfLifeMs = state.halfLifeMs;
-  const updatedAt = state.updatedAt;
-  const h = state.h;
+  const state = dataRecord(value);
+  if (Object.hasOwn(state, 'format')) {
+    if (
+      state.format !== USE_STATE_FORMAT ||
+      Reflect.ownKeys(state).some(
+        (key) =>
+          typeof key !== 'string' ||
+          !['format', 'subject', 'policy', 'revisionId', 'modelId', 'state', 'updatedAt'].includes(
+            key,
+          ),
+      ) ||
+      !identifier(state.subject) ||
+      !identifier(state.policy) ||
+      !identifier(state.revisionId) ||
+      !identifier(state.modelId) ||
+      !Object.hasOwn(state, 'state') ||
+      !timestamp(state.updatedAt)
+    )
+      invalidState();
+    return { kind: 'current', record: state as unknown as UseStateRecord };
+  }
   if (
-    typeof state.subject !== 'string' ||
-    typeof state.policy !== 'string' ||
-    typeof state.revisionId !== 'string' ||
-    typeof halfLifeMs !== 'number' ||
-    !Number.isFinite(halfLifeMs) ||
-    halfLifeMs <= 0 ||
-    typeof updatedAt !== 'number' ||
-    !Number.isSafeInteger(updatedAt) ||
-    updatedAt < 0 ||
-    typeof h !== 'number' ||
-    !Number.isFinite(h) ||
-    h < 0
+    Reflect.ownKeys(state).some(
+      (key) =>
+        typeof key !== 'string' ||
+        !['subject', 'policy', 'revisionId', 'halfLifeMs', 'updatedAt', 'h'].includes(key),
+    ) ||
+    !identifier(state.subject) ||
+    !identifier(state.policy) ||
+    !identifier(state.revisionId) ||
+    typeof state.halfLifeMs !== 'number' ||
+    !Number.isFinite(state.halfLifeMs) ||
+    state.halfLifeMs <= 0 ||
+    !timestamp(state.updatedAt) ||
+    typeof state.h !== 'number' ||
+    !Number.isFinite(state.h) ||
+    state.h < 0
   )
-    fail('STATE_INVALIDATED');
-  return state as UseStateRecord;
+    invalidState();
+  return { kind: 'legacy', record: state as unknown as LegacyUseStateRecord };
 }
 
 function eventRecord(value: unknown): UseEventRecord | undefined {
   if (value === undefined) return undefined;
-  if (!value || typeof value !== 'object') fail('STATE_INVALIDATED');
-  const event = value as Partial<UseEventRecord>;
-  const acceptedAt = event.acceptedAt;
+  const event = dataRecord(value);
   if (
-    typeof event.subject !== 'string' ||
-    typeof event.policy !== 'string' ||
-    typeof event.revisionId !== 'string' ||
-    typeof event.eventId !== 'string' ||
-    typeof acceptedAt !== 'number' ||
-    !Number.isSafeInteger(acceptedAt) ||
-    acceptedAt < 0
+    Reflect.ownKeys(event).some(
+      (key) =>
+        typeof key !== 'string' ||
+        !['subject', 'policy', 'revisionId', 'eventId', 'acceptedAt'].includes(key),
+    ) ||
+    !identifier(event.subject) ||
+    !identifier(event.policy) ||
+    !identifier(event.revisionId) ||
+    !identifier(event.eventId) ||
+    !timestamp(event.acceptedAt)
   )
-    fail('STATE_INVALIDATED');
-  return event as UseEventRecord;
-}
-
-function checkHalfLife(state: UseStateRecord | undefined, halfLifeMs: number): void {
-  if (state && state.halfLifeMs !== halfLifeMs) {
-    fail('STATE_INVALIDATED', 'Activation half-life changed; resetUse is required');
-  }
+    invalidState();
+  return event as unknown as UseEventRecord;
 }
 
 function checkStateScope(
-  state: UseStateRecord | undefined,
+  state: StoredUseState | undefined,
   subject: string,
   policy: string,
   revisionId: string,
 ): void {
   if (
     state &&
-    (state.subject !== subject || state.policy !== policy || state.revisionId !== revisionId)
+    (state.record.subject !== subject ||
+      state.record.policy !== policy ||
+      state.record.revisionId !== revisionId)
   )
-    fail('STATE_INVALIDATED');
+    invalidState();
 }
 
-function decay(state: UseStateRecord | undefined, at: number, halfLifeMs: number): number {
-  if (!state) return 0;
-  checkHalfLife(state, halfLifeMs);
-  const elapsed = Math.max(0, at - state.updatedAt);
-  const value = state.h * 2 ** (-elapsed / halfLifeMs);
-  if (!Number.isFinite(value) || value < 0) fail('STATE_INVALIDATED');
-  return value;
+function checkModel(state: StoredUseState | undefined, model: AvailabilityModel): void {
+  if (!state) return;
+  if (state.kind === 'current') {
+    if (state.record.modelId !== model.id)
+      invalidState('Availability model changed; resetUse is required');
+  } else if (!isAdaptiveUse(model)) {
+    invalidState('Legacy use state requires adaptiveUse; resetUse is required');
+  }
 }
 
-function validIdentifier(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0 && Buffer.byteLength(value) <= 512;
+function previousState(state: StoredUseState | undefined): Json | undefined {
+  if (!state) return undefined;
+  if (state.kind === 'current') return availabilityState(state.record.state);
+  return availabilityState({
+    mass: state.record.h,
+    updatedAt: state.record.updatedAt,
+    halfLifeMs: state.record.halfLifeMs,
+  });
+}
+
+function stateUpdatedAt(state: StoredUseState | undefined): number | undefined {
+  return state?.record.updatedAt;
 }
 
 function recordEntry(
@@ -102,12 +182,12 @@ function recordEntry(
   const entry = engine.storage.metaGet<RefEntry>(`sdk:ref:${ref}`);
   if (
     !entry ||
-    !validIdentifier(entry.subject) ||
-    !validIdentifier(entry.policy) ||
+    !identifier(entry.subject) ||
+    !identifier(entry.policy) ||
     !entry.target ||
     entry.target.kind !== 'pinned' ||
-    !validIdentifier(entry.target.atomId) ||
-    !validIdentifier(entry.target.revisionId)
+    !identifier(entry.target.atomId) ||
+    !identifier(entry.target.revisionId)
   )
     fail('INVALID_REF');
   if (entry.overlay) fail('INVALID_REF', 'Tentative references cannot record use');
@@ -142,9 +222,10 @@ export function recordUse(
   const session = engine.session(binding);
   const principal = session.principal;
   const policies = engine.policies(binding, principal);
-  const result = engine.storage.transaction(() => {
+  return engine.storage.transaction(() => {
     const config = activationOptions(engine.options.activation);
-    const acceptedAt = Date.now();
+    const observedAt = Date.now();
+    if (!timestamp(observedAt)) fail('INVALID_INPUT', 'Invalid accepted-use time');
     engine.check(session);
     const unique = new Map<string, { subject: string; policy: string; revision: AtomRevision }>();
     for (const ref of refs) {
@@ -158,15 +239,15 @@ export function recordUse(
       );
       unique.set(`${target.policy}\u0000${target.revision.revisionId}`, target);
     }
-    let recorded = 0;
-    let repeated = 0;
-    for (const target of unique.values()) {
+    let acceptedAt = observedAt;
+    const entries = [...unique.values()].map((target) => {
       engine.check(session);
       const current = stateRecord(
         getUseState(engine.storage, target.subject, target.policy, target.revision.revisionId),
       );
       checkStateScope(current, target.subject, target.policy, target.revision.revisionId);
-      checkHalfLife(current, config.halfLifeMs);
+      checkModel(current, config.model);
+      acceptedAt = Math.max(acceptedAt, stateUpdatedAt(current) ?? acceptedAt);
       const marker = eventRecord(
         getUseEvent(
           engine.storage,
@@ -176,56 +257,53 @@ export function recordUse(
           eventId,
         ),
       );
-      if (marker) {
-        if (
-          marker.subject !== target.subject ||
+      if (
+        marker &&
+        (marker.subject !== target.subject ||
           marker.policy !== target.policy ||
           marker.revisionId !== target.revision.revisionId ||
-          marker.eventId !== eventId
-        )
-          fail('STATE_INVALIDATED');
+          marker.eventId !== eventId)
+      )
+        invalidState();
+      return { target, current, marker };
+    });
+    let recorded = 0;
+    let repeated = 0;
+    for (const { target, current, marker } of entries) {
+      engine.check(session);
+      if (marker) {
         repeated++;
         continue;
       }
-      const updatedAt = Math.max(acceptedAt, current?.updatedAt ?? acceptedAt);
-      const h = decay(current, updatedAt, config.halfLifeMs) + 1;
-      if (!Number.isFinite(h)) fail('LIMIT_EXCEEDED');
+      session.ledger.charge({ maxEvaluationWork: 1 });
+      const state = updateAvailability(config.model, previousState(current), acceptedAt);
       const next: UseStateRecord = {
+        format: USE_STATE_FORMAT,
         subject: target.subject,
         policy: target.policy,
         revisionId: target.revision.revisionId,
-        halfLifeMs: config.halfLifeMs,
-        updatedAt,
-        h,
+        modelId: config.model.id,
+        state,
+        updatedAt: acceptedAt,
       };
-      putUseState(engine.storage, next);
-      putUseEvent(engine.storage, {
+      const event: UseEventRecord = {
         subject: target.subject,
         policy: target.policy,
         revisionId: target.revision.revisionId,
         eventId,
         acceptedAt,
-      });
-      // Charge actual metadata written/read, keeping use recording within the
-      // same operation budget and making large hostile batches fail atomically.
+      };
+      putUseState(engine.storage, next);
+      putUseEvent(engine.storage, event);
+      // Charge actual bounded metadata output. A late failure rolls back every
+      // durable state and marker write in this batch.
       session.ledger.charge({
-        maxBytes:
-          Buffer.byteLength(canonical(next)) +
-          Buffer.byteLength(
-            canonical({
-              subject: target.subject,
-              policy: target.policy,
-              revisionId: target.revision.revisionId,
-              eventId,
-              acceptedAt,
-            }),
-          ),
+        maxBytes: Buffer.byteLength(canonical(next)) + Buffer.byteLength(canonical(event)),
       });
       recorded++;
     }
     return { acceptedAt, recorded, repeated };
   });
-  return result;
 }
 
 /** Clear only the caller's scoped activation aggregates; event deduplication remains. */
@@ -235,13 +313,17 @@ export function resetUse(engine: Engine, binding: ClientBinding): void {
   engine.storage.transaction(() => {
     engine.check(session);
     for (const policy of policies) {
-      for (const [, raw] of engine.storage.metaEntries<UseStateRecord>(
+      for (const [, raw] of engine.storage.metaEntries<unknown>(
         useScopePrefix(session.principal.subject, policy),
       )) {
         const state = stateRecord(raw);
-        if (!state || state.subject !== session.principal.subject || state.policy !== policy)
+        if (
+          !state ||
+          state.record.subject !== session.principal.subject ||
+          state.record.policy !== policy
+        )
           continue;
-        deleteUseState(engine.storage, state);
+        deleteUseState(engine.storage, state.record);
       }
     }
   });
@@ -258,11 +340,13 @@ export function snapshotUse(
 ): { at: number; boosts: number[] } {
   if (!Array.isArray(nodes)) fail('INVALID_INPUT');
   const policies = engine.policies(s.binding, s.principal);
-  const snapshot = engine.storage.transaction(() => {
+  return engine.storage.transaction(() => {
     const config = activationOptions(engine.options.activation);
-    const at = Date.now();
+    const observedAt = Date.now();
+    if (!timestamp(observedAt)) fail('INVALID_INPUT', 'Invalid availability evaluation time');
     engine.check(s);
-    const boosts = nodes.map((node) => {
+    let at = observedAt;
+    const entries = nodes.map((node) => {
       engine.check(s);
       if (!node || typeof node !== 'object') fail('INVALID_SCHEMA');
       if (!policies.includes(node.policyId) || !s.principal.readPolicies.includes(node.policyId))
@@ -272,13 +356,23 @@ export function snapshotUse(
         getUseState(engine.storage, s.principal.subject, node.policyId, node.revisionId),
       );
       checkStateScope(current, s.principal.subject, node.policyId, node.revisionId);
-      checkHalfLife(current, config.halfLifeMs);
-      const metadataBytes = Buffer.byteLength(canonical(current ?? null));
+      checkModel(current, config.model);
+      const state = previousState(current);
+      at = Math.max(at, stateUpdatedAt(current) ?? at);
+      const metadataBytes = Buffer.byteLength(
+        canonical(current === undefined ? null : current.record),
+      );
       s.ledger.charge({ maxBytes: metadataBytes });
-      const h = decay(current, at, config.halfLifeMs);
-      return 1 + config.maxBoost * (h / (1 + h));
+      return state;
+    });
+    const boosts = entries.map((state) => {
+      engine.check(s);
+      s.ledger.charge({ maxEvaluationWork: 1 });
+      const availability = valueAvailability(config.model, state, at);
+      const boost = 1 + config.maxBoost * (availability / (1 + availability));
+      if (!Number.isFinite(boost) || boost < 0) fail('INVALID_INPUT', 'Invalid availability boost');
+      return boost;
     });
     return { at, boosts };
   });
-  return snapshot;
 }

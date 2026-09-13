@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BudgetLedger, defaultBudget } from '../dist/core/budget.js';
 import { evaluateActivation } from '../dist/core/evaluation.js';
+import { adaptiveUse } from '../dist/core/availability.js';
 import { activationOptions, cosine, retrievalOptions, seedScore } from '../dist/core/ranking.js';
 
 function evaluate(seeds, edges, options = {}) {
@@ -261,9 +262,11 @@ test('stable scaling accepts huge finite weights and values, while unprovable in
   );
 });
 
-test('0.6 option parsing and fixed seed scoring reject legacy or nonfinite knobs', () => {
-  assert.deepEqual(activationOptions(), {
-    halfLifeMs: 7 * 24 * 60 * 60 * 1000,
+test('option parsing and fixed seed scoring reject legacy or nonfinite knobs', () => {
+  const { model, ...activationDefaults } = activationOptions();
+  assert.equal(model.id, adaptiveUse().id);
+  assert.equal(model.value(undefined, 0), 0);
+  assert.deepEqual(activationDefaults, {
     maxBoost: 0.3,
     propagation: 0.5,
     relations: {},

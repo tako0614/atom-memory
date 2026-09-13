@@ -1,4 +1,4 @@
-import { LocalAuthority, MemoryHost, MemoryStorage } from '../dist/index.js';
+import { adaptiveUse, LocalAuthority, MemoryHost, MemoryStorage } from '../dist/index.js';
 
 const authority = new LocalAuthority();
 const auth = authority.issue({
@@ -11,7 +11,10 @@ const storage = new MemoryStorage();
 const host = new MemoryHost({
   authority,
   storage,
-  activation: { relations: { condition: { forward: 2, reverse: 0 } } },
+  activation: {
+    model: adaptiveUse(),
+    relations: { condition: { forward: 2, reverse: 0 } },
+  },
 });
 const memory = host.connect({ auth, writePolicy: 'notes', actor: { type: 'human' } });
 const condition = await memory.write('管理者の署名を受けてから実施する。');

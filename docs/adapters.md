@@ -8,7 +8,7 @@
 | ローカルのファイルに残す         | `SqliteStorage`        |
 | ベクトルによる候補も取得する     | `embedding`            |
 | 候補取得の方式を実装する         | `candidateProvider`    |
-| 利用活性の半減期・増幅・関係重み | `activation`           |
+| 利用可能性モデル・増幅・関係重み | `activation`           |
 | 候補・グラフ・探索の上限         | `retrieval`            |
 
 ## SQLite に保存する
@@ -180,9 +180,25 @@ SQLiteでベクトル候補も有限に絞る場合は、語彙・ベクトル�
 
 ## 候補とベクトルの設定を分ける
 
-候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。providerの返却値は `PinnedRef[]` であり、スコア・本文・関係の重みを返す契約ではありません。Coreは保存層からrevisionを再読し、本文80%・語彙20%（利用活性を含む初期活性）と関係伝播を評価します。`maxScan`、`maxNodes`、`maxEdges` と `maxEvaluationWork` で候補取得・グラフ評価を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。
+候補providerは入口を決め、取得後の[ランキング](/ranking)は共通です。providerの返却値は `PinnedRef[]` であり、スコア・本文・関係の重みを返す契約ではありません。Coreは保存層からrevisionを再読し、本文80%・語彙20%とモデルの利用可能性から初期活性を作って関係伝播を評価します。`maxScan`、`maxNodes`、`maxEdges` と `maxEvaluationWork` で候補取得・グラフ評価を打ち切り、結果返却前に順位を確定します。cursorで探索範囲を無限に広げることはありません。
 
-利用活性は `HostOptions.activation` で宣言します。既定は半減期7日、最大増幅0.3、伝播0.5です。主体・policy・revisionごとの利用状態は、成功したモデル応答後にホストが `recordUse(refs, binding, { eventId })` を呼んだときだけ更新されます。`read` や候補探索だけでは増えません。設定を変える場合は[移行](/migration)の状態失効規則を確認してください。
+利用可能性は `HostOptions.activation` で宣言します。既定の `adaptiveUse()` は初期半減期7日、最大半減期365日で、受理イベントの間隔に応じて状態を更新します。最大増幅0.3、伝播0.5、関係ごとの重みは従来の評価規則を維持します。主体・policy・revisionごとの状態は、成功したモデル応答後にホストが `recordUse(refs, binding, { eventId })` を呼んだときだけ更新されます。`read` や候補探索だけでは増えません。`activation.halfLifeMs` はありません。設定を変える場合は[移行](/migration)のモデルIDと状態失効規則を確認してください。
+
+独自モデルは `AvailabilityModel<S extends Json>` を実装して `activation.model` に渡します。
+
+```ts
+import { MemoryHost, adaptiveUse } from 'atom-memory';
+
+const model = adaptiveUse({
+  initialHalfLifeMs: 7 * 24 * 60 * 60 * 1000,
+  maxHalfLifeMs: 365 * 24 * 60 * 60 * 1000,
+});
+const host = new MemoryHost({ activation: { model } });
+```
+
+`adaptiveUse` の状態は `{ mass, updatedAt, halfLifeMs }` です。受理イベントでは、現在の半減期で減衰したmassへ1を加え（上限1,000,000）、保持率に応じて半減期を初期値ぶん伸ばし（既定の上限365日、設定した `maxHalfLifeMs` があればその値）、`value` は現在時刻までmassを減衰させます。以前の0.6状態は読み出し時に正確に解釈され、readや再送では書き換えません。次の新しい受理イベントでだけ新形式へ書き換えます。
+
+モデルの `id` は設定の意味とパラメータを含む識別子です。同じ意味の関数を再生成してもIDが同じなら状態を継続できます。IDが変わった状態は `STATE_INVALIDATED` となり、対象のscopeで `host.resetUse(binding)` を明示してから再開します。モデルのコールバックは同期的かつ純粋で、JSON状態は1 KiB以下、非有限値・Promise・例外はエラーです。ライブラリはscope、dedup、原子性、purgeを管理します。
 
 ベクトルの設定は評価規則から独立しています。v3の表現とStorageの再利用条件、`StorageAdapter` の旧 `indexEntries` 境界は[移行](/migration)を参照してください。
 

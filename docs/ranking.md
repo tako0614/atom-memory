@@ -1,17 +1,19 @@
-# 一つの活性規則で読む
+# 一つの利用可能性規則で読む
 
-Atomの本文・関係・版が記憶の正本です。読むときは、現在の入力と受理された利用から初期活性を作り、同じグラフの関係へ伝えます。親も子も関係Atomも同じ変数として扱い、共有された同じ版を複製しません。
+Atomの本文・関係・版が記憶の正本です。読むときは、現在の入力と受理された利用から初期活性を作り、同じグラフの関係へ伝えます。親も子も関係Atomも同じ変数として扱い、共有された同じ版を複製しません。受理利用の状態から利用可能性を計算する規則は `AvailabilityModel` で選び、既定は `adaptiveUse()` です。
 
 ## 評価式
 
 ```text
-h(t) = h(t₀) × 2^(-(t − t₀)/H)
-bᵢ = mᵢ × (1 + β hᵢ/(1 + hᵢ))
+uᵢ = model.value(stateᵢ, now)
+bᵢ = mᵢ × (1 + β uᵢ/(1 + uᵢ))
 a = b + Tᵀa
 scoreᵢ = aᵢ / sum(a)
 ```
 
-`m` は本文と現在の入力との一致、`h` はその主体・policy・観測版に残る利用の影響です。新たに受理した一利用につき `h` に1を加えます。`T` は役割と方向の重みを始点ごとに正規化し、`propagation` を掛けた伝播です。出辺がなければ、その行は0です。入力がすべて0なら結果も0です。
+`m` は本文と現在の入力との一致、`u` はその主体・policy・観測版に対するモデルの利用可能性です。`T` は役割と方向の重みを始点ごとに正規化し、`propagation` を掛けた伝播です。出辺がなければ、その行は0です。入力がすべて0なら結果も0です。`u` は候補の発見や権限の代わりにはなりません。
+
+既定の `adaptiveUse()` は `{ mass, updatedAt, halfLifeMs }` を保存します。新しいイベントでは現在の半減期でmassを減衰させて1を加え（最大1,000,000）、`halfLifeMs` を `initialHalfLifeMs × (1 - retainedFraction)` だけ伸ばします（最大 `maxHalfLifeMs`）。`value` は現在時刻までmassを減衰させた非負有限値を返します。初期半減期は7日、既定の最大半減期は365日です。この圧縮規則は間隔のある再利用を扱うための工学的近似であり、脳の再現や経験的に最適なパラメータではありません。
 
 本文一致は **埋め込み80% + 語彙20%** で固定します。負のcosineは0、埋め込みがなければ利用できる語彙側へ正規化します。同じ入力種類は平均し、存在する種類間も等しく平均します。`query`・`context`・`thought`・`observations`・ホストの `signal` が対象です。`thought` は呼出し元が渡せる検討状態であり、モデル内部の非公開思考を取得しません。
 
@@ -20,12 +22,15 @@ scoreᵢ = aᵢ / sum(a)
 ## 設定するもの
 
 ```ts runnable
-import { LocalAuthority, MemoryHost, MemoryStorage } from 'atom-memory';
+import { LocalAuthority, MemoryHost, MemoryStorage, adaptiveUse } from 'atom-memory';
 const host = new MemoryHost({
   authority: new LocalAuthority(),
   storage: new MemoryStorage(),
   activation: {
-    halfLifeMs: 7 * 24 * 60 * 60 * 1000,
+    model: adaptiveUse({
+      initialHalfLifeMs: 7 * 24 * 60 * 60 * 1000,
+      maxHalfLifeMs: 365 * 24 * 60 * 60 * 1000,
+    }),
     maxBoost: 0.3,
     propagation: 0.5,
     relations: {
@@ -45,7 +50,7 @@ const host = new MemoryHost({
 });
 ```
 
-7日・0.3・0.5は初期既定値で、意味品質の最適値という主張ではありません。設定はホスト作成時に固定します。任意のscore・decay callback、入力種類の重み、semantic/lexicalの調整、反復数・収束許容値の設定はありません。
+7日・365日・0.3・0.5は初期既定値で、意味品質の最適値という主張ではありません。設定はホスト作成時に固定します。任意のscore callback、入力種類の重み、semantic/lexicalの調整、反復数・収束許容値の設定はありません。独自の利用可能性を使う場合は `AvailabilityModel<S extends Json>` を実装して `activation.model` に渡します。`id` は意味とパラメータを含む設定identityとして扱います。
 
 `forward` はリンク元から対象へ、`reverse` は対象からリンク元への比率です。未指定の役割・方向は1。重みは有限・非負、`propagation` は0以上1未満です。一つしかない出辺の重みだけを増やしても正規化後の比率は変わりません。`depth: 0` は関係の取得を止め、`propagation: 0` は取得済み本文の初期活性だけで評価します。
 
@@ -85,11 +90,11 @@ if (use.recorded !== 1) throw new Error('Expected one accepted use');
 
 探索候補や伝播で触れただけのAtomは通知しません。パッキング後にアプリが本文を除いた場合、その参照も除きます。引用の本文を別のevidenceに載せた場合は、その参照を含めます。同じモデル要求の同じ観測版は一度だけ加算し、次の検索から反映します。
 
-`recordUse(refs, binding, { eventId })` は `{ acceptedAt, recorded, repeated }` を返します。時刻と重みは外部入力にせず、サーバー受理時刻と固定重量1を使います。再試行では同じeventIdを使います。アプリは成功応答と未通知イベントを既存checkpointへ保存し、通知だけを再試行できるようにします。providerの処理後に通信が切れ、成功を観測できなかった要求まで記録できる保証はありません。
+`recordUse(refs, binding, { eventId })` は `{ acceptedAt, recorded, repeated }` を返します。時刻と重みは外部入力にせず、サーバー受理時刻と固定重量1を使います。再試行では同じeventIdを使います。アプリは成功応答と未通知イベントを既存checkpointへ保存し、通知だけを再試行できるようにします。providerの処理後に通信が切れ、成功を観測できなかった要求まで記録できる保証はありません。read/searchだけでは `update` は呼ばれません。
 
 利用状態は `(subject, policy, revisionId)` ごとです。認証handle更新後の保存済み参照も、同じsubjectと現在の読取権限を満たす場合だけ通知できます。これはhost-only操作に限り、通常のread・inspect・editの参照認可は緩めません。旧観測版の利用は後継版へ継承せず、purge対象の利用状態と再試行記録も同時に削除します。
 
-半減期を変えた場合、既存の集計値は新しい半減期へ変換できないため `STATE_INVALIDATED` です。`host.resetUse(binding)` でその主体と現在選択したpolicyの集計を明示リセットします。古い通知の二重加算を防ぐ記録は残します。maxBoostの変更にリセットは不要です。
+モデルIDを変えた場合、既存状態を別の意味へ変換しないため `STATE_INVALIDATED` です。`host.resetUse(binding)` でその主体と現在選択したpolicyの集計を明示リセットします。古い通知の二重加算を防ぐ記録は残します。`maxBoost` や伝播の設定を変えても、利用状態のモデルIDが同じなら状態のresetは不要ですが、既存cursorは設定identityの変更で失効します。
 
 ## 数値予算と再利用
 
@@ -107,6 +112,8 @@ if (use.recorded !== 1) throw new Error('Expected one accepted use');
 
 この数値上限は、実際に保存した丸め後の遷移係数に対するものです。propagationが1に極端に近く、外向き丸めで収縮を確認できない場合や、中間計算が非有限になる場合は入力を拒否します。候補の取り逃し・未取得の辺・Writerの意味的な誤りは、この誤差に含みません。`coverageCertified` は常にfalseです。十分な予算がないwarm評価には古い入力の影響が誤差範囲内で残り得ます。
 
+モデル実装の失敗は安全に隠しません。`update` または `value` が例外を投げる、Promiseを返す、無効なJSON状態を作る、非負有限でない値を返す場合は操作を失敗させます。利用可能性を0にして処理を続けるフォールバックはありません。モデルのcallbackへ最終score、query/context、候補グラフ、全履歴は渡しません。
+
 cursorには完成した候補順・score・評価時刻を固定します。途中で利用が増えても同じcursorを再評価しません。追加予算で評価し直す場合は新しいread/searchを始めます。必要な条件・権限・出典・purgeの検証は、活性やcacheによって省略しません。
 
 ## 検証と研究の範囲
@@ -120,4 +127,4 @@ cursorには完成した候補順・score・評価時刻を固定します。途
 
 `npm run evaluate:ranking` は、同じ本文・固定ベクトル・予算で関係による根拠取得を比較します。利用の長期的な品質改善や実モデルの費用削減は、この試験からは判断しません。
 
-[合成評価](/composition)の内部消去・復元は研究用です。0.6の通常評価器は上の残差補正であり、Schur前処理を既定にしていません。研究内のv0.5 PPR比較は凍結した参照実装を使います。独自性の主張には、本文取得・更新・cacheの検証まで含む同条件の実測が必要です。
+[合成評価](/composition)の内部消去・復元は研究用です。0.7の通常評価器は上の残差補正であり、Schur前処理を既定にしていません。研究内のv0.5 PPR比較は凍結した参照実装を使います。独自性の主張には、本文取得・更新・cacheの検証まで含む同条件の実測が必要です。

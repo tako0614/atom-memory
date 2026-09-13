@@ -67,15 +67,17 @@ Atomは数学的に唯一の最小意味単位ではありません。粒度、�
 
 保存済み版の互換性と、索引の再生成は別に管理します。旧表現・scopeごとの索引準備と旧保存フィールドの扱いは[移行](/migration)を参照してください。
 
-## v0.6の活性化と評価
+## v0.7の利用可能性と評価
 
-内容・受理された利用・経過時間から初期活性を作り、共有・再帰構造の上で同じ伝播演算を使う方針です。利用の蓄積・指数減衰・上限付き増幅はライブラリの核に含め、何を利用と数えるかはアプリが通知します。自動readや探索だけでは加算しません。
+内容・受理された利用・経過時間から初期活性を作り、共有・再帰構造の上で同じ伝播演算を使う方針です。利用状態の更新と時刻からの値の計算は `AvailabilityModel` が担い、何を利用と数えるかはアプリが通知します。自動readや探索だけでは加算しません。既定の `adaptiveUse()` は、減衰したmassへイベントを加え、間隔に応じて半減期を伸ばす有界なモデルです。
 
 利用統計は認証主体とスコープに対応する補助状態であり、Atomの本文や全利用者共通の重要度にはしません。減衰の時計と伝播反復は独立です。鮮度・権限・削除・必須条件の保証は活性によって上書きしません。
 
-v0.6でこの方針を実装しました。`MemoryHost.recordUse(refs, binding, { eventId })` は成功したモデル応答をホストがackするための入力で、`read`・`search`・探索だけでは利用を加算しません。`host.resetUse(binding)` は現在の主体・許可policyの集計を消し、重複防止マーカーは残します。半減期の変更で保存状態が不整合になった場合は `STATE_INVALIDATED` として明示リセットを要求します。最大増幅だけの変更では集計を消しません。
+v0.7でこの方針を実装しました。`MemoryHost.recordUse(refs, binding, { eventId })` は成功したモデル応答をホストがackするための入力で、`read`・`search`・探索だけでは利用を加算しません。`AvailabilityModel<S extends Json>` は `id`、同期的な `update(previous, acceptedAt)`、同期的な `value(state, now)` だけを持ちます。callbackへquery・context・score・graph・全履歴を渡さず、状態は正規化JSON 1 KiB以下に制限します。非有限値、無効なstate、例外、Promiseはエラーとして扱い、0へフォールバックしません。
 
-候補providerは `PinnedRef[]` だけを返し、Coreが認可済みの保存本文を再読して本文一致、利用活性、関係伝播を単一の評価規則へ合成します。候補取得の `maxScan` と、数値評価の `maxEvaluationWork` は別の予算です。設計上の数値保証、失効、purge、候補打切りは[設計レビュー](/design-review)に、利用・移行の手順は[移行](/migration)にまとめています。
+`host.resetUse(binding)` は現在の主体・許可policyの集計を消し、重複防止マーカーは残します。モデルの `id` は設定の一部です。意味やパラメータが変わってIDが変わると保存状態は `STATE_INVALIDATED` になり、明示リセット後に再開します。ライブラリはscope、原子性、dedup、purge、状態の保存形式を所有し、モデルは候補選択や権限判断を行いません。
+
+候補providerは `PinnedRef[]` だけを返し、Coreが認可済みの保存本文を再読して本文一致、モデルの利用可能性、関係伝播を単一の評価規則へ合成します。候補取得の `maxScan` と、数値評価の `maxEvaluationWork` は別の予算です。設計上の数値保証、失効、purge、候補打切りは[設計レビュー](/design-review)に、利用・移行の手順は[移行](/migration)にまとめています。
 
 ## 実装の所在
 
@@ -84,7 +86,7 @@ v0.6でこの方針を実装しました。`MemoryHost.recordUse(refs, binding, 
 | 操作と原子的な編集             | `src/client/memory.ts`                                                     |
 | 認可・参照・入力記録・候補取得 | `src/client/engine.ts`                                                     |
 | 鮮度検証・条件閉包・本文構築   | `src/client/retrieval.ts`                                                  |
-| 利用活性の集計とスコープ検証   | `src/client/activation.ts` / `src/core/use-state.ts`                       |
+| 利用可能性の集計とスコープ検証 | `src/client/activation.ts` / `src/core/use-state.ts`                       |
 | グラフ取得と数値評価           | `src/client/ranking.ts` / `src/core/ranking.ts` / `src/core/evaluation.ts` |
 | 確定・出典検証・purge          | `src/core/store.ts`                                                        |
 | 索引更新と保存実装             | `src/client/indexing.ts` / `src/adapters/`                                 |
