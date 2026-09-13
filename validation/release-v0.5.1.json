@@ -60,8 +60,117 @@
   "site": {
     "url": "https://atom-memory.takos.jp",
     "worker": "atom-memory-docs",
-    "published": false,
-    "readback": "pending"
+    "published": true,
+    "sourceCommit": "a8df5c9cadac88117e5a065e78027b9d31babdf3",
+    "versionId": "4c2de745-ebcb-4cce-bfb5-618d99d4fb48",
+    "deploymentId": "e01dc1f3-3241-4918-abe8-6a5665887fd0",
+    "deployedAt": "2026-09-13T09:30:50.401365Z",
+    "build": "passed",
+    "dryRun": "passed",
+    "readback": "passed: 18 HTML pages and release manifest match build on custom domain and workers.dev",
+    "pages": [
+      {
+        "path": "/acceptance",
+        "verified": true,
+        "sha256": "e72629c8bb27ae88a2dda95ab81351bc6574dd61923ca73b98439955302a115b"
+      },
+      {
+        "path": "/adapters",
+        "verified": true,
+        "sha256": "02d4b517df840d3be22e17037a4798b06e138667b1fed4c7737bbd15ab59c42c"
+      },
+      {
+        "path": "/api",
+        "verified": true,
+        "sha256": "399ee4d04cb914730151e9ee85364fb30369ca2217ab8cf6f8534951ebae9fe4"
+      },
+      {
+        "path": "/composition",
+        "verified": true,
+        "sha256": "c6f94f9acb316ee7571369c96171f006731206ac0e172b3c4450c5702ecaf302"
+      },
+      {
+        "path": "/concepts",
+        "verified": true,
+        "sha256": "78f22db0745a7b9338b0a221b8ad890073ec528c58d64494fe474c1ef500084c"
+      },
+      {
+        "path": "/contracts",
+        "verified": true,
+        "sha256": "87008f8f7198b393ea32579b5b4efa8b93dab4f8c46f21c9b71a27c131c07912"
+      },
+      {
+        "path": "/design-review",
+        "verified": true,
+        "sha256": "5024b988449605bf764e1934261e25936da5d92fdbdedf70aabb5bf3981702ab"
+      },
+      {
+        "path": "/examples",
+        "verified": true,
+        "sha256": "93b7ac398ff9f7f4079ded1a1703aeb9814aac38638f81a4c5946cdc2d5a6b0d"
+      },
+      {
+        "path": "/guide",
+        "verified": true,
+        "sha256": "0b08867be8c9b002ae3678069f4e3927b8cf3efbba5a9ed9004fb0d2acf10fd6"
+      },
+      {
+        "path": "/history",
+        "verified": true,
+        "sha256": "59f81c8c2e1d78303b3dc5609c3a828c005e34ee77176328e1580956f150c4cb"
+      },
+      {
+        "path": "/",
+        "verified": true,
+        "sha256": "c22f45fcda7e81fa484641746192e10288dd0613b187378dd2dac3a4d3392012"
+      },
+      {
+        "path": "/migration-architecture",
+        "verified": true,
+        "sha256": "c76638f71529145527dd88b5d8b8144def42d81b873ccdb86ade49606f646488"
+      },
+      {
+        "path": "/migration",
+        "verified": true,
+        "sha256": "533c2912067559c222c67eb06ebf716225e8dc9f3b05666b34fdd19996245240"
+      },
+      {
+        "path": "/ranking",
+        "verified": true,
+        "sha256": "609f86f5f593948d7afb77acd587561a19638ae81caf0336f5436950c59a53e8"
+      },
+      {
+        "path": "/release",
+        "verified": true,
+        "sha256": "e84932ac27c1146a23201782ce0d53e06a91d665e38ef3f1cfbfbf3943f76bb6"
+      },
+      {
+        "path": "/runtime",
+        "verified": true,
+        "sha256": "df735bbd2c1f0ede98f5b7f67792a2a9555c07a1e8d8b2cbcb106c4663bb60f4"
+      },
+      {
+        "path": "/setup",
+        "verified": true,
+        "sha256": "7a44dedac6ede544238a49350a0507a9b6a30fe0c5e0de69c4d061a2f372bfd3"
+      },
+      {
+        "path": "/specification",
+        "verified": true,
+        "sha256": "4416a2bedb096214e44cc3adbcebc3daf43f28f0a6cd43ff486ed003f9f53ebb"
+      },
+      {
+        "path": "/release.json",
+        "verified": true,
+        "sha256": "80c231acc25eca5a93b7efa9c113ea8b80a2830cf1decaa7fea956e12eee9343"
+      }
+    ],
+    "workersDev": {
+      "url": "https://atom-memory-docs.shoutatomiyama0614.workers.dev",
+      "pagesVerified": 19,
+      "passed": true
+    }
   },
-  "scope": "npm library and documentation publication; no Sakana production cutover"
+  "scope": "npm library and documentation publication; no Sakana production cutover",
+  "verifiedAt": "2026-09-13T09:31:38.166699+00:00"
 }
