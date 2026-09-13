@@ -1,6 +1,6 @@
 {
   "name": "atom-memory",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Atom graph storage, revisioned edits and context-aware structural retrieval for host-owned agents.",
   "type": "module",
   "license": "MIT",

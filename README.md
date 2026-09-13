@@ -1,6 +1,8 @@
 # Atom Memory
 
-0.5.0では、Atom自身の本文を検索表現にし、役割・方向の重み付きグラフ伝播を別の層で適用します。Atomは再帰的・多重所属できる対等な形式ですが、すべての関係を別Atomへ reify する必要はありません。LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.5への移行](https://atom-memory.takos.jp/migration)を参照してください。
+0.5.1では、Atom自身の本文を検索表現にし、役割・方向の重み付きグラフ伝播を別の層で適用します。Atomは再帰的・多重所属できる対等な形式ですが、すべての関係を別Atomへ reify する必要はありません。LLMによる重要度採点や常駐処理は不要です。[ランキング](https://atom-memory.takos.jp/ranking)・[0.5への移行](https://atom-memory.takos.jp/migration)を参照してください。
+
+0.5.1は公開APIを維持し、結果のパッキングと入力記録の内部実装を整理した版です。[設計レビュー](https://atom-memory.takos.jp/design-review)では「活性の与え方をカスタマイズできる、合成可能な記憶の読み出しライブラリ」という次の設計方針を示します。利用イベント・時間減衰の検索への接続は未実装で、合成評価器は研究段階です。
 
 Give your agent something to remember.
 

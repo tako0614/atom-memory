@@ -49,8 +49,8 @@ v3の `prepareIndex` はcursorでcurrent headをscopeごとに走査します。
 
 旧Kernelのreadと旧Harnessの互換実装はありません。既知のPinnedRefは、信頼されたホストから `host.reference(pinnedRef, binding)` で解決します。保存契約に残るincludeやvalidTime等の旧フィールドを、新しい公開操作の機能と混同しないでください。過去の設計は[歴史資料](/migration-architecture)、現在の責務は[アーキテクチャ](/specification)を参照してください。
 
-## 次版に向けた内部整理
+## 0.5.1の内部整理
 
 2026-09-13の[設計レビュー](/design-review)で、未使用の旧 `Selector/Consistency/ReadReceipt` と、入力manifestの未使用のsnapshot・selector・tokenizer属性を除きました。確定出力用の入力記録を `sdk:trace:` と `receipt:` の両方へ保存する処理も除いています。実際に観測した版、query範囲、認可、期限、削除依存は維持し、既存manifestの余分な属性は読み飛ばせます。出力のないeditから未使用の永続manifestを作る処理も除きました。既存保存行の一括削除はしていません。
 
-`EmbeddingProvider` の型定義を検索側へ移し、内部の原子的な保存層にあった未使用のembedding/tokenizer設定を削除しました。パッケージ直下からの型import、`MemoryHost` の設定、五つの公開操作は変わりません。この節は作業ツリーの次版向け変更で、公開済み0.5.0の配布内容を変更したという意味ではありません。
+`EmbeddingProvider` の型定義を検索側へ移し、内部の原子的な保存層にあった未使用のembedding/tokenizer設定を削除しました。パッケージ直下からの型import、`MemoryHost` の設定、五つの公開操作は変わりません。0.5.0からの更新に、新しい保存データや索引の移行は不要です。
