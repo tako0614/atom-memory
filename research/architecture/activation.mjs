@@ -1,4 +1,4 @@
-// Algebra checks for the optional activation-input proposal. No production API changes.
+// Algebra checks for the required activation-input design. No production API changes.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';

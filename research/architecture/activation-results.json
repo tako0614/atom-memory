@@ -19,6 +19,6 @@
   },
   "sourceSha256": {
     "src/core/ranking.ts": "fd94c0d7504a3467328871df066e123d5b9ebf0d5c9eb89fc5cefc4e59070d00",
-    "research/architecture/activation.mjs": "7523922ebff9e0f2f2657c9633f2b724622c3674db68803cf410b21ef6da3963"
+    "research/architecture/activation.mjs": "d642ad84cf56e5bc4887dae6397166489f437f09ebd6b1706e0d438cce254bf7"
   }
 }
