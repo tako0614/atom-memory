@@ -77,7 +77,11 @@ export interface PresentationUnit {
   ref: import('../client/types.js').AtomRef;
   revision: PinnedRef;
   digest: string;
-  metadata?: Omit<import('../client/types.js').AtomView, 'text' | 'ref'>;
+  metadata?: Omit<import('../client/types.js').AtomView, 'text' | 'ref'> & {
+    /** Present only for inspect neighbors; relation evidence is part of the presentation. */
+    via?: readonly import('../client/types.js').InspectionVia[];
+    inspectionRoot?: boolean;
+  };
   display?: 'body' | 'quote' | 'range';
   quote?: { ref: import('../client/types.js').AtomRef; start: number; end: number; unit: 'utf8' };
   range?: { start: number; end: number };
@@ -309,7 +313,7 @@ export class AtomicStore {
           if (target.policyId !== c.policyId && !c.provenance.dependencyContract)
             fail('ACCESS_DENIED', 'Persistent references must remain in one policy');
         }
-        for (const origin of c.origins) {
+        for (const origin of unchangedRetirement ? [] : c.origins) {
           const source = resolve(origin.source);
           if (source.policyId !== c.policyId) fail('ACCESS_DENIED');
           if (

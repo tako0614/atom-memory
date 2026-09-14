@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
+import { create, revise } from './fixtures.mjs';
 import { MemoryHost, LocalAuthority, MemoryStorage, adaptiveUse } from '../dist/index.js';
 import { useStateKey, useEventKey, putUseState, putUseEvent } from '../dist/core/use-state.js';
 import { snapshotUse } from '../dist/client/activation.js';
@@ -51,7 +52,7 @@ for (const { name, make } of stores) {
     const { storage, close } = make();
     try {
       const f = createFixture(storage);
-      const item = await f.memory.write('unit weight');
+      const item = await create(f.memory, 'unit weight');
       const revision = target(storage, item.ref).revisionId;
       await f.memory.read({ query: 'unit weight' });
       assert.equal(storage.metaGet(useStateKey('owner', 'p', revision)), undefined);
@@ -80,7 +81,7 @@ for (const { name, make } of stores) {
     const { storage, close } = make();
     try {
       const f = createFixture(storage);
-      const item = await f.memory.write('restartable');
+      const item = await create(f.memory, 'restartable');
       assert.equal(f.host.recordUse([item.ref], f.binding, { eventId: 'same-event' }).recorded, 1);
       assert.equal(f.host.recordUse([item.ref], f.binding, { eventId: 'same-event' }).repeated, 1);
       const restarted = createFixture(storage, {});
@@ -119,7 +120,7 @@ storageTest(
     });
     const host = new MemoryHost({ authority, storage });
     const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
-    const item = await host.connect(binding).write('same subject');
+    const item = await create(host.connect(binding), 'same subject');
     const renewed = authority.issue({
       subject: 'owner',
       readPolicies: ['p'],
@@ -161,8 +162,8 @@ storageTest(
   'revision use does not inherit and rollback invalid batches atomically',
   async (storage) => {
     const f = createFixture(storage);
-    const first = await f.memory.write('first revision');
-    const edited = await f.memory.edit((draft) => draft.revise(first.ref, 'second revision'));
+    const first = await create(f.memory, 'first revision');
+    const edited = await revise(f.memory, first.ref, 'second revision');
     const oldRevision = target(storage, first.ref).revisionId;
     const newRevision = target(storage, edited.value.ref).revisionId;
     assert.equal(f.host.recordUse([first.ref], f.binding, { eventId: 'old' }).recorded, 1);
@@ -186,7 +187,7 @@ storageTest(
       model: adaptiveUse({ initialHalfLifeMs: 1000, maxHalfLifeMs: 10_000 }),
       maxBoost: 0.3,
     });
-    const item = await f.memory.write('clock');
+    const item = await create(f.memory, 'clock');
     const revision = target(storage, item.ref).revisionId;
     const originalNow = Date.now;
     try {
@@ -214,7 +215,7 @@ storageTest(
     const f = createFixture(storage, {
       model: adaptiveUse({ initialHalfLifeMs: 1000, maxHalfLifeMs: 10_000 }),
     });
-    const item = await f.memory.write('reset and purge');
+    const item = await create(f.memory, 'reset and purge');
     const revision = target(storage, item.ref).revisionId;
     f.host.recordUse([item.ref], f.binding, { eventId: 'keep-marker' });
     const changed = new MemoryHost({
@@ -237,16 +238,21 @@ storageTest(
   },
 );
 
-storageTest('overlay references cannot record use', async (storage) => {
-  const f = createFixture(storage);
-  await f.memory.edit(async (draft) => {
-    const staged = await draft.write('overlay');
+storageTest(
+  'batch-local ids cannot record use before a committed AtomRef is returned',
+  async (storage) => {
+    const f = createFixture(storage);
     assert.throws(
-      () => f.host.recordUse([staged.ref], f.binding, { eventId: 'overlay' }),
+      () => f.host.recordUse(['local:pending'], f.binding, { eventId: 'pending' }),
       error('INVALID_REF'),
     );
-  });
-});
+    const committed = await create(f.memory, 'committed batch output');
+    assert.equal(
+      f.host.recordUse([committed.ref], f.binding, { eventId: 'committed' }).recorded,
+      1,
+    );
+  },
+);
 
 storageTest(
   'custom state is isolated, replay is inert, and the fixed boost stays bounded',
@@ -275,8 +281,8 @@ storageTest(
       },
     };
     const f = createFixture(storage, { model, maxBoost: 0.3, propagation: 0 });
-    const used = await f.memory.write('custom used');
-    const unused = await f.memory.write('custom unused');
+    const used = await create(f.memory, 'custom used');
+    const unused = await create(f.memory, 'custom unused');
     const originalNow = Date.now;
     try {
       Date.now = () => 100;
@@ -323,8 +329,8 @@ storageTest('batch updates and snapshots use one host-owned monotonic time', asy
       },
     },
   });
-  const first = await f.memory.write('common clock first');
-  const second = await f.memory.write('common clock second');
+  const first = await create(f.memory, 'common clock first');
+  const second = await create(f.memory, 'common clock second');
   const firstRevision = target(storage, first.ref).revisionId;
   const secondRevision = target(storage, second.ref).revisionId;
   const originalNow = Date.now;
@@ -375,8 +381,8 @@ storageTest('a late custom callback failure rolls back every state and marker', 
       value: () => 0,
     },
   });
-  const first = await f.memory.write('atomic custom first');
-  const second = await f.memory.write('atomic custom second');
+  const first = await create(f.memory, 'atomic custom first');
+  const second = await create(f.memory, 'atomic custom second');
   assert.throws(
     () => f.host.recordUse([first.ref, second.ref], f.binding, { eventId: 'atomic-custom' }),
     error('INVALID_INPUT'),
@@ -387,7 +393,7 @@ storageTest('a late custom callback failure rolls back every state and marker', 
 
 storageTest('new-format state requires the host-owned monotonic timestamp', async (storage) => {
   const f = createFixture(storage);
-  const item = await f.memory.write('required host timestamp');
+  const item = await create(f.memory, 'required host timestamp');
   const revision = target(storage, item.ref).revisionId;
   f.host.recordUse([item.ref], f.binding, { eventId: 'initial' });
   const key = useStateKey('owner', 'p', revision);
@@ -404,7 +410,7 @@ storageTest(
   'async or oversized custom state fails atomically and callback work is budgeted',
   async (storage) => {
     const f = createFixture(storage);
-    const item = await f.memory.write('bounded custom');
+    const item = await create(f.memory, 'bounded custom');
     for (const [id, update] of [
       ['async-custom-v1', async () => ({ uses: 1 })],
       ['large-custom-v1', () => ({ value: 'x'.repeat(1025) })],
@@ -449,7 +455,7 @@ storageTest(
   'legacy aggregates preserve exact value, migrate on use, and never replay after reset',
   async (storage) => {
     const f = createFixture(storage, { propagation: 0, maxBoost: 0.3 });
-    const item = await f.memory.write('legacy aggregate');
+    const item = await create(f.memory, 'legacy aggregate');
     const revision = target(storage, item.ref);
     const legacy = {
       subject: 'owner',

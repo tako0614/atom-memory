@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 
 for (const reopenLegacy of [false, true])
   test(`SQLite purge follows historical and uncited dependencies without a full scan (legacy=${reopenLegacy})`, async () => {
@@ -13,21 +14,39 @@ for (const reopenLegacy of [false, true])
     const path = join(dir, 'memory.sqlite');
     let storage = new SqliteStorage(path);
     try {
-      const { memory, writer } = fixture({ storage });
-      const source = await memory.write('private original');
-      const unrelated = await memory.write('unrelated survives');
-      const dependent = await writer.edit(async (draft) => {
-        await draft.inspect(source.ref, { depth: 0 });
-        return draft.write('uncited interpretation');
-      });
-      const relation = await writer.write({
-        text: 'historical reference',
-        links: { target: source.ref },
-      });
-      await memory.edit((draft) => draft.revise(relation.ref, 'current version has no link'));
-      const ids = [source.ref, dependent.value.ref, relation.ref].map(
-        (ref) => storage.metaGet(`sdk:ref:${ref}`).target.atomId,
+      const { memory, writer, host, binding } = fixture({ storage });
+      const source = await create(memory, 'private original');
+      const unrelated = await create(memory, 'unrelated survives');
+      const observed = await writer.inspect(source.ref);
+      const input = host.observe(
+        {
+          presentations: [{ receipt: observed.receipt }],
+          payloadDigest: createHash('sha256').update('uncited interpretation').digest('hex'),
+        },
+        { ...binding, actor: { type: 'agent' } },
       );
+      const dependent = await create(writer, 'uncited interpretation', { input });
+      const relationInput = host.observe(
+        {
+          presentations: [{ receipt: observed.receipt }],
+          payloadDigest: createHash('sha256').update('historical reference').digest('hex'),
+        },
+        { ...binding, actor: { type: 'agent' } },
+      );
+      const relation = await create(
+        writer,
+        { text: 'historical reference', links: { target: source.ref } },
+        { input: relationInput },
+      );
+      await revise(memory, relation.ref, 'current version has no link');
+      const namedIds = Object.fromEntries(
+        Object.entries({
+          source: source.ref,
+          dependent: dependent.ref,
+          relation: relation.ref,
+        }).map(([name, ref]) => [name, storage.metaGet(`sdk:ref:${ref}`).target.atomId]),
+      );
+      const ids = Object.values(namedIds);
       const surviving = storage.metaGet(`sdk:ref:${unrelated.ref}`).target.atomId;
       if (reopenLegacy) {
         storage.close();
@@ -42,7 +61,8 @@ for (const reopenLegacy of [false, true])
         throw Error('purge must not scan the entire history');
       };
       const active = fixture({ storage }).host;
-      assert.deepEqual(active.purge(ids[0]).erasedAtomIds.sort(), ids.sort());
+      const erased = active.purge(ids[0]).erasedAtomIds.sort();
+      assert.deepEqual(erased, ids.sort(), JSON.stringify({ namedIds, erased }));
       for (const id of ids)
         assert.equal(storage.get({ kind: 'logical', atomId: id }, storage.watermark()), undefined);
       assert.equal(
@@ -61,7 +81,7 @@ test('purge indexes stay atomic for the pre-index SQLite write protocol', async 
   const storage = new SqliteStorage(path);
   try {
     const { memory } = fixture({ storage });
-    const source = await memory.write('source');
+    const source = await create(memory, 'source');
     const id = storage.metaGet(`sdk:ref:${source.ref}`).target.atomId;
     const revision = structuredClone(
       storage.get({ kind: 'logical', atomId: id }, storage.watermark()),

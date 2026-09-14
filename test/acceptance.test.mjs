@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MemoryStorage, origin } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 import { AtomicStore } from '../dist/core/store.js';
 import { content } from '../dist/core/helpers.js';
 // Legacy selectors/harness are replaced by the current client, while atomic
@@ -23,44 +23,52 @@ for (const adapter of ['memory', 'sqlite']) {
   };
   test(`${adapter}: independent multi-membership survives another relation's retirement`, async (t) => {
     const { memory: m } = setup(t);
-    const child = await m.write('shared child'),
-      p = await m.write('P'),
-      q = await m.write('Q');
-    const a = await m.write({ text: 'membership P', links: { group: p.ref, member: child.ref } });
-    const b = await m.write({ text: 'membership Q', links: { group: q.ref, member: child.ref } });
-    await m.edit((d) => d.retire(a.ref));
-    assert.equal((await m.inspect(b.ref, { depth: 2 })).atom.text, 'membership Q');
+    const child = await create(m, 'shared child'),
+      p = await create(m, 'P'),
+      q = await create(m, 'Q');
+    const a = await create(m, { text: 'membership P', links: { group: p.ref, member: child.ref } });
+    const b = await create(m, { text: 'membership Q', links: { group: q.ref, member: child.ref } });
+    await retire(m, a.ref);
+    assert.equal((await m.inspect(b.ref, {})).atom.text, 'membership Q');
     assert.equal((await m.inspect(child.ref)).atom.state, 'active');
   });
   test(`${adapter}: observed references keep their version and logical links follow revisions`, async (t) => {
     const { memory: m } = setup(t);
-    const a = await m.write('version one');
-    const p = await m.write({ text: 'fixed', links: { member: { ref: a.ref, at: 'observed' } } });
-    const q = await m.write({ text: 'current', links: { member: a.ref } });
-    await m.edit((d) => d.revise(a.ref, 'version two'));
-    assert.ok((await m.inspect(p.ref)).items.some((i) => i.text === 'version one'));
-    assert.ok((await m.inspect(q.ref)).items.some((i) => i.text === 'version two'));
+    const a = await create(m, 'version one');
+    const p = await create(m, { text: 'fixed', links: { member: { ref: a.ref, at: 'observed' } } });
+    const q = await create(m, { text: 'current', links: { member: a.ref } });
+    await revise(m, a.ref, 'version two');
+    assert.ok((await m.inspect(p.ref)).neighbors.some((i) => i.atom.text === 'version one'));
+    assert.ok((await m.inspect(q.ref)).neighbors.some((i) => i.atom.text === 'version two'));
   });
   test(`${adapter}: private edits roll back and a stale Writer cannot commit`, async (t) => {
     const f = setup(t),
-      input = await f.memory.write('input'),
+      input = await create(f.memory, 'input'),
       before = f.storage.watermark();
     await assert.rejects(
-      f.memory.edit(async (d) => {
-        await d.write('rollback');
-        throw Error('abort');
+      f.memory.write({
+        changes: [
+          {
+            id: 'rollback',
+            op: 'create',
+            content: { text: 'rollback', links: { broken: { local: 'missing' } } },
+            sources: [],
+          },
+        ],
       }),
-      /abort/,
+      { code: 'INVALID_REF' },
     );
     assert.equal(f.storage.watermark(), before);
-    await assert.rejects(
-      f.writer.edit(async (d) => {
-        await d.inspect(input.ref, { version: 'latest' });
-        await d.write('stale result');
-        await f.memory.edit((other) => other.revise(input.ref, 'changed'));
-      }),
-      { code: 'REVISION_CONFLICT' },
+    const inspected = await f.writer.inspect(input.ref, { version: 'latest', limit: 0 });
+    const agentBinding = { ...f.binding, actor: { type: 'agent' } };
+    const generation = f.host.observe(
+      { presentations: [{ receipt: inspected.receipt }], payloadDigest: 'a'.repeat(64) },
+      agentBinding,
     );
+    await revise(f.memory, input.ref, 'changed');
+    await assert.rejects(create(f.writer, 'stale result', { input: generation }), {
+      code: 'REVISION_CONFLICT',
+    });
     assert.ok(
       !(await f.memory.search('stale result')).items.some((i) => i.text === 'stale result'),
     );
@@ -161,9 +169,10 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: purge erases previous versions, blobs and dependent organizations`, async (t) => {
     const f = setup(t),
-      source = await f.host.ingestBlob(Buffer.from('private source'), 'text/plain', f.binding);
-    const statement = await f.writer.write('interpretation', { sources: [{ ref: source.ref }] });
-    await f.memory.edit((d) => d.retire(statement.ref));
+      ingested = await f.host.ingestBlob(Buffer.from('private source'), 'text/plain', f.binding),
+      source = ingested.changes.source;
+    const statement = await create(f.writer, 'interpretation', { sources: [{ ref: source.ref }] });
+    await retire(f.memory, statement.ref);
     f.host.purge(f.storage.metaGet(`sdk:ref:${source.ref}`).target.atomId);
     await assert.rejects(f.memory.inspect(source.ref), { code: 'ACCESS_DENIED' });
     await assert.rejects(f.memory.inspect(statement.ref), { code: 'ACCESS_DENIED' });

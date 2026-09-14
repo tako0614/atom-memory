@@ -1,3 +1,4 @@
+import { create } from '../../test/fixtures.mjs';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -16,10 +17,11 @@ for (const adapter of ['memory', 'sqlite'])
     try {
       const f = await atomFixture(storage, 6, 8);
       if (shape === 'costly-condition') {
-        const condition = await f.memory.write(
+        const condition = await create(
+          f.memory,
           'Required approval and source evidence. '.repeat(400),
         );
-        await f.memory.write({
+        await create(f.memory, {
           text: 'Important exception with a costly indivisible condition',
           links: { condition: { ref: condition.ref, required: true } },
         });
@@ -46,7 +48,7 @@ for (const adapter of ['memory', 'sqlite'])
         const start = performance.now(),
           prepared = prepareEvaluator(g, method, 0.65, cache),
           prepareMs = performance.now() - start;
-        for (const maxWork of [2_000, 20_000, 200_000]) {
+        for (const maxWork of [2000, 20000, 200000]) {
           const times = [],
             trials = [];
           for (let repeat = 0; repeat < 5; repeat++) {
@@ -135,7 +137,7 @@ for (const nodes of [128, 1024, 8192]) {
       throw e;
     }
     const prepareMs = performance.now() - start,
-      work = new WorkBudget(2_000_000),
+      work = new WorkBudget(2000000),
       queryStart = performance.now();
     let complete = false,
       error;

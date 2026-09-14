@@ -1,3 +1,4 @@
+import { revise } from '../../test/fixtures.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -7,7 +8,6 @@ import { SqliteStorage } from '../../dist/adapters/sqlite.js';
 import { compileComposition, CompositionCache } from './evaluator.mjs';
 import { propagate, seedScore } from './reference-ranking.mjs';
 import { atomFixture, acquire, comparePacked, prepare } from './fixture.mjs';
-
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 function measure(fn, repetitions = 40) {
   for (let i = 0; i < 8; i++) fn(i);
@@ -133,12 +133,10 @@ for (const adapter of ['memory', 'sqlite']) {
     });
     assert.equal(reused.stats.coefficientMisses, 0);
     // Repeat with one relationship update. Other groups' coefficients remain reusable.
-    await f.memory.edit((draft) =>
-      draft.revise(f.groups[0].ref, {
-        text: 'changed collection',
-        links: { member: f.leaves.slice(0, 6).map((l) => l.ref) },
-      }),
-    );
+    await revise(f.memory, f.groups[0].ref, {
+      text: 'changed collection',
+      links: { member: f.leaves.slice(0, 6).map((l) => l.ref) },
+    });
     await prepare(f.host, f.binding);
     const updated = await acquire(f, 'other context');
     const updatePlan = compileComposition(updated.seeds.length, updated.edges, updated.regions, {

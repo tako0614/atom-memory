@@ -1,3 +1,4 @@
+import { create } from '../test/fixtures.mjs';
 import { writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { fixture } from '../test/fixtures.mjs';
@@ -74,7 +75,7 @@ for (const adapter of ['memory', 'sqlite'])
         for (const [from, to] of d.links ?? [])
           if (from === i) links.when = { ref: values[to].ref, required: true };
         for (const [from, to] of d.related ?? []) if (from === i) links.member = values[to].ref;
-        values.push(await f.memory.write({ text: d.bodies[i], links }));
+        values.push(await create(f.memory, { text: d.bodies[i], links }));
       }
       if (d.useFirst)
         f.host.recordUse([values[0].ref], f.binding, { eventId: 'fixed-comparison-event' });
@@ -184,7 +185,7 @@ const output = {
     'Finite proxy utility comparison only; no semantic quality, optimality, approximation ratio, or novelty claim.',
 };
 writeFileSync(
-  new URL('../validation/selection-v0.8.0.json', import.meta.url),
+  new URL('../validation/selection-v0.9.0.json', import.meta.url),
   JSON.stringify(output, null, 2) + '\n',
 );
 console.log(

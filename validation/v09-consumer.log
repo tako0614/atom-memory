@@ -1,0 +1,558 @@
+TAP version 13
+# Subtest: memory V09-40 package exports and persisted observations
+ok 1 - memory V09-40 package exports and persisted observations
+  ---
+  duration_ms: 29.91708
+  type: 'test'
+  ...
+# Subtest: sqlite V09-40 package exports and persisted observations
+ok 2 - sqlite V09-40 package exports and persisted observations
+  ---
+  duration_ms: 19.717835
+  type: 'test'
+  ...
+# Subtest: memory V08-22 acquisition and presentation are distinct
+ok 3 - memory V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 29.219964
+  type: 'test'
+  ...
+# Subtest: memory V09-24 independent generations share a commit only
+ok 4 - memory V09-24 independent generations share a commit only
+  ---
+  duration_ms: 6.129728
+  type: 'test'
+  ...
+# Subtest: memory V08-28 forged token is refused
+ok 5 - memory V08-28 forged token is refused
+  ---
+  duration_ms: 4.518558
+  type: 'test'
+  ...
+# Subtest: memory V08-31 independent source survives ordinary relation purge
+ok 6 - memory V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 4.310907
+  type: 'test'
+  ...
+# Subtest: memory V08-33 unavailable required blocks read but permits inspect
+ok 7 - memory V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 3.360386
+  type: 'test'
+  ...
+# Subtest: memory V09-01 five operations use declarative content
+ok 8 - memory V09-01 five operations use declarative content
+  ---
+  duration_ms: 2.610848
+  type: 'test'
+  ...
+# Subtest: memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 9 - memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 5.275847
+  type: 'test'
+  ...
+# Subtest: memory V08-03 reading leaves semantic revisions and use state intact
+ok 10 - memory V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 2.342384
+  type: 'test'
+  ...
+# Subtest: memory V08-04 observed inspection and logical links retain separate versions
+ok 11 - memory V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 2.345324
+  type: 'test'
+  ...
+# Subtest: memory V09-05 declarative batches roll back and exact observed CAS wins once
+ok 12 - memory V09-05 declarative batches roll back and exact observed CAS wins once
+  ---
+  duration_ms: 2.076444
+  type: 'test'
+  ...
+# Subtest: memory V08-06 bounded use correction preserves the v0.7 activation formula
+ok 13 - memory V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 6.909267
+  type: 'test'
+  ...
+# Subtest: memory V08-07 use cannot create relevance without matching body or edge
+ok 14 - memory V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 4.017346
+  type: 'test'
+  ...
+# Subtest: memory V08-08 wall clock and iteration count do not mutate use
+ok 15 - memory V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 2.188331
+  type: 'test'
+  ...
+# Subtest: memory V08-09 cold and warm solve the same acquired graph
+ok 16 - memory V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 3.231076
+  type: 'test'
+  ...
+# Subtest: memory V08-10 invalid model values and states fail explicitly
+ok 17 - memory V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 6.495448
+  type: 'test'
+  ...
+# Subtest: memory V08-11 acquisition and numerical truncation are separate diagnostics
+ok 18 - memory V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 1.685124
+  type: 'test'
+  ...
+# Subtest: memory V08-12 long top-ranked body competes with short closure sets
+ok 19 - memory V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 13.826609
+  type: 'test'
+  ...
+# Subtest: memory V08-13 explanation itself can be the answer
+ok 20 - memory V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 1.258452
+  type: 'test'
+  ...
+# Subtest: memory V08-14 shared required body is rendered once
+ok 21 - memory V08-14 shared required body is rendered once
+  ---
+  duration_ms: 2.428225
+  type: 'test'
+  ...
+# Subtest: memory V08-15 deep required cycles close finitely
+ok 22 - memory V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 5.65029
+  type: 'test'
+  ...
+# Subtest: memory V08-16 oversized closure is deferred without ref-only substitution
+ok 23 - memory V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 2.263822
+  type: 'test'
+  ...
+# Subtest: memory V08-17 overlapping verified quotations share evidence
+ok 24 - memory V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 5.66005
+  type: 'test'
+  ...
+# Subtest: memory V08-18 different generated meanings and different sources stay separate
+ok 25 - memory V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 4.967567
+  type: 'test'
+  ...
+# Subtest: memory V08-19 identical quote classes count max activation while retaining selected refs
+ok 26 - memory V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 5.85984
+  type: 'test'
+  ...
+# Subtest: memory V08-20 exact UTF-8 display and explicit packing work limits
+ok 27 - memory V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 2.166929
+  type: 'test'
+  ...
+# Subtest: memory V08-21 small corpus oracle compares every feasible public rendering
+ok 28 - memory V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 4.412723
+  type: 'test'
+  ...
+# {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+# Subtest: memory V08-23 host filtering narrows delivery while preserving acquisition
+ok 29 - memory V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 2.569322
+  type: 'test'
+  ...
+# Subtest: memory V09-25 citations cannot split one generation input
+ok 30 - memory V09-25 citations cannot split one generation input
+  ---
+  duration_ms: 2.58823
+  type: 'test'
+  ...
+# Subtest: memory V08-26 inherited working state cannot drop its dependency
+ok 31 - memory V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 2.134278
+  type: 'test'
+  ...
+# Subtest: memory inherited staged generation outputs remain purge dependencies
+ok 32 - memory inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 3.314147
+  type: 'test'
+  ...
+# Subtest: memory V08-27 unshown selection inputs remain erasure dependencies
+ok 33 - memory V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 5.549134
+  type: 'test'
+  ...
+# Subtest: memory V08-29 historical and empty-query currentness differ
+ok 34 - memory V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 8.000879
+  type: 'test'
+  ...
+# Subtest: memory V09-30 every agent change requires an explicit generation input
+ok 35 - memory V09-30 every agent change requires an explicit generation input
+  ---
+  duration_ms: 1.585292
+  type: 'test'
+  ...
+# Subtest: memory V09 mixed batch rejects a tokenless sibling atomically
+ok 36 - memory V09 mixed batch rejects a tokenless sibling atomically
+  ---
+  duration_ms: 6.634467
+  type: 'test'
+  ...
+# Subtest: memory V08-32 generation and inherited erasure ignore search weights
+ok 37 - memory V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 3.627852
+  type: 'test'
+  ...
+# Subtest: memory V08-34 hidden ordinary targets expose no identity or reason
+ok 38 - memory V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 1.63234
+  type: 'test'
+  ...
+# Subtest: memory V08-35 mixed legacy manifests preserve conservative deletion
+ok 39 - memory V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 4.544011
+  type: 'test'
+  ...
+# Subtest: memory V08-36 failed and budgeted purge blocks reads until explicit resume
+ok 40 - memory V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 1.243409
+  type: 'test'
+  ...
+# Subtest: memory V08-37 ack counts successful exposure once per event and revision
+ok 41 - memory V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 1.932172
+  type: 'test'
+  ...
+# Subtest: memory V08-38 reset, subjects, and revisions preserve isolation
+ok 42 - memory V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 2.529918
+  type: 'test'
+  ...
+# Subtest: memory V08-39 cursor fixes evaluation while each page includes required text
+ok 43 - memory V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 3.596523
+  type: 'test'
+  ...
+# Subtest: sqlite V08-22 acquisition and presentation are distinct
+ok 44 - sqlite V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 24.127727
+  type: 'test'
+  ...
+# Subtest: sqlite V09-24 independent generations share a commit only
+ok 45 - sqlite V09-24 independent generations share a commit only
+  ---
+  duration_ms: 9.125972
+  type: 'test'
+  ...
+# Subtest: sqlite V08-28 forged token is refused
+ok 46 - sqlite V08-28 forged token is refused
+  ---
+  duration_ms: 5.505264
+  type: 'test'
+  ...
+# Subtest: sqlite V08-31 independent source survives ordinary relation purge
+ok 47 - sqlite V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 7.380631
+  type: 'test'
+  ...
+# Subtest: sqlite V08-33 unavailable required blocks read but permits inspect
+ok 48 - sqlite V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 5.927694
+  type: 'test'
+  ...
+# Subtest: sqlite V09-01 five operations use declarative content
+ok 49 - sqlite V09-01 five operations use declarative content
+  ---
+  duration_ms: 4.83453
+  type: 'test'
+  ...
+# Subtest: sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 50 - sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 9.358492
+  type: 'test'
+  ...
+# Subtest: sqlite V08-03 reading leaves semantic revisions and use state intact
+ok 51 - sqlite V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 4.277017
+  type: 'test'
+  ...
+# Subtest: sqlite V08-04 observed inspection and logical links retain separate versions
+ok 52 - sqlite V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 4.552568
+  type: 'test'
+  ...
+# Subtest: sqlite V09-05 declarative batches roll back and exact observed CAS wins once
+ok 53 - sqlite V09-05 declarative batches roll back and exact observed CAS wins once
+  ---
+  duration_ms: 4.728335
+  type: 'test'
+  ...
+# Subtest: sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+ok 54 - sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 9.213849
+  type: 'test'
+  ...
+# Subtest: sqlite V08-07 use cannot create relevance without matching body or edge
+ok 55 - sqlite V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 6.280291
+  type: 'test'
+  ...
+# Subtest: sqlite V08-08 wall clock and iteration count do not mutate use
+ok 56 - sqlite V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 4.338897
+  type: 'test'
+  ...
+# Subtest: sqlite V08-09 cold and warm solve the same acquired graph
+ok 57 - sqlite V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 6.618229
+  type: 'test'
+  ...
+# Subtest: sqlite V08-10 invalid model values and states fail explicitly
+ok 58 - sqlite V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 14.024167
+  type: 'test'
+  ...
+# Subtest: sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+ok 59 - sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 3.690384
+  type: 'test'
+  ...
+# Subtest: sqlite V08-12 long top-ranked body competes with short closure sets
+ok 60 - sqlite V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 29.281809
+  type: 'test'
+  ...
+# Subtest: sqlite V08-13 explanation itself can be the answer
+ok 61 - sqlite V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 3.374642
+  type: 'test'
+  ...
+# Subtest: sqlite V08-14 shared required body is rendered once
+ok 62 - sqlite V08-14 shared required body is rendered once
+  ---
+  duration_ms: 6.573048
+  type: 'test'
+  ...
+# Subtest: sqlite V08-15 deep required cycles close finitely
+ok 63 - sqlite V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 14.376998
+  type: 'test'
+  ...
+# Subtest: sqlite V08-16 oversized closure is deferred without ref-only substitution
+ok 64 - sqlite V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 5.192674
+  type: 'test'
+  ...
+# Subtest: sqlite V08-17 overlapping verified quotations share evidence
+ok 65 - sqlite V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 8.069902
+  type: 'test'
+  ...
+# Subtest: sqlite V08-18 different generated meanings and different sources stay separate
+ok 66 - sqlite V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 11.195426
+  type: 'test'
+  ...
+# Subtest: sqlite V08-19 identical quote classes count max activation while retaining selected refs
+ok 67 - sqlite V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 11.009315
+  type: 'test'
+  ...
+# Subtest: sqlite V08-20 exact UTF-8 display and explicit packing work limits
+ok 68 - sqlite V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 5.151328
+  type: 'test'
+  ...
+# Subtest: sqlite V08-21 small corpus oracle compares every feasible public rendering
+ok 69 - sqlite V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 9.88914
+  type: 'test'
+  ...
+# {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+# Subtest: sqlite V08-23 host filtering narrows delivery while preserving acquisition
+ok 70 - sqlite V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 7.070421
+  type: 'test'
+  ...
+# Subtest: sqlite V09-25 citations cannot split one generation input
+ok 71 - sqlite V09-25 citations cannot split one generation input
+  ---
+  duration_ms: 5.656153
+  type: 'test'
+  ...
+# Subtest: sqlite V08-26 inherited working state cannot drop its dependency
+ok 72 - sqlite V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 4.634366
+  type: 'test'
+  ...
+# Subtest: sqlite inherited staged generation outputs remain purge dependencies
+ok 73 - sqlite inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 6.965498
+  type: 'test'
+  ...
+# Subtest: sqlite V08-27 unshown selection inputs remain erasure dependencies
+ok 74 - sqlite V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 7.726749
+  type: 'test'
+  ...
+# Subtest: sqlite V08-29 historical and empty-query currentness differ
+ok 75 - sqlite V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 11.850291
+  type: 'test'
+  ...
+# Subtest: sqlite V09-30 every agent change requires an explicit generation input
+ok 76 - sqlite V09-30 every agent change requires an explicit generation input
+  ---
+  duration_ms: 3.376092
+  type: 'test'
+  ...
+# Subtest: sqlite V09 mixed batch rejects a tokenless sibling atomically
+ok 77 - sqlite V09 mixed batch rejects a tokenless sibling atomically
+  ---
+  duration_ms: 17.49906
+  type: 'test'
+  ...
+# Subtest: sqlite V08-32 generation and inherited erasure ignore search weights
+ok 78 - sqlite V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 10.77345
+  type: 'test'
+  ...
+# Subtest: sqlite V08-34 hidden ordinary targets expose no identity or reason
+ok 79 - sqlite V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 4.220697
+  type: 'test'
+  ...
+# Subtest: sqlite V08-35 mixed legacy manifests preserve conservative deletion
+ok 80 - sqlite V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 9.137263
+  type: 'test'
+  ...
+# Subtest: sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+ok 81 - sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 3.711425
+  type: 'test'
+  ...
+# Subtest: sqlite V08-37 ack counts successful exposure once per event and revision
+ok 82 - sqlite V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 3.945895
+  type: 'test'
+  ...
+# Subtest: sqlite V08-38 reset, subjects, and revisions preserve isolation
+ok 83 - sqlite V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 4.169231
+  type: 'test'
+  ...
+# Subtest: sqlite V08-39 cursor fixes evaluation while each page includes required text
+ok 84 - sqlite V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 8.262777
+  type: 'test'
+  ...
+# Subtest: V09 declarative batches preallocate local cycles, dedupe shared neighbors, revise and retire
+ok 85 - V09 declarative batches preallocate local cycles, dedupe shared neighbors, revise and retire
+  ---
+  duration_ms: 14.400428
+  type: 'test'
+  ...
+# Subtest: V09 generation grouping is order-independent and local links do not merge inputs
+ok 86 - V09 generation grouping is order-independent and local links do not merge inputs
+  ---
+  duration_ms: 17.836908
+  type: 'test'
+  ...
+# Subtest: V09 memory retire preserves unavailable raw slots and origins
+ok 87 - V09 memory retire preserves unavailable raw slots and origins
+  ---
+  duration_ms: 2.404239
+  type: 'test'
+  ...
+# Subtest: V09 sqlite retire preserves unavailable raw slots and origins
+ok 88 - V09 sqlite retire preserves unavailable raw slots and origins
+  ---
+  duration_ms: 5.226143
+  type: 'test'
+  ...
+# Subtest: V09 inspect is one-hop, pageable, version-exact, scoped and fully receipted
+ok 89 - V09 inspect is one-hop, pageable, version-exact, scoped and fully receipted
+  ---
+  duration_ms: 15.902061
+  type: 'test'
+  ...
+# Subtest: V09 SQLite idempotency survives a discarded acknowledgement, reconnect and expired input
+ok 90 - V09 SQLite idempotency survives a discarded acknowledgement, reconnect and expired input
+  ---
+  duration_ms: 10.51484
+  type: 'test'
+  ...
+# Subtest: V09 rejects partial write shapes, empty batches, inspect depth and tokenless agent retirement
+ok 91 - V09 rejects partial write shapes, empty batches, inspect depth and tokenless agent retirement
+  ---
+  duration_ms: 3.722533
+  type: 'test'
+  ...
+1..91
+# tests 91
+# suites 0
+# pass 91
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 603.816569

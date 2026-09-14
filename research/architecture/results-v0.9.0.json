@@ -1,0 +1,62 @@
+{
+  "scope": "Deterministic local contract examples; no model, embedding, or semantic-quality claim.",
+  "sourceSha256": {
+    "src/contracts.ts": "d0079b2b661b7fe5658f7e203429ce2f800f44cc7d55d1d13bcde6b6eb0f9774",
+    "src/index.ts": "dfa16d17603512589e5ff098328356bf04eb24d9b0844086fcaf50044800da7f",
+    "src/client/types.ts": "bccbc3b6c67d345343e777af740530223dc5ea6865b85182cb298a58cfbab13e",
+    "src/core/store.ts": "6d617a9daeb04fcf0af1244b4246c45ef14b5ae337405a00180670d61e43b1ed",
+    "src/client/memory.ts": "4ca34d088a2076a048c424a352cbc14c4276a748bb64c32423f4dcb414e0d8ca",
+    "src/client/engine.ts": "1e087cc6e0f954241cb51fe1a22f02fc79bf5b187459f03e632645794c14e43e",
+    "src/client/retrieval.ts": "3bceff4fd3379ee92185e677766baa6dbe0303ecd6aac8600bd2949aa9880988",
+    "src/client/ranking.ts": "dae9ca4496da60217add026c55e932d3db6cbfcf67221df8d6d62178829b0180",
+    "src/core/ranking.ts": "64663275373c9da3c4eaa6e38077f23063cfb5fb00d48c4c81b37c209b26675d",
+    "src/adapters/memory.ts": "d08704fd4447614678be52d13ac26d13006436bc1bec0208e5996ca446401b62",
+    "src/adapters/sqlite.ts": "d6c9d344fb062b9a22f9a729cc34f59358c5e397ae073f439c9ae2dd6e3f0b38",
+    "research/architecture/evaluate.mjs": "e3e49b5d74470af764f0eb13c0608c48602da5bd937bfe7687cc79aca8ab9973",
+    "test/boundary.test.mjs": "3e0d5383d9d385dd78dc4356508f6f8dc84fc78b378c28f5971e3ddb51c26618"
+  },
+  "results": [
+    {
+      "adapter": "memory",
+      "ordinaryLinkPurge": {
+        "erased": ["B"],
+        "surviving": ["P", "Q", "R", "U"]
+      },
+      "sharedGenerationInput": {
+        "stale": ["alpha conclusion", "beta conclusion"],
+        "returned": []
+      },
+      "independentGenerationInputsInOneCommit": {
+        "stale": ["alpha conclusion"],
+        "returned": ["beta conclusion"]
+      },
+      "retrievalDependencies": {
+        "returnedBodies": 1,
+        "acquiredRevisions": 12,
+        "generationPresentedBodies": 1,
+        "generationAuditRevisions": 12
+      }
+    },
+    {
+      "adapter": "sqlite",
+      "ordinaryLinkPurge": {
+        "erased": ["B"],
+        "surviving": ["P", "Q", "R", "U"]
+      },
+      "sharedGenerationInput": {
+        "stale": ["alpha conclusion", "beta conclusion"],
+        "returned": []
+      },
+      "independentGenerationInputsInOneCommit": {
+        "stale": ["alpha conclusion"],
+        "returned": ["beta conclusion"]
+      },
+      "retrievalDependencies": {
+        "returnedBodies": 1,
+        "acquiredRevisions": 12,
+        "generationPresentedBodies": 1,
+        "generationAuditRevisions": 12
+      }
+    }
+  ]
+}

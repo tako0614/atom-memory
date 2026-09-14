@@ -34,6 +34,13 @@ export interface HostInput {
   /** SHA-256 of the final host payload. Host attestation, not model introspection. */
   readonly payloadDigest: string;
 }
+export interface LocalLinkTarget {
+  /** Batch-local change id. It is never a durable or independently resolvable reference. */
+  readonly local: string;
+  readonly at?: 'logical' | 'observed';
+  readonly required?: boolean;
+  readonly orderKey?: string;
+}
 export type LinkTarget =
   | AtomRef
   | {
@@ -41,11 +48,16 @@ export type LinkTarget =
       readonly at?: 'logical' | 'observed';
       readonly required?: boolean;
       readonly orderKey?: string;
-    };
+    }
+  | LocalLinkTarget;
 export type Links =
   | Readonly<Record<string, LinkTarget | readonly LinkTarget[]>>
   | readonly { readonly role: string; readonly target: LinkTarget }[];
-export type MemoryContent = string | { readonly text: string; readonly links?: Links };
+export interface MemoryContent {
+  readonly text: string;
+  /** Links are a full replacement and must be stated, including an empty value. */
+  readonly links: Links;
+}
 export interface SourceCitation {
   readonly ref: AtomRef;
   readonly start?: number;
@@ -80,18 +92,44 @@ export interface ReadOptions extends SearchOptions {
   readonly depth?: number;
 }
 export interface InspectOptions extends OperationOptions {
-  readonly depth?: number;
   readonly version?: 'observed' | 'latest';
+  readonly direction?: 'both' | 'incoming' | 'outgoing';
+  readonly roles?: readonly string[];
   readonly range?: { readonly start?: number; readonly bytes?: number };
 }
 export interface WriteOptions {
-  readonly input?: InputToken;
   readonly idempotencyKey?: string;
-  readonly sources?: readonly SourceCitation[];
+  readonly budget?: Partial<Budget>;
+  readonly deadline?: string;
   readonly signal?: AbortSignal;
 }
-export interface EditOptions extends OperationOptions {
-  readonly basis?: 'current' | 'historical';
+export interface CreateChange {
+  readonly id: string;
+  readonly op: 'create';
+  readonly content: MemoryContent;
+  /** Citations are a full replacement and must be stated, including an empty array. */
+  readonly sources: readonly SourceCitation[];
+  readonly input?: InputToken;
+}
+export interface ReviseChange {
+  readonly id: string;
+  readonly op: 'revise';
+  /** An issued observed revision. It is also the exact compare-and-swap head. */
+  readonly target: AtomRef;
+  readonly content: MemoryContent;
+  readonly sources: readonly SourceCitation[];
+  readonly input?: InputToken;
+}
+export interface RetireChange {
+  readonly id: string;
+  readonly op: 'retire';
+  /** An issued observed revision. Retirement preserves its raw body, slots and origins. */
+  readonly target: AtomRef;
+  readonly input?: InputToken;
+}
+export type MemoryChange = CreateChange | ReviseChange | RetireChange;
+export interface MemoryWriteRequest {
+  readonly changes: readonly MemoryChange[];
 }
 export type AtomLink = {
   readonly role: string;
@@ -168,10 +206,27 @@ export interface MemoryPage {
   readonly diagnostics: Diagnostics;
   readonly usage: Readonly<Record<Resource, number>>;
 }
-export interface Inspection extends MemoryPage {
+export interface InspectionVia {
+  readonly direction: 'incoming' | 'outgoing';
+  readonly role: string;
+  readonly at: 'logical' | 'observed';
+  readonly required: boolean;
+  readonly orderKey?: string;
+}
+export interface InspectionNeighbor {
+  readonly atom: AtomView;
+  readonly via: readonly InspectionVia[];
+}
+export interface Inspection {
   /** Inspect does not certify eligibility for normal read; an unavailable immediate condition is explicit. */
   readonly readEligibility: 'unchecked' | 'blocked';
   readonly atom: AtomView;
+  readonly neighbors: readonly InspectionNeighbor[];
+  readonly stale: readonly AtomRef[];
+  readonly receipt: MemoryReceipt;
+  readonly cursor?: string;
+  readonly diagnostics: Diagnostics;
+  readonly usage: Readonly<Record<Resource, number>>;
   readonly range?: {
     readonly start: number;
     readonly end: number;
@@ -188,33 +243,17 @@ export interface RecallResult extends MemoryPage {
   readonly sources: readonly SourceCitation[];
   readonly tokenCount: number;
 }
-export interface WriteOutcome extends AtomView {
+export interface WriteOutcome {
   readonly operationId: string;
   readonly repeated: boolean;
   readonly indexing: 'pending' | 'ready';
-}
-export interface Draft {
-  write(content: MemoryContent, options?: WriteOptions): Promise<AtomView>;
-  revise(ref: AtomRef, content: MemoryContent, options?: WriteOptions): Promise<AtomView>;
-  retire(ref: AtomRef): Promise<AtomView>;
-  search(query: string, options?: SearchOptions): Promise<MemoryPage>;
-  inspect(ref: AtomRef, options?: InspectOptions): Promise<Inspection>;
-}
-export interface EditOutcome<T> {
-  readonly value: T;
-  readonly changes: readonly AtomView[];
-  readonly operationId: string;
-  resolve(ref: AtomRef): AtomRef;
+  readonly changes: Readonly<Record<string, AtomView>>;
 }
 export interface MemoryAPI {
   read(state: MemoryState, options?: ReadOptions): Promise<RecallResult>;
   search(query: string, options?: SearchOptions): Promise<MemoryPage>;
   inspect(ref: AtomRef, options?: InspectOptions): Promise<Inspection>;
-  write(content: MemoryContent, options?: WriteOptions): Promise<WriteOutcome>;
-  edit<T>(
-    callback: (draft: Draft) => T | Promise<T>,
-    options?: EditOptions,
-  ): Promise<EditOutcome<T>>;
+  write(request: MemoryWriteRequest, options?: WriteOptions): Promise<WriteOutcome>;
 }
 export interface HostActor {
   readonly type: 'human' | 'input-adapter' | 'agent';

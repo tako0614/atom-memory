@@ -1,18 +1,18 @@
 # 長期履歴を整理する
 
-期間・件数・バイト数で入力を区切り、Agentが既存の記憶を調べながら複数Atomをまとめて編集します。期間の選び方、意味の分解、モデル、再試行はアプリ側の処理です。
+期間・件数・バイト数で入力を区切り、Agentが既存の記憶を調べながら複数Atomをまとめてwriteします。期間の選び方、意味の分解、モデル、再試行はアプリ側の処理です。
 
 ```text
 アプリの未処理キュー → 有限の原資料 → Agentが検索・検討
                                       ↓
-                         検証した複数Atomのedit
+                         検証した複数Atomのwrite batch
                                       ↓
                         索引更新 → 永続化 → 完了記録
 ```
 
 ## 一件ずつに限定しない
 
-一つの `edit` で複数の `draft.write` / `draft.revise` / `draft.retire` をまとめられます。新しいAtomを、同じ非公開編集中に作った別のAtomから参照できます。途中失敗では全件を取り消します。
+一つの `write({ changes })` で複数の `create` / `revise` / `retire` をまとめられます。`{ local: changeId }` のbatch-local linkで、同じbatch内の新しいAtomを相互参照できます。途中失敗では全件を取り消します。
 
 <<< ../examples/history-writer.mjs
 
@@ -38,8 +38,8 @@ Atomのコミットと、アプリの入力キューの完了記録は別の責�
 
 ## Writerの依存と再開
 
-Writerは公開receiptを実行中プロセスで認可確認に使い、receipt自体はcheckpointへ保存しません。checkpointには採用した既存Atomのentry・sourceと、正確なbatch ID・Atom refを保存します。`read` が候補探索中に触れたstale候補や拒否された候補を、採用済み入力として無条件に記録するわけではありません。モデル応答後とcommit直前にreceiptの認可・accepted batchのcurrent headを検証し、最終editでは採用refを `version: 'latest'` で読み直します。checkpoint復元時も正確な採用refを再束縛します（明示的なrevise対象はrevision CAS）。これにより、モデルリンクが付かない出力でも、モデルに見えた組織化入力の依存と鮮度をdurable lineageとして保持します。
+Writerは公開receiptを実行中プロセスで認可確認に使い、receipt自体はcheckpointへ保存しません。checkpointには採用した既存Atomのentry・sourceと、正確なbatch ID・Atom refを保存します。`read` が候補探索中に触れたstale候補や拒否された候補を、採用済み入力として無条件に記録するわけではありません。モデル応答後とcommit直前にreceiptの認可・accepted batchのcurrent headを検証し、最終writeでは採用refを `version: 'latest'` で読み直します。checkpoint復元時も正確な採用refを再束縛します（明示的なrevise targetはrevision CAS）。これにより、モデルリンクが付かない出力でも、モデルに見えた組織化入力の依存と鮮度をdurable lineageとして保持します。
 
-checkpointを復元するときは保存済みの正確なrefを再束縛します。採用したheadが変われば、キャッシュしたモデル出力を再利用せず、新しいreadから再開します。明示的なreviseはrevision CASと、確定した置換版のcurrentnessを通して自己stalenessを防ぎます。
+checkpointを復元するときは保存済みの正確なrefを再束縛します。採用したheadが変われば、キャッシュしたモデル出力を再利用せず、新しいreadから再開します。明示的なrevise changeはrevision CASと、確定した置換版のcurrentnessを通して自己stalenessを防ぎます。Writerのagent changeにはhost-issued InputTokenが必要です。
 
 索引は意味構造の保存とは別です。targetのrevisionだけが変わっても、リンク元のown bodyが同じなら、その親を再エンコードしません。変更されたAtomのv3本文をfeedから処理し、関係の影響は構造ランキングで評価します。

@@ -1,6 +1,6 @@
 # 保存と検索の設定
 
-ホストの設定で、保存先・検索表現・予算を選べます。アプリから使う `write`、`search`、`inspect`、`read`、`edit` の流れは共通です。
+ホストの設定で、保存先・検索表現・予算を選べます。アプリから使う `write`、`search`、`inspect`、`read` の流れは共通です。複数の変更は `write({ changes })` の一つの宣言的batchへまとめます。
 
 | 設定したいこと                 | 選択肢                 |
 | ------------------------------ | ---------------------- |
@@ -18,7 +18,6 @@
 ```ts runnable
 import { MemoryHost, LocalAuthority } from 'atom-memory';
 import { SqliteStorage } from 'atom-memory/sqlite';
-
 const storage = new SqliteStorage('notes.sqlite');
 const authority = new LocalAuthority();
 const auth = authority.issue({
@@ -33,7 +32,21 @@ const memory = new MemoryHost({ storage, authority }).connect({
   actor: { type: 'human' },
 });
 try {
-  const rule = await memory.write('招待リンクの有効期限は24時間です。');
+  const rule = (
+    await memory.write({
+      changes: [
+        {
+          id: 'atom',
+          op: 'create',
+          content: {
+            text: '招待リンクの有効期限は24時間です。',
+            links: [],
+          },
+          sources: [],
+        },
+      ],
+    })
+  ).changes.atom;
   console.log((await memory.inspect(rule.ref)).atom.text);
 } finally {
   storage.close();
@@ -72,8 +85,21 @@ const binding = {
   actor: { type: 'human' as const },
 };
 const memory = host.connect(binding);
-await memory.write('招待リンクの有効期限は24時間です。');
-
+(
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '招待リンクの有効期限は24時間です。',
+          links: [],
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
 const prepared = await host.prepareIndex(binding, { limit: 100 });
 if (prepared.cursor) {
   await host.prepareIndex(binding, { limit: 100, cursor: prepared.cursor });
@@ -107,7 +133,6 @@ const page = await memory.search('招待リンクの期限');
 
 ```ts runnable
 import { MemoryHost, LocalAuthority, type ClientBinding } from 'atom-memory';
-
 const authority = new LocalAuthority();
 const auth = authority.issue({
   subject: 'document-importer',
@@ -122,19 +147,19 @@ const binding: ClientBinding = {
   actor: { type: 'input-adapter' },
 };
 const memory = host.connect(binding);
-const document = await host.ingestBlob(
-  new TextEncoder().encode('招待手順の原文。リンクの有効期限は24時間です。'),
-  'text/plain',
-  binding,
-);
+const document = (
+  await host.ingestBlob(
+    new TextEncoder().encode('招待手順の原文。リンクの有効期限は24時間です。'),
+    'text/plain',
+    binding,
+  )
+).changes.source;
 const detail = await memory.inspect(document.ref, {
-  depth: 0,
   range: { start: 0, bytes: 48 },
 });
 console.log(detail.range?.text);
 if (detail.cursor) {
   const next = await memory.inspect(document.ref, {
-    depth: 0,
     range: { start: 0, bytes: 48 },
     cursor: detail.cursor,
   });
@@ -158,12 +183,29 @@ Atom MemoryはJavaScriptライブラリです。サーバー、常駐worker、AI
 
 ```js
 // 履歴の取り込みと、新しいデータの両方に同じAPIを使う。
-const source = await memory.write('資料の本文', { idempotencyKey: 'document:42:v1' });
-// 必要なら既存のWriter／自分のagentで memory.edit(...) を行う。
-
+const source = (
+  await memory.write(
+    {
+      changes: [
+        {
+          id: 'atom',
+          op: 'create',
+          content: {
+            text: '資料の本文',
+            links: [],
+          },
+          sources: [],
+        },
+      ],
+    },
+    {
+      idempotencyKey: 'document:42:v1',
+    },
+  )
+).changes.atom;
+// 必要なら既存のWriter／自分のagentで revise changeを含むwriteを行う。
 // 今できたAtomを優先する場合。参照は同じbindingで発行したものを使う。
 await host.indexAtoms([source.ref], binding, { limit: 64 });
-
 // 既存履歴と、その後の改訂を有限量ずつ進める。進捗は保存層に残る。
 const progress = await host.updateIndex(binding, { limit: 32 });
 console.log(progress.indexed, progress.processed, progress.pending);
@@ -172,7 +214,7 @@ console.log(progress.indexed, progress.processed, progress.pending);
 
 `updateIndex` はSQLite／MemoryStorageのコミット順の変更フィードを使います。同一コミット内の複数Atomも、再起動・エンコーダー失敗・ページ境界をまたいで進められます。変更されたAtomの現在headだけを、そのAtom自身の本文から再計算します。リンク先の改訂や所属の追加だけで、本文が変わらない親を再エンコードしません。新しい表現設定では別の進捗として履歴を準備します。purgeは対象のベクトルも消し、無関係な索引を維持します。
 
-これは意味を判断して説明を書き換えるAPIではありません。分解・再集約・説明の改訂はWriterが通常の `edit` で行い、索引はその受理済みの結果を扱います。外付けの所属が増えただけで親と全祖先を書き換えることもありません。
+これは意味を判断して説明を書き換えるAPIではありません。分解・再集約・説明の改訂はWriterが宣言的な `write` batchで行い、索引はその受理済みの結果を扱います。外付けの所属が増えただけで親と全祖先を書き換えることもありません。
 
 エンコーダーは `embed(texts, signal, purpose)` の第三引数で `'document'` と `'query'` を区別できます。第三引数を使わない既存の実装も動きます。文脈・`thought`・観測はquery側、Atomの検索表現はdocument側です。空間IDにはモデルの版・前処理・次元を含めてください。
 
@@ -188,7 +230,6 @@ SQLiteでベクトル候補も有限に絞る場合は、語彙・ベクトル�
 
 ```ts
 import { MemoryHost, adaptiveUse } from 'atom-memory';
-
 const model = adaptiveUse({
   initialHalfLifeMs: 7 * 24 * 60 * 60 * 1000,
   maxHalfLifeMs: 365 * 24 * 60 * 60 * 1000,

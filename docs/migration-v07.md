@@ -1,5 +1,9 @@
 # v0.7への移行
 
+::: info 歴史資料
+このページはv0.6からv0.7へ移行した時点の契約と検証手順を保存しています。`edit`、`basis`、旧manifestの記載は当時の実装に対する歴史的なvalidationで、v0.9.0の公開APIではありません。現行の宣言的writeとInputTokenは[移行](/migration)を参照してください。
+:::
+
 v0.7は v0.6 から利用可能性の公開契約を更新します。Atomの本文・ID・revision・出典・receipt・links、v3のown-bodyベクトルと保存データは保持します。認証・policyを含む既存の保存を消去して移行する必要はありません。設定identityが変わるため古いcursorは失効させて取り直します。公開版と検証結果は[リリース記録](/release)で確認できます。
 
 ## まず確認すること

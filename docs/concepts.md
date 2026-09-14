@@ -17,19 +17,30 @@ Atom は、本文と参照を持つ addressable な一つの情報です。メ�
 次の例では、一つの関係に依頼者・承認者・対象という三つの役割を持たせています。同じ役割に複数の対象も指定できます。
 
 ```ts
-await memory.write({
-  text: '参加申請は、担当者の承認を受けて受け付ける。',
-  links: {
-    依頼者: applicant.ref,
-    承認者: [primaryReviewer.ref, backupReviewer.ref],
-    対象: application.ref,
-  },
-});
+(
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '参加申請は、担当者の承認を受けて受け付ける。',
+          links: {
+            依頼者: applicant.ref,
+            承認者: [primaryReviewer.ref, backupReviewer.ref],
+            対象: application.ref,
+          },
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
 ```
 
 役割を入れ替えると違う関係になります。役割名の繰り返しや全体の順序を明示したいときは、`links: [{ role: '承認者', target: ref }, ...]` の配列形式を使えます。
 
-検索候補の直接入口は各Atom自身の本文です。リンク先の本文を親へ暗黙に連結しません。`inspect` や `read` は接続を両方向にたどり、結果にも本文と役割を残します。`depth`、件数、訪問済みの管理により、相互参照があっても有限で停止します。関係weightが0の役割・方向は構造伝播にも入りません。
+検索候補の直接入口は各Atom自身の本文です。リンク先の本文を親へ暗黙に連結しません。`inspect` はrootから一-hopだけを調べ、`direction`、`roles`、`limit`、cursorで隣接をページングします。`read` は独自の`depth`、件数、訪問済み管理でrequired閉包を有限に選びます。相互参照があっても停止し、関係weightが0の役割・方向は構造伝播にも入りません。
 
 ## 関係をAtomにする境界
 
@@ -42,11 +53,36 @@ await memory.write({
 「外部参加者を招待できる」と「管理者の承認が必要」を別の Atom にするなら、条件を `required: true` の参照として結び付けます。
 
 ```ts
-const condition = await memory.write('外部参加者の招待には管理者の承認が必要です。');
-await memory.write({
-  text: '外部参加者を招待できます。',
-  links: { 条件: { ref: condition.ref, required: true } },
-});
+const condition = (
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '外部参加者の招待には管理者の承認が必要です。',
+          links: [],
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
+(
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '外部参加者を招待できます。',
+          links: { 条件: { ref: condition.ref, required: true } },
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
 ```
 
 `read` は主張と条件の本文を一緒にパックします。両方を予算内で渡せなければ、主張を省きます。通常の関係は周辺を探す手掛かりになり、`required` はその本文を読むために欠かせない依存を指定します。
@@ -55,18 +91,18 @@ await memory.write({
 
 保存や検索で受け取る `ref` には、論理的な対象と、そのとき見た版が対応付いています。使う操作によって、どちらを使うかが決まります。
 
-| 操作                                       | 読む・変更する対象                       |
-| ------------------------------------------ | ---------------------------------------- |
-| `inspect(ref)`                             | そのとき観測した版                       |
-| `inspect(ref, { version: 'latest' })`      | 同じ対象の最新版                         |
-| `draft.revise(ref, content)`               | 観測版を前提に同じ対象を改訂             |
-| `links: { role: ref }`                     | 同じ対象へ接続し、読取時の状態で版を解決 |
-| `links: { role: { ref, at: 'observed' } }` | 接続先を観測版に固定                     |
+| 操作                                                       | 読む・変更する対象                       |
+| ---------------------------------------------------------- | ---------------------------------------- |
+| `inspect(ref)`                                             | そのとき観測した版                       |
+| `inspect(ref, { version: 'latest' })`                      | 同じ対象の最新版                         |
+| `write({ changes: [{ op: 'revise', target: ref, ... }] })` | 観測版を前提に同じ対象を改訂             |
+| `links: { role: ref }`                                     | 同じ対象へ接続し、読取時の状態で版を解決 |
+| `links: { role: { ref, at: 'observed' } }`                 | 接続先を観測版に固定                     |
 
 例えば有効期限を改訂しても、手順からルールへの通常リンクは接続し続けます。一方、以前の回答の根拠を調べる `inspect` は、その回答で参照した版を返します。
 
 ## 整理を更新して、当時の構成も残す
 
-別の視点でまとめた説明は、そのまま並べて保存できます。同じ整理を更新する場合は `edit` の `revise` で新しい版を作ります。以前に受け取った参照は元の版を指します。
+別の視点でまとめた説明は、そのまま並べて保存できます。同じ整理を更新する場合は `write` の `revise` changeで新しい版を作ります。以前に受け取った参照は元の版を指します。複数のcreate/revise/retireとbatch-local linkは一つのwriteへまとめて原子的に確定できます。
 
 「どの整理を採用するか」「何を後継とするか」「当時の構成をいつまで残すか」はアプリ側の運用です。Atomは役割名から後継採用を推定せず、特定の関係形式や保持期間を要求しません。検索の `score` も queryへの相対関連度であり、真偽や絶対的重要度ではありません。[責務の境界](/specification)を参照してください。

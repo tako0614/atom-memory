@@ -1,0 +1,380 @@
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 check
+> npm test && npm run check:research && node scripts/evaluate-ranking.mjs && node scripts/evaluate-v08.mjs && npm run docs:examples && npm run docs:build
+
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 test
+> npm run build && node --test test/*.test.mjs
+
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 build
+> node --input-type=module -e "import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });" && tsc -p tsconfig.json
+
+✔ memory: independent multi-membership survives another relation's retirement (23.577981ms)
+✔ memory: observed references keep their version and logical links follow revisions (8.195228ms)
+✔ memory: private edits roll back and a stale Writer cannot commit (12.260987ms)
+✔ memory: atomic CAS, idempotency and trusted source ingestion remain enforced (2.832774ms)
+✔ memory: semantic labels are generic; logical include remains invalid (1.571442ms)
+✔ memory: purge erases previous versions, blobs and dependent organizations (10.523396ms)
+✔ sqlite: independent multi-membership survives another relation's retirement (21.62842ms)
+✔ sqlite: observed references keep their version and logical links follow revisions (15.6719ms)
+✔ sqlite: private edits roll back and a stale Writer cannot commit (13.442094ms)
+✔ sqlite: atomic CAS, idempotency and trusted source ingestion remain enforced (5.880634ms)
+✔ sqlite: semantic labels are generic; logical include remains invalid (3.398345ms)
+✔ sqlite: purge erases previous versions, blobs and dependent organizations (27.62524ms)
+✔ UTF-8 source coordinates reject split code points and remain byte exact (0.582625ms)
+✔ a provider proposes references; injected scores and bodies cannot control activation (23.800533ms)
+✔ every acquired internal body supplies direct activation, even outside provider seeds (9.937252ms)
+✔ read alone does not record; actual delivery changes only the next frozen evaluation (19.634241ms)
+✔ warm context and graph corrections agree with cold evaluation within reported bounds (26.476587ms)
+✔ 0.7 rejects retired scoring configuration instead of silently accepting it (1.756706ms)
+✔ memory: use transaction rolls back written markers and states on a late budget failure (6.792886ms)
+✔ sqlite: use transaction rolls back written markers and states on a late budget failure (9.635181ms)
+✔ engine identity uses availability model id without hashing function bodies (0.957614ms)
+✔ memory: custom value failures are INVALID_INPUT instead of a zero fallback (8.32375ms)
+✔ sqlite: custom value failures are INVALID_INPUT instead of a zero fallback (17.127661ms)
+✔ SQLite reopen, scoped reset, and transitive purge preserve exact use-event semantics (29.234977ms)
+✔ scoped unit use and read alone do not activate (memory) (20.918525ms)
+✔ duplicate use is durable and restart-safe (memory) (3.924616ms)
+✔ scoped unit use and read alone do not activate (sqlite) (14.63301ms)
+✔ duplicate use is durable and restart-safe (sqlite) (9.27485ms)
+✔ memory: renewed handles preserve subject scope while other subjects and policies are denied (6.420564ms)
+✔ sqlite: renewed handles preserve subject scope while other subjects and policies are denied (6.529352ms)
+✔ memory: revision use does not inherit and rollback invalid batches atomically (6.034793ms)
+✔ sqlite: revision use does not inherit and rollback invalid batches atomically (10.110968ms)
+✔ memory: clock rollback does not decay, then elapsed time decays exponentially (4.129736ms)
+✔ sqlite: clock rollback does not decay, then elapsed time decays exponentially (9.354781ms)
+✔ memory: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata (4.60445ms)
+✔ sqlite: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata (9.327309ms)
+✔ memory: batch-local ids cannot record use before a committed AtomRef is returned (1.906507ms)
+✔ sqlite: batch-local ids cannot record use before a committed AtomRef is returned (5.753028ms)
+✔ memory: custom state is isolated, replay is inert, and the fixed boost stays bounded (7.67296ms)
+✔ sqlite: custom state is isolated, replay is inert, and the fixed boost stays bounded (8.508243ms)
+✔ memory: batch updates and snapshots use one host-owned monotonic time (4.820935ms)
+✔ sqlite: batch updates and snapshots use one host-owned monotonic time (10.514859ms)
+✔ memory: a late custom callback failure rolls back every state and marker (2.916055ms)
+✔ sqlite: a late custom callback failure rolls back every state and marker (6.416301ms)
+✔ memory: new-format state requires the host-owned monotonic timestamp (2.298843ms)
+✔ sqlite: new-format state requires the host-owned monotonic timestamp (6.14021ms)
+✔ memory: async or oversized custom state fails atomically and callback work is budgeted (2.726401ms)
+✔ sqlite: async or oversized custom state fails atomically and callback work is budgeted (6.1321ms)
+✔ memory: legacy aggregates preserve exact value, migrate on use, and never replay after reset (3.395575ms)
+✔ sqlite: legacy aggregates preserve exact value, migrate on use, and never replay after reset (6.642217ms)
+✔ A05/A06 schema-independent directions, three-way relations and repeated roles (39.808749ms)
+✔ A07/A09 rank the whole allowed scope before limit; non-tied ranks ignore IDs (205.152447ms)
+✔ A08/A15/A32 lexical fallback survives unprepared vectors and incompatible spaces fail (11.38468ms)
+✔ A17/A18 source union is used in actual packing without merging different derived prose (45.652339ms)
+✔ A19 required conditions are actual text or the entire claim is omitted (13.317133ms)
+✔ A20 cyclic, high-degree relations are bounded and all remaining edges can resume (65.148046ms)
+✔ A22 stale CAS rolls back every declarative change (2.565307ms)
+✔ A24 source edits exclude stale summaries and report them for explicit refresh (8.560019ms)
+✔ A25 UTF-8 blob ranges read real bytes and resume without cutting characters (450.451871ms)
+✔ A24 a new arbitrary relation invalidates a prior range-dependent explanation (5.454326ms)
+✔ A22 inserted relations after observation fail current range validation (3.186463ms)
+✔ adaptiveUse has deterministic parameter identity and validates its bounds (2.266379ms)
+✔ adaptiveUse updates one bounded O(1) triple and evaluates exponential availability (1.544475ms)
+✔ distributed uses retain more long-term availability than a same-count terminal burst (0.552064ms)
+✔ custom model state is cloned, deeply frozen, bounded JSON (0.685535ms)
+✔ callback exceptions, async results, invalid scalars and hostile JSON fail closed (1.016824ms)
+✔ model normalization trusts stable id identity and never source-hashes functions (0.300695ms)
+✔ the package exposes memory operations, not a model execution protocol (14.034379ms)
+✔ host-owned model execution still cannot forge sources, references or revoked access (16.708814ms)
+✔ memory: one durable dependency manifest preserves freshness, conflicts and purge (32.170451ms)
+✔ memory: stale candidates never lend their rank to current sources (25.565296ms)
+✔ memory: stale memory is reported, and an explicit Writer edit restores it (19.744535ms)
+✔ sqlite: one durable dependency manifest preserves freshness, conflicts and purge (37.485472ms)
+✔ sqlite: stale candidates never lend their rank to current sources (34.693482ms)
+✔ sqlite: stale memory is reported, and an explicit Writer edit restores it (46.374644ms)
+✔ memory: R2 overlapping quotations share the actual context evidence text (41.085278ms)
+✔ memory: R2 containment keeps each Atom and recall packs shared evidence once (15.331787ms)
+✔ memory: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions (26.279085ms)
+✔ memory: R2 equal text from distinct sources and revisions stays distinct (17.179112ms)
+✔ memory: R2 summaries with the same origins are not treated as verbatim equivalents (13.981186ms)
+✔ memory: R2 required conditions are included in the final text or the complete claim is omitted (28.823855ms)
+✔ sqlite: R2 overlapping quotations share the actual context evidence text (36.3455ms)
+✔ sqlite: R2 containment keeps each Atom and recall packs shared evidence once (21.382754ms)
+✔ sqlite: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions (21.014267ms)
+✔ sqlite: R2 equal text from distinct sources and revisions stays distinct (12.537847ms)
+✔ sqlite: R2 summaries with the same origins are not treated as verbatim equivalents (13.54944ms)
+✔ sqlite: R2 required conditions are included in the final text or the complete claim is omitted (34.059852ms)
+✔ A03/A34 a lost commit acknowledgment retries the exact operation without replaying edits (26.572999ms)
+✔ A35 legacy SQLite data and memberships keep exact IDs/revisions/origins across client adoption and reopen (58.202364ms)
+✔ A08/A32 index preparation advances and index changes expire search cursors (23.069117ms)
+✔ A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking (52.434561ms)
+✔ A31 vector cache is partitioned by authorization and cancellation reaches the embedding call (8.542039ms)
+✔ A31 purge invalidates issued refs, summaries and cached representation routes (13.370335ms)
+✔ A19 stale required generated conditions cannot enter as unvalidated companions (8.829988ms)
+✔ historical analysis of old generated inputs preserves provenance without demanding current heads (14.186593ms)
+✔ retiring generated Atoms preserves links and citations while host controls provenance (6.742799ms)
+✔ a host with multiple read policies can write an independent input without relabelling search scope (2.522068ms)
+✔ range-dependent edits require the adapter query-guard capability before publishing (5.551052ms)
+✔ A01/A02 declarative flow and independent repeated content (73.500645ms)
+✔ A03/A04 idempotent resend and observed-ref CAS (9.546026ms)
+✔ A21/A22 rejected declarative batch exposes no tentative changes (4.163285ms)
+✔ zero, dangling, cycles, and shared descendants follow a=b+T^T a (5.931359ms)
+✔ dense references lie inside the reported normalized error certificate (56.888666ms)
+✔ raw activation is linear and bounded input boosts keep raw and normalized bounds (0.550816ms)
+✔ signed warm correction survives changed seeds and graphs without going negative (2.833738ms)
+✔ the final residual is reserved and low budget returns a finite approximation (1.449983ms)
+✔ equal residual priority uses IDs and charges heap selection work (0.303715ms)
+✔ stable scaling accepts huge finite weights and values, while unprovable inputs fail (0.897744ms)
+✔ option parsing and fixed seed scoring reject legacy or nonfinite knobs (2.128161ms)
+✔ a tiny finite warm state returns a bounded approximation instead of rejecting an overflowing error ratio (1.039903ms)
+✔ memory: committed changes, own-body indexing, retries and restart (37.089854ms)
+✔ sqlite: committed changes, own-body indexing, retries and restart (46.520755ms)
+✔ memory: zero-weight links do not seed a parent from target body text (12.900863ms)
+✔ sqlite: zero-weight links do not seed a parent from target body text (12.685091ms)
+✔ memory: published v2 vectors reuse only matching own-body metadata (11.017766ms)
+✔ sqlite: published v2 vectors reuse only matching own-body metadata (22.799608ms)
+✔ memory: v3 progress ignores v2 checkpoints and drains after restart (4.225832ms)
+✔ sqlite: v3 progress ignores v2 checkpoints and drains after restart (9.911585ms)
+✔ SQLite default hybrid vectors find a lexical miss without scanning unrelated or private bodies (182.772216ms)
+✔ memory: old index metadata cannot report an unindexed current candidate ready (3.34797ms)
+✔ sqlite: old index metadata cannot report an unindexed current candidate ready (6.382575ms)
+✔ failed indexing never rolls back committed content and cannot publish a purged vector (1.536064ms)
+✔ memory: default ingress reaches a known match beyond the finite exact scan (541.831349ms)
+✔ sqlite: default ingress reaches a known match beyond the finite exact scan (631.346275ms)
+✔ lexical ingress finds late matches within a small scan budget and preserves scope and deletion (20.60208ms)
+✔ incremental packing keeps shared quotations and required closures atomic at exact output limits (54.496628ms)
+✔ incremental packing rechecks authorization before final emission (5.668261ms)
+✔ signal kinds keep their weights; repeated observations cannot drown out context (2.531897ms)
+✔ weighted propagation conserves mass, joins paths, and handles cycles and dangling nodes (3.310984ms)
+✔ memory: an exact node cap still collects every edge among admitted nodes (18.219084ms)
+✔ memory: rejected nodes do not stop edges between already admitted nodes (8.194554ms)
+✔ memory: a stale seed cannot lend rank to its current neighbor (13.227341ms)
+✔ memory: traversal stops at a stale bridge and reports it (16.110736ms)
+✔ memory: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks (32.431407ms)
+✔ memory: graph differences, not extra embeddings, cause related evidence recall (16.170991ms)
+✔ memory: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it (7.824154ms)
+✔ memory: role direction and grant boundaries also apply to inverse expansion (7.779241ms)
+✔ sqlite: an exact node cap still collects every edge among admitted nodes (12.505309ms)
+✔ sqlite: rejected nodes do not stop edges between already admitted nodes (11.631185ms)
+✔ sqlite: a stale seed cannot lend rank to its current neighbor (16.942747ms)
+✔ sqlite: traversal stops at a stale bridge and reports it (20.364744ms)
+✔ sqlite: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks (29.004911ms)
+✔ sqlite: graph differences, not extra embeddings, cause related evidence recall (20.771028ms)
+✔ sqlite: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it (13.592061ms)
+✔ sqlite: role direction and grant boundaries also apply to inverse expansion (9.1277ms)
+✔ edge budget bounds graph collection after the node cap is reached (1.649514ms)
+✔ candidate budget exhaustion leaves ranking tasks resumable (2.11969ms)
+✔ automatic recall returns useful memory from a large corpus within the default budget (3152.468207ms)
+✔ disabled inverse roles cannot add a parent; arbitrary role names remain ordinary roles (3.190535ms)
+✔ replayable SQLite import flushes before an external checkpoint and retains rollback (6.209847ms)
+✔ metadata prefix scans preserve literal and supplementary Unicode keys (4.652749ms)
+✔ transient cleanup does not load durable write traces (25.911028ms)
+✔ SQLite purge follows historical and uncited dependencies without a full scan (legacy=false) (47.24111ms)
+✔ SQLite purge follows historical and uncited dependencies without a full scan (legacy=true) (30.688539ms)
+✔ purge indexes stay atomic for the pre-index SQLite write protocol (5.398304ms)
+✔ memory V09-40 package exports and persisted observations (51.903086ms)
+✔ sqlite V09-40 package exports and persisted observations (48.67363ms)
+✔ memory V08-22 acquisition and presentation are distinct (56.738752ms)
+✔ memory V09-24 independent generations share a commit only (14.558251ms)
+✔ memory V08-28 forged token is refused (8.679688ms)
+✔ memory V08-31 independent source survives ordinary relation purge (10.04952ms)
+✔ memory V08-33 unavailable required blocks read but permits inspect (7.826399ms)
+✔ memory V09-01 five operations use declarative content (6.219618ms)
+✔ memory V08-02 shared n-ary roles and cycles use ordinary Atoms (12.600997ms)
+✔ memory V08-03 reading leaves semantic revisions and use state intact (5.698232ms)
+✔ memory V08-04 observed inspection and logical links retain separate versions (5.145538ms)
+✔ memory V09-05 declarative batches roll back and exact observed CAS wins once (4.117014ms)
+✔ memory V08-06 bounded use correction preserves the v0.7 activation formula (11.927132ms)
+✔ memory V08-07 use cannot create relevance without matching body or edge (6.83969ms)
+✔ memory V08-08 wall clock and iteration count do not mutate use (2.926888ms)
+✔ memory V08-09 cold and warm solve the same acquired graph (5.379623ms)
+✔ memory V08-10 invalid model values and states fail explicitly (5.332174ms)
+✔ memory V08-11 acquisition and numerical truncation are separate diagnostics (1.543026ms)
+✔ memory V08-12 long top-ranked body competes with short closure sets (20.25156ms)
+✔ memory V08-13 explanation itself can be the answer (1.368344ms)
+✔ memory V08-14 shared required body is rendered once (2.623623ms)
+✔ memory V08-15 deep required cycles close finitely (6.155136ms)
+✔ memory V08-16 oversized closure is deferred without ref-only substitution (2.785535ms)
+✔ memory V08-17 overlapping verified quotations share evidence (4.787233ms)
+✔ memory V08-18 different generated meanings and different sources stay separate (4.367523ms)
+✔ memory V08-19 identical quote classes count max activation while retaining selected refs (11.112939ms)
+✔ memory V08-20 exact UTF-8 display and explicit packing work limits (4.966826ms)
+✔ memory V08-21 small corpus oracle compares every feasible public rendering (7.232485ms)
+ℹ {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+✔ memory V08-23 host filtering narrows delivery while preserving acquisition (3.422633ms)
+✔ memory V09-25 citations cannot split one generation input (4.204912ms)
+✔ memory V08-26 inherited working state cannot drop its dependency (3.422505ms)
+✔ memory inherited staged generation outputs remain purge dependencies (4.178966ms)
+✔ memory V08-27 unshown selection inputs remain erasure dependencies (5.770264ms)
+✔ memory V08-29 historical and empty-query currentness differ (7.991107ms)
+✔ memory V09-30 every agent change requires an explicit generation input (1.827514ms)
+✔ memory V09 mixed batch rejects a tokenless sibling atomically (7.882282ms)
+✔ memory V08-32 generation and inherited erasure ignore search weights (4.421099ms)
+✔ memory V08-34 hidden ordinary targets expose no identity or reason (2.063563ms)
+✔ memory V08-35 mixed legacy manifests preserve conservative deletion (5.368649ms)
+✔ memory V08-36 failed and budgeted purge blocks reads until explicit resume (1.610662ms)
+✔ memory V08-37 ack counts successful exposure once per event and revision (2.242278ms)
+✔ memory V08-38 reset, subjects, and revisions preserve isolation (2.198646ms)
+✔ memory V08-39 cursor fixes evaluation while each page includes required text (5.874101ms)
+✔ sqlite V08-22 acquisition and presentation are distinct (30.959309ms)
+✔ sqlite V09-24 independent generations share a commit only (10.099169ms)
+✔ sqlite V08-28 forged token is refused (4.658556ms)
+✔ sqlite V08-31 independent source survives ordinary relation purge (6.85556ms)
+✔ sqlite V08-33 unavailable required blocks read but permits inspect (5.085465ms)
+✔ sqlite V09-01 five operations use declarative content (6.599927ms)
+✔ sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms (12.700799ms)
+✔ sqlite V08-03 reading leaves semantic revisions and use state intact (7.316714ms)
+✔ sqlite V08-04 observed inspection and logical links retain separate versions (6.221998ms)
+✔ sqlite V09-05 declarative batches roll back and exact observed CAS wins once (4.812542ms)
+✔ sqlite V08-06 bounded use correction preserves the v0.7 activation formula (7.851482ms)
+✔ sqlite V08-07 use cannot create relevance without matching body or edge (6.953927ms)
+✔ sqlite V08-08 wall clock and iteration count do not mutate use (6.091949ms)
+✔ sqlite V08-09 cold and warm solve the same acquired graph (10.265128ms)
+✔ sqlite V08-10 invalid model values and states fail explicitly (15.933079ms)
+✔ sqlite V08-11 acquisition and numerical truncation are separate diagnostics (4.774526ms)
+✔ sqlite V08-12 long top-ranked body competes with short closure sets (30.166501ms)
+✔ sqlite V08-13 explanation itself can be the answer (3.885724ms)
+✔ sqlite V08-14 shared required body is rendered once (6.035506ms)
+✔ sqlite V08-15 deep required cycles close finitely (17.906506ms)
+✔ sqlite V08-16 oversized closure is deferred without ref-only substitution (8.273593ms)
+✔ sqlite V08-17 overlapping verified quotations share evidence (12.220477ms)
+✔ sqlite V08-18 different generated meanings and different sources stay separate (9.124248ms)
+✔ sqlite V08-19 identical quote classes count max activation while retaining selected refs (13.743404ms)
+✔ sqlite V08-20 exact UTF-8 display and explicit packing work limits (8.821767ms)
+✔ sqlite V08-21 small corpus oracle compares every feasible public rendering (9.289169ms)
+ℹ {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+✔ sqlite V08-23 host filtering narrows delivery while preserving acquisition (5.943881ms)
+✔ sqlite V09-25 citations cannot split one generation input (5.651895ms)
+✔ sqlite V08-26 inherited working state cannot drop its dependency (5.179179ms)
+✔ sqlite inherited staged generation outputs remain purge dependencies (7.886858ms)
+✔ sqlite V08-27 unshown selection inputs remain erasure dependencies (11.439585ms)
+✔ sqlite V08-29 historical and empty-query currentness differ (17.483484ms)
+✔ sqlite V09-30 every agent change requires an explicit generation input (6.002448ms)
+✔ sqlite V09 mixed batch rejects a tokenless sibling atomically (11.237533ms)
+✔ sqlite V08-32 generation and inherited erasure ignore search weights (9.088344ms)
+✔ sqlite V08-34 hidden ordinary targets expose no identity or reason (5.146686ms)
+✔ sqlite V08-35 mixed legacy manifests preserve conservative deletion (10.904349ms)
+✔ sqlite V08-36 failed and budgeted purge blocks reads until explicit resume (3.461691ms)
+✔ sqlite V08-37 ack counts successful exposure once per event and revision (4.049552ms)
+✔ sqlite V08-38 reset, subjects, and revisions preserve isolation (3.214702ms)
+✔ sqlite V08-39 cursor fixes evaluation while each page includes required text (7.341036ms)
+✔ V09 declarative batches preallocate local cycles, dedupe shared neighbors, revise and retire (29.989241ms)
+✔ V09 generation grouping is order-independent and local links do not merge inputs (41.312636ms)
+✔ V09 memory retire preserves unavailable raw slots and origins (3.791736ms)
+✔ V09 sqlite retire preserves unavailable raw slots and origins (7.461793ms)
+✔ V09 inspect is one-hop, pageable, version-exact, scoped and fully receipted (23.476111ms)
+✔ V09 SQLite idempotency survives a discarded acknowledgement, reconnect and expired input (12.398665ms)
+✔ V09 rejects partial write shapes, empty batches, inspect depth and tokenless agent retirement (3.900701ms)
+ℹ tests 246
+ℹ suites 0
+ℹ pass 246
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3598.109422
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 check:research
+> node --test research/composition/*.test.mjs
+
+✔ memory: composed Atom graph preserves packed evidence, scope, updates and stale exclusion (907.425995ms)
+✔ sqlite: composed Atom graph preserves packed evidence, scope, updates and stale exclusion (1565.989012ms)
+✔ sparse flat and heap push agree with the fixed graph after query and edge changes (58.697551ms)
+✔ work budget pauses push atomically and supports more work without losing the residual (1.318907ms)
+✔ composition agrees with converged propagation across 90 fixed graphs and elimination orders (52.049273ms)
+✔ overlapping regions retain a single shared port; duplicate membership is not duplicated mass (0.747799ms)
+✔ query changes reuse query-independent operators even with dangling redistribution and internal seeds (1.908009ms)
+✔ a parent composes child interfaces and recovers an internal score through nested operators (0.650309ms)
+✔ local relationship and boundary-degree changes invalidate affected operators and retain others (1.341687ms)
+✔ dense interfaces remain expanded and a bounded cache can evict without changing results (0.97953ms)
+✔ composition rejects malformed input and supports cancellation during compile and solve (1.280032ms)
+✔ 120 context and graph corrections match fresh solves; signed residual bounds enclose lazy recovery (106.722689ms)
+✔ adaptive selection can certify a winner without opening unrelated regions and resumes under budget (0.546787ms)
+✔ nested recovery charges shared dependencies once and conservative bounds handle ties and zero seeds (1.330368ms)
+✔ memory: budgeted evaluation returns exactly packed evidence and resumes (254.549632ms)
+✔ sqlite: budgeted evaluation returns exactly packed evidence and resumes (382.520433ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2541.937525
+{
+  "at": "2026-09-14T00:12:10.294Z",
+  "node": "v26.1.0",
+  "kind": "deterministic structural retrieval; not LLM quality",
+  "model": "fixed 2D encoder, no answer model or Writer",
+  "tokens": "UTF-8 bytes; not billed tokens",
+  "budgets": {
+    "maxCandidates": 4000,
+    "maxBytes": 4000000,
+    "tokens": 20000
+  },
+  "runs": [
+    {
+      "variant": "correct",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": true,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 1,
+      "reciprocalRank": 0.3333333333333333,
+      "memoryBytes": 1014,
+      "latencyMs": 8.094711999999994,
+      "heapDeltaBytes": 1164928
+    },
+    {
+      "variant": "none",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": false,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 0,
+      "reciprocalRank": 0,
+      "memoryBytes": 757,
+      "latencyMs": 1.6355799999999974,
+      "heapDeltaBytes": -687584
+    },
+    {
+      "variant": "damaged",
+      "atoms": 4,
+      "edges": 2,
+      "expansionEnabled": true,
+      "documentCalls": 4,
+      "queryCalls": 1,
+      "sourceRecall": 0,
+      "reciprocalRank": 0,
+      "memoryBytes": 1004,
+      "latencyMs": 2.7902349999999956,
+      "heapDeltaBytes": 1303984
+    }
+  ]
+}
+{"comparisons":12,"improvements":2,"oracleGaps":0,"realLLM":false}
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 docs:examples
+> node scripts/check-doc-examples.mjs
+
+Documentation: extracted, typechecked and executed 14 examples; verified 6 documented outputs.
+npm warn Unknown builtin config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "globalignorefile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> atom-memory@0.9.0 docs:build
+> vitepress build docs
+
+
+  vitepress 2.0.0-alpha.20  (using vite 8.3.0)
+
+- building client + server bundles...
+[32m✓[0m building client + server bundles...
+- rendering pages...
+[32m✓[0m rendering pages...
+- generating sitemap...
+[32m✓[0m generating sitemap...
+build complete in 1.83s.

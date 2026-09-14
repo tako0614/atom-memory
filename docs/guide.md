@@ -48,7 +48,7 @@ node hello.mjs
 
 ## もう少し、使ってみよう
 
-候補を一覧で見たいときは `search`。情報が変わったら `edit`。どちらも同じ `memory` を使えます。
+候補を一覧で見たいときは `search`。情報が変わったら `write` の `revise` changeを使います。どちらも同じ `memory` を使えます。複数のcreate/revise/retireは一つの `write({ changes })` にまとめられます。
 
 <div class="doc-paths">
 <a href="/examples"><strong>短いコードで試す <span aria-hidden="true">→</span></strong><span>検索、訂正、条件付きの記憶。</span></a>

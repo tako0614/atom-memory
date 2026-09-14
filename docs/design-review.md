@@ -1,5 +1,9 @@
 # v0.8 設計判断
 
+::: info 歴史資料
+これはv0.8の設計判断とvalidation境界を保存した記録です。現行v0.9.0の公開APIは `read` / `search` / `inspect` / `write` であり、下記の `edit` 相当の語は当時の設計・入力契約を指します。現在の意味の正本は[規範仕様](/specification)です。
+:::
+
 基準は `a2f3c59098ba7f6a46ffd3903d2fc14fa43335f5`、v0.7.0。意味の正本は[規範仕様](/specification)、実行記録は `validation/v0.8.0.md` です。
 
 | v0.7で結合していた責務 | v0.8の扱い                                                                    |

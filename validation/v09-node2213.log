@@ -1,0 +1,1272 @@
+TAP version 13
+# (node:3892921) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory: independent multi-membership survives another relation's retirement
+ok 1 - memory: independent multi-membership survives another relation's retirement
+  ---
+  duration_ms: 23.351435
+  ...
+# Subtest: memory: observed references keep their version and logical links follow revisions
+ok 2 - memory: observed references keep their version and logical links follow revisions
+  ---
+  duration_ms: 8.283269
+  ...
+# Subtest: memory: private edits roll back and a stale Writer cannot commit
+ok 3 - memory: private edits roll back and a stale Writer cannot commit
+  ---
+  duration_ms: 20.695069
+  ...
+# Subtest: memory: atomic CAS, idempotency and trusted source ingestion remain enforced
+ok 4 - memory: atomic CAS, idempotency and trusted source ingestion remain enforced
+  ---
+  duration_ms: 5.936592
+  ...
+# Subtest: memory: semantic labels are generic; logical include remains invalid
+ok 5 - memory: semantic labels are generic; logical include remains invalid
+  ---
+  duration_ms: 1.628501
+  ...
+# Subtest: memory: purge erases previous versions, blobs and dependent organizations
+ok 6 - memory: purge erases previous versions, blobs and dependent organizations
+  ---
+  duration_ms: 12.583069
+  ...
+# Subtest: sqlite: independent multi-membership survives another relation's retirement
+ok 7 - sqlite: independent multi-membership survives another relation's retirement
+  ---
+  duration_ms: 31.900348
+  ...
+# Subtest: sqlite: observed references keep their version and logical links follow revisions
+ok 8 - sqlite: observed references keep their version and logical links follow revisions
+  ---
+  duration_ms: 20.667629
+  ...
+# Subtest: sqlite: private edits roll back and a stale Writer cannot commit
+ok 9 - sqlite: private edits roll back and a stale Writer cannot commit
+  ---
+  duration_ms: 17.015026
+  ...
+# Subtest: sqlite: atomic CAS, idempotency and trusted source ingestion remain enforced
+ok 10 - sqlite: atomic CAS, idempotency and trusted source ingestion remain enforced
+  ---
+  duration_ms: 5.455951
+  ...
+# Subtest: sqlite: semantic labels are generic; logical include remains invalid
+ok 11 - sqlite: semantic labels are generic; logical include remains invalid
+  ---
+  duration_ms: 5.68896
+  ...
+# Subtest: sqlite: purge erases previous versions, blobs and dependent organizations
+ok 12 - sqlite: purge erases previous versions, blobs and dependent organizations
+  ---
+  duration_ms: 36.195825
+  ...
+# Subtest: UTF-8 source coordinates reject split code points and remain byte exact
+ok 13 - UTF-8 source coordinates reject split code points and remain byte exact
+  ---
+  duration_ms: 0.39199
+  ...
+# Subtest: a provider proposes references; injected scores and bodies cannot control activation
+ok 14 - a provider proposes references; injected scores and bodies cannot control activation
+  ---
+  duration_ms: 17.855223
+  ...
+# Subtest: every acquired internal body supplies direct activation, even outside provider seeds
+ok 15 - every acquired internal body supplies direct activation, even outside provider seeds
+  ---
+  duration_ms: 7.160408
+  ...
+# Subtest: read alone does not record; actual delivery changes only the next frozen evaluation
+ok 16 - read alone does not record; actual delivery changes only the next frozen evaluation
+  ---
+  duration_ms: 12.461157
+  ...
+# Subtest: warm context and graph corrections agree with cold evaluation within reported bounds
+ok 17 - warm context and graph corrections agree with cold evaluation within reported bounds
+  ---
+  duration_ms: 22.825072
+  ...
+# Subtest: 0.7 rejects retired scoring configuration instead of silently accepting it
+ok 18 - 0.7 rejects retired scoring configuration instead of silently accepting it
+  ---
+  duration_ms: 4.356499
+  ...
+# (node:3892922) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory: use transaction rolls back written markers and states on a late budget failure
+ok 19 - memory: use transaction rolls back written markers and states on a late budget failure
+  ---
+  duration_ms: 16.415281
+  ...
+# Subtest: sqlite: use transaction rolls back written markers and states on a late budget failure
+ok 20 - sqlite: use transaction rolls back written markers and states on a late budget failure
+  ---
+  duration_ms: 6.124748
+  ...
+# Subtest: engine identity uses availability model id without hashing function bodies
+ok 21 - engine identity uses availability model id without hashing function bodies
+  ---
+  duration_ms: 0.807035
+  ...
+# Subtest: memory: custom value failures are INVALID_INPUT instead of a zero fallback
+ok 22 - memory: custom value failures are INVALID_INPUT instead of a zero fallback
+  ---
+  duration_ms: 7.007769
+  ...
+# Subtest: sqlite: custom value failures are INVALID_INPUT instead of a zero fallback
+ok 23 - sqlite: custom value failures are INVALID_INPUT instead of a zero fallback
+  ---
+  duration_ms: 11.399322
+  ...
+# Subtest: SQLite reopen, scoped reset, and transitive purge preserve exact use-event semantics
+ok 24 - SQLite reopen, scoped reset, and transitive purge preserve exact use-event semantics
+  ---
+  duration_ms: 25.713594
+  ...
+# (node:3892928) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: scoped unit use and read alone do not activate (memory)
+ok 25 - scoped unit use and read alone do not activate (memory)
+  ---
+  duration_ms: 36.090023
+  ...
+# Subtest: duplicate use is durable and restart-safe (memory)
+ok 26 - duplicate use is durable and restart-safe (memory)
+  ---
+  duration_ms: 9.817372
+  ...
+# Subtest: scoped unit use and read alone do not activate (sqlite)
+ok 27 - scoped unit use and read alone do not activate (sqlite)
+  ---
+  duration_ms: 23.735165
+  ...
+# Subtest: duplicate use is durable and restart-safe (sqlite)
+ok 28 - duplicate use is durable and restart-safe (sqlite)
+  ---
+  duration_ms: 20.662817
+  ...
+# Subtest: memory: renewed handles preserve subject scope while other subjects and policies are denied
+ok 29 - memory: renewed handles preserve subject scope while other subjects and policies are denied
+  ---
+  duration_ms: 4.715285
+  ...
+# Subtest: sqlite: renewed handles preserve subject scope while other subjects and policies are denied
+ok 30 - sqlite: renewed handles preserve subject scope while other subjects and policies are denied
+  ---
+  duration_ms: 7.543662
+  ...
+# Subtest: memory: revision use does not inherit and rollback invalid batches atomically
+ok 31 - memory: revision use does not inherit and rollback invalid batches atomically
+  ---
+  duration_ms: 6.562429
+  ...
+# Subtest: sqlite: revision use does not inherit and rollback invalid batches atomically
+ok 32 - sqlite: revision use does not inherit and rollback invalid batches atomically
+  ---
+  duration_ms: 9.703683
+  ...
+# Subtest: memory: clock rollback does not decay, then elapsed time decays exponentially
+ok 33 - memory: clock rollback does not decay, then elapsed time decays exponentially
+  ---
+  duration_ms: 2.683115
+  ...
+# Subtest: sqlite: clock rollback does not decay, then elapsed time decays exponentially
+ok 34 - sqlite: clock rollback does not decay, then elapsed time decays exponentially
+  ---
+  duration_ms: 9.472524
+  ...
+# Subtest: memory: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata
+ok 35 - memory: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata
+  ---
+  duration_ms: 11.440566
+  ...
+# Subtest: sqlite: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata
+ok 36 - sqlite: reset invalidated half-life, keeps dedup markers, and purge removes all use metadata
+  ---
+  duration_ms: 11.640253
+  ...
+# Subtest: memory: batch-local ids cannot record use before a committed AtomRef is returned
+ok 37 - memory: batch-local ids cannot record use before a committed AtomRef is returned
+  ---
+  duration_ms: 1.999198
+  ...
+# Subtest: sqlite: batch-local ids cannot record use before a committed AtomRef is returned
+ok 38 - sqlite: batch-local ids cannot record use before a committed AtomRef is returned
+  ---
+  duration_ms: 6.695617
+  ...
+# Subtest: memory: custom state is isolated, replay is inert, and the fixed boost stays bounded
+ok 39 - memory: custom state is isolated, replay is inert, and the fixed boost stays bounded
+  ---
+  duration_ms: 8.803646
+  ...
+# Subtest: sqlite: custom state is isolated, replay is inert, and the fixed boost stays bounded
+ok 40 - sqlite: custom state is isolated, replay is inert, and the fixed boost stays bounded
+  ---
+  duration_ms: 8.398773
+  ...
+# Subtest: memory: batch updates and snapshots use one host-owned monotonic time
+ok 41 - memory: batch updates and snapshots use one host-owned monotonic time
+  ---
+  duration_ms: 5.250455
+  ...
+# Subtest: sqlite: batch updates and snapshots use one host-owned monotonic time
+ok 42 - sqlite: batch updates and snapshots use one host-owned monotonic time
+  ---
+  duration_ms: 11.211395
+  ...
+# Subtest: memory: a late custom callback failure rolls back every state and marker
+ok 43 - memory: a late custom callback failure rolls back every state and marker
+  ---
+  duration_ms: 5.215378
+  ...
+# Subtest: sqlite: a late custom callback failure rolls back every state and marker
+ok 44 - sqlite: a late custom callback failure rolls back every state and marker
+  ---
+  duration_ms: 17.307275
+  ...
+# Subtest: memory: new-format state requires the host-owned monotonic timestamp
+ok 45 - memory: new-format state requires the host-owned monotonic timestamp
+  ---
+  duration_ms: 8.119343
+  ...
+# Subtest: sqlite: new-format state requires the host-owned monotonic timestamp
+ok 46 - sqlite: new-format state requires the host-owned monotonic timestamp
+  ---
+  duration_ms: 11.979258
+  ...
+# Subtest: memory: async or oversized custom state fails atomically and callback work is budgeted
+ok 47 - memory: async or oversized custom state fails atomically and callback work is budgeted
+  ---
+  duration_ms: 3.126722
+  ...
+# Subtest: sqlite: async or oversized custom state fails atomically and callback work is budgeted
+ok 48 - sqlite: async or oversized custom state fails atomically and callback work is budgeted
+  ---
+  duration_ms: 6.124009
+  ...
+# Subtest: memory: legacy aggregates preserve exact value, migrate on use, and never replay after reset
+ok 49 - memory: legacy aggregates preserve exact value, migrate on use, and never replay after reset
+  ---
+  duration_ms: 2.971412
+  ...
+# Subtest: sqlite: legacy aggregates preserve exact value, migrate on use, and never replay after reset
+ok 50 - sqlite: legacy aggregates preserve exact value, migrate on use, and never replay after reset
+  ---
+  duration_ms: 10.146786
+  ...
+# Subtest: A05/A06 schema-independent directions, three-way relations and repeated roles
+ok 51 - A05/A06 schema-independent directions, three-way relations and repeated roles
+  ---
+  duration_ms: 902.259249
+  ...
+# Subtest: A07/A09 rank the whole allowed scope before limit; non-tied ranks ignore IDs
+ok 52 - A07/A09 rank the whole allowed scope before limit; non-tied ranks ignore IDs
+  ---
+  duration_ms: 144.065289
+  ...
+# Subtest: A08/A15/A32 lexical fallback survives unprepared vectors and incompatible spaces fail
+ok 53 - A08/A15/A32 lexical fallback survives unprepared vectors and incompatible spaces fail
+  ---
+  duration_ms: 6.898437
+  ...
+# Subtest: A17/A18 source union is used in actual packing without merging different derived prose
+ok 54 - A17/A18 source union is used in actual packing without merging different derived prose
+  ---
+  duration_ms: 29.682721
+  ...
+# Subtest: A19 required conditions are actual text or the entire claim is omitted
+ok 55 - A19 required conditions are actual text or the entire claim is omitted
+  ---
+  duration_ms: 8.762882
+  ...
+# Subtest: A20 cyclic, high-degree relations are bounded and all remaining edges can resume
+ok 56 - A20 cyclic, high-degree relations are bounded and all remaining edges can resume
+  ---
+  duration_ms: 61.38066
+  ...
+# Subtest: A22 stale CAS rolls back every declarative change
+ok 57 - A22 stale CAS rolls back every declarative change
+  ---
+  duration_ms: 3.120413
+  ...
+# Subtest: A24 source edits exclude stale summaries and report them for explicit refresh
+ok 58 - A24 source edits exclude stale summaries and report them for explicit refresh
+  ---
+  duration_ms: 11.261976
+  ...
+# Subtest: A25 UTF-8 blob ranges read real bytes and resume without cutting characters
+ok 59 - A25 UTF-8 blob ranges read real bytes and resume without cutting characters
+  ---
+  duration_ms: 608.976661
+  ...
+# Subtest: A24 a new arbitrary relation invalidates a prior range-dependent explanation
+ok 60 - A24 a new arbitrary relation invalidates a prior range-dependent explanation
+  ---
+  duration_ms: 5.783793
+  ...
+# Subtest: A22 inserted relations after observation fail current range validation
+ok 61 - A22 inserted relations after observation fail current range validation
+  ---
+  duration_ms: 2.682277
+  ...
+# Subtest: adaptiveUse has deterministic parameter identity and validates its bounds
+ok 62 - adaptiveUse has deterministic parameter identity and validates its bounds
+  ---
+  duration_ms: 5.197807
+  ...
+# Subtest: adaptiveUse updates one bounded O(1) triple and evaluates exponential availability
+ok 63 - adaptiveUse updates one bounded O(1) triple and evaluates exponential availability
+  ---
+  duration_ms: 4.360044
+  ...
+# Subtest: distributed uses retain more long-term availability than a same-count terminal burst
+ok 64 - distributed uses retain more long-term availability than a same-count terminal burst
+  ---
+  duration_ms: 0.511343
+  ...
+# Subtest: custom model state is cloned, deeply frozen, bounded JSON
+ok 65 - custom model state is cloned, deeply frozen, bounded JSON
+  ---
+  duration_ms: 0.664904
+  ...
+# Subtest: callback exceptions, async results, invalid scalars and hostile JSON fail closed
+ok 66 - callback exceptions, async results, invalid scalars and hostile JSON fail closed
+  ---
+  duration_ms: 0.884826
+  ...
+# Subtest: model normalization trusts stable id identity and never source-hashes functions
+ok 67 - model normalization trusts stable id identity and never source-hashes functions
+  ---
+  duration_ms: 3.901472
+  ...
+# (node:3892941) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: the package exposes memory operations, not a model execution protocol
+ok 68 - the package exposes memory operations, not a model execution protocol
+  ---
+  duration_ms: 16.975758
+  ...
+# Subtest: host-owned model execution still cannot forge sources, references or revoked access
+ok 69 - host-owned model execution still cannot forge sources, references or revoked access
+  ---
+  duration_ms: 29.58711
+  ...
+# Subtest: memory: one durable dependency manifest preserves freshness, conflicts and purge
+ok 70 - memory: one durable dependency manifest preserves freshness, conflicts and purge
+  ---
+  duration_ms: 42.287436
+  ...
+# Subtest: memory: stale candidates never lend their rank to current sources
+ok 71 - memory: stale candidates never lend their rank to current sources
+  ---
+  duration_ms: 20.397017
+  ...
+# Subtest: memory: stale memory is reported, and an explicit Writer edit restores it
+ok 72 - memory: stale memory is reported, and an explicit Writer edit restores it
+  ---
+  duration_ms: 49.011488
+  ...
+# Subtest: sqlite: one durable dependency manifest preserves freshness, conflicts and purge
+ok 73 - sqlite: one durable dependency manifest preserves freshness, conflicts and purge
+  ---
+  duration_ms: 50.486864
+  ...
+# Subtest: sqlite: stale candidates never lend their rank to current sources
+ok 74 - sqlite: stale candidates never lend their rank to current sources
+  ---
+  duration_ms: 30.638798
+  ...
+# Subtest: sqlite: stale memory is reported, and an explicit Writer edit restores it
+ok 75 - sqlite: stale memory is reported, and an explicit Writer edit restores it
+  ---
+  duration_ms: 45.973056
+  ...
+# (node:3892943) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory: R2 overlapping quotations share the actual context evidence text
+ok 76 - memory: R2 overlapping quotations share the actual context evidence text
+  ---
+  duration_ms: 35.421696
+  ...
+# Subtest: memory: R2 containment keeps each Atom and recall packs shared evidence once
+ok 77 - memory: R2 containment keeps each Atom and recall packs shared evidence once
+  ---
+  duration_ms: 22.472728
+  ...
+# Subtest: memory: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions
+ok 78 - memory: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions
+  ---
+  duration_ms: 32.982444
+  ...
+# Subtest: memory: R2 equal text from distinct sources and revisions stays distinct
+ok 79 - memory: R2 equal text from distinct sources and revisions stays distinct
+  ---
+  duration_ms: 34.951723
+  ...
+# Subtest: memory: R2 summaries with the same origins are not treated as verbatim equivalents
+ok 80 - memory: R2 summaries with the same origins are not treated as verbatim equivalents
+  ---
+  duration_ms: 11.617794
+  ...
+# Subtest: memory: R2 required conditions are included in the final text or the complete claim is omitted
+ok 81 - memory: R2 required conditions are included in the final text or the complete claim is omitted
+  ---
+  duration_ms: 55.090494
+  ...
+# Subtest: sqlite: R2 overlapping quotations share the actual context evidence text
+ok 82 - sqlite: R2 overlapping quotations share the actual context evidence text
+  ---
+  duration_ms: 39.211742
+  ...
+# Subtest: sqlite: R2 containment keeps each Atom and recall packs shared evidence once
+ok 83 - sqlite: R2 containment keeps each Atom and recall packs shared evidence once
+  ---
+  duration_ms: 20.208573
+  ...
+# Subtest: sqlite: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions
+ok 84 - sqlite: R2 Japanese disjoint ranges expose omissions and preserve repeated source positions
+  ---
+  duration_ms: 43.28667
+  ...
+# Subtest: sqlite: R2 equal text from distinct sources and revisions stays distinct
+ok 85 - sqlite: R2 equal text from distinct sources and revisions stays distinct
+  ---
+  duration_ms: 16.195617
+  ...
+# Subtest: sqlite: R2 summaries with the same origins are not treated as verbatim equivalents
+ok 86 - sqlite: R2 summaries with the same origins are not treated as verbatim equivalents
+  ---
+  duration_ms: 17.405185
+  ...
+# Subtest: sqlite: R2 required conditions are included in the final text or the complete claim is omitted
+ok 87 - sqlite: R2 required conditions are included in the final text or the complete claim is omitted
+  ---
+  duration_ms: 51.949979
+  ...
+# (node:3892955) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: A03/A34 a lost commit acknowledgment retries the exact operation without replaying edits
+ok 88 - A03/A34 a lost commit acknowledgment retries the exact operation without replaying edits
+  ---
+  duration_ms: 18.336845
+  ...
+# Subtest: A35 legacy SQLite data and memberships keep exact IDs/revisions/origins across client adoption and reopen
+ok 89 - A35 legacy SQLite data and memberships keep exact IDs/revisions/origins across client adoption and reopen
+  ---
+  duration_ms: 44.916605
+  ...
+# Subtest: A08/A32 index preparation advances and index changes expire search cursors
+ok 90 - A08/A32 index preparation advances and index changes expire search cursors
+  ---
+  duration_ms: 29.622875
+  ...
+# Subtest: A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking
+ok 91 - A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking
+  ---
+  duration_ms: 65.606707
+  ...
+# Subtest: A31 vector cache is partitioned by authorization and cancellation reaches the embedding call
+ok 92 - A31 vector cache is partitioned by authorization and cancellation reaches the embedding call
+  ---
+  duration_ms: 7.179759
+  ...
+# Subtest: A31 purge invalidates issued refs, summaries and cached representation routes
+ok 93 - A31 purge invalidates issued refs, summaries and cached representation routes
+  ---
+  duration_ms: 12.171128
+  ...
+# Subtest: A19 stale required generated conditions cannot enter as unvalidated companions
+ok 94 - A19 stale required generated conditions cannot enter as unvalidated companions
+  ---
+  duration_ms: 18.036963
+  ...
+# Subtest: historical analysis of old generated inputs preserves provenance without demanding current heads
+ok 95 - historical analysis of old generated inputs preserves provenance without demanding current heads
+  ---
+  duration_ms: 25.149931
+  ...
+# Subtest: retiring generated Atoms preserves links and citations while host controls provenance
+ok 96 - retiring generated Atoms preserves links and citations while host controls provenance
+  ---
+  duration_ms: 22.992118
+  ...
+# Subtest: a host with multiple read policies can write an independent input without relabelling search scope
+ok 97 - a host with multiple read policies can write an independent input without relabelling search scope
+  ---
+  duration_ms: 7.203127
+  ...
+# Subtest: range-dependent edits require the adapter query-guard capability before publishing
+ok 98 - range-dependent edits require the adapter query-guard capability before publishing
+  ---
+  duration_ms: 11.31793
+  ...
+# Subtest: A01/A02 declarative flow and independent repeated content
+ok 99 - A01/A02 declarative flow and independent repeated content
+  ---
+  duration_ms: 942.410642
+  ...
+# Subtest: A03/A04 idempotent resend and observed-ref CAS
+ok 100 - A03/A04 idempotent resend and observed-ref CAS
+  ---
+  duration_ms: 8.876661
+  ...
+# Subtest: A21/A22 rejected declarative batch exposes no tentative changes
+ok 101 - A21/A22 rejected declarative batch exposes no tentative changes
+  ---
+  duration_ms: 2.026013
+  ...
+# Subtest: zero, dangling, cycles, and shared descendants follow a=b+T^T a
+ok 102 - zero, dangling, cycles, and shared descendants follow a=b+T^T a
+  ---
+  duration_ms: 8.498675
+  ...
+# Subtest: dense references lie inside the reported normalized error certificate
+ok 103 - dense references lie inside the reported normalized error certificate
+  ---
+  duration_ms: 59.938096
+  ...
+# Subtest: raw activation is linear and bounded input boosts keep raw and normalized bounds
+ok 104 - raw activation is linear and bounded input boosts keep raw and normalized bounds
+  ---
+  duration_ms: 0.807194
+  ...
+# Subtest: signed warm correction survives changed seeds and graphs without going negative
+ok 105 - signed warm correction survives changed seeds and graphs without going negative
+  ---
+  duration_ms: 1.015409
+  ...
+# Subtest: the final residual is reserved and low budget returns a finite approximation
+ok 106 - the final residual is reserved and low budget returns a finite approximation
+  ---
+  duration_ms: 0.905123
+  ...
+# Subtest: equal residual priority uses IDs and charges heap selection work
+ok 107 - equal residual priority uses IDs and charges heap selection work
+  ---
+  duration_ms: 0.456444
+  ...
+# Subtest: stable scaling accepts huge finite weights and values, while unprovable inputs fail
+ok 108 - stable scaling accepts huge finite weights and values, while unprovable inputs fail
+  ---
+  duration_ms: 1.345092
+  ...
+# Subtest: option parsing and fixed seed scoring reject legacy or nonfinite knobs
+ok 109 - option parsing and fixed seed scoring reject legacy or nonfinite knobs
+  ---
+  duration_ms: 2.998091
+  ...
+# Subtest: a tiny finite warm state returns a bounded approximation instead of rejecting an overflowing error ratio
+ok 110 - a tiny finite warm state returns a bounded approximation instead of rejecting an overflowing error ratio
+  ---
+  duration_ms: 6.081645
+  ...
+# (node:3892985) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory: committed changes, own-body indexing, retries and restart
+ok 111 - memory: committed changes, own-body indexing, retries and restart
+  ---
+  duration_ms: 32.082263
+  ...
+# Subtest: sqlite: committed changes, own-body indexing, retries and restart
+ok 112 - sqlite: committed changes, own-body indexing, retries and restart
+  ---
+  duration_ms: 55.557532
+  ...
+# Subtest: memory: zero-weight links do not seed a parent from target body text
+ok 113 - memory: zero-weight links do not seed a parent from target body text
+  ---
+  duration_ms: 8.154746
+  ...
+# Subtest: sqlite: zero-weight links do not seed a parent from target body text
+ok 114 - sqlite: zero-weight links do not seed a parent from target body text
+  ---
+  duration_ms: 13.392038
+  ...
+# Subtest: memory: published v2 vectors reuse only matching own-body metadata
+ok 115 - memory: published v2 vectors reuse only matching own-body metadata
+  ---
+  duration_ms: 11.038857
+  ...
+# Subtest: sqlite: published v2 vectors reuse only matching own-body metadata
+ok 116 - sqlite: published v2 vectors reuse only matching own-body metadata
+  ---
+  duration_ms: 38.409484
+  ...
+# Subtest: memory: v3 progress ignores v2 checkpoints and drains after restart
+ok 117 - memory: v3 progress ignores v2 checkpoints and drains after restart
+  ---
+  duration_ms: 3.755585
+  ...
+# Subtest: sqlite: v3 progress ignores v2 checkpoints and drains after restart
+ok 118 - sqlite: v3 progress ignores v2 checkpoints and drains after restart
+  ---
+  duration_ms: 21.193882
+  ...
+# Subtest: SQLite default hybrid vectors find a lexical miss without scanning unrelated or private bodies
+ok 119 - SQLite default hybrid vectors find a lexical miss without scanning unrelated or private bodies
+  ---
+  duration_ms: 239.350968
+  ...
+# Subtest: memory: old index metadata cannot report an unindexed current candidate ready
+ok 120 - memory: old index metadata cannot report an unindexed current candidate ready
+  ---
+  duration_ms: 5.143261
+  ...
+# Subtest: sqlite: old index metadata cannot report an unindexed current candidate ready
+ok 121 - sqlite: old index metadata cannot report an unindexed current candidate ready
+  ---
+  duration_ms: 13.135355
+  ...
+# Subtest: failed indexing never rolls back committed content and cannot publish a purged vector
+ok 122 - failed indexing never rolls back committed content and cannot publish a purged vector
+  ---
+  duration_ms: 2.371053
+  ...
+# (node:3892990) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory: default ingress reaches a known match beyond the finite exact scan
+ok 123 - memory: default ingress reaches a known match beyond the finite exact scan
+  ---
+  duration_ms: 673.255398
+  ...
+# Subtest: sqlite: default ingress reaches a known match beyond the finite exact scan
+ok 124 - sqlite: default ingress reaches a known match beyond the finite exact scan
+  ---
+  duration_ms: 903.279112
+  ...
+# Subtest: lexical ingress finds late matches within a small scan budget and preserves scope and deletion
+ok 125 - lexical ingress finds late matches within a small scan budget and preserves scope and deletion
+  ---
+  duration_ms: 27.833158
+  ...
+# Subtest: incremental packing keeps shared quotations and required closures atomic at exact output limits
+ok 126 - incremental packing keeps shared quotations and required closures atomic at exact output limits
+  ---
+  duration_ms: 33.7696
+  ...
+# Subtest: incremental packing rechecks authorization before final emission
+ok 127 - incremental packing rechecks authorization before final emission
+  ---
+  duration_ms: 2.241943
+  ...
+# (node:3893044) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: signal kinds keep their weights; repeated observations cannot drown out context
+ok 128 - signal kinds keep their weights; repeated observations cannot drown out context
+  ---
+  duration_ms: 3.672725
+  ...
+# Subtest: weighted propagation conserves mass, joins paths, and handles cycles and dangling nodes
+ok 129 - weighted propagation conserves mass, joins paths, and handles cycles and dangling nodes
+  ---
+  duration_ms: 4.056251
+  ...
+# Subtest: memory: an exact node cap still collects every edge among admitted nodes
+ok 130 - memory: an exact node cap still collects every edge among admitted nodes
+  ---
+  duration_ms: 21.634052
+  ...
+# Subtest: memory: rejected nodes do not stop edges between already admitted nodes
+ok 131 - memory: rejected nodes do not stop edges between already admitted nodes
+  ---
+  duration_ms: 16.628452
+  ...
+# Subtest: memory: a stale seed cannot lend rank to its current neighbor
+ok 132 - memory: a stale seed cannot lend rank to its current neighbor
+  ---
+  duration_ms: 19.527861
+  ...
+# Subtest: memory: traversal stops at a stale bridge and reports it
+ok 133 - memory: traversal stops at a stale bridge and reports it
+  ---
+  duration_ms: 36.601888
+  ...
+# Subtest: memory: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks
+ok 134 - memory: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks
+  ---
+  duration_ms: 34.244299
+  ...
+# Subtest: memory: graph differences, not extra embeddings, cause related evidence recall
+ok 135 - memory: graph differences, not extra embeddings, cause related evidence recall
+  ---
+  duration_ms: 17.68856
+  ...
+# Subtest: memory: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it
+ok 136 - memory: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it
+  ---
+  duration_ms: 12.121316
+  ...
+# Subtest: memory: role direction and grant boundaries also apply to inverse expansion
+ok 137 - memory: role direction and grant boundaries also apply to inverse expansion
+  ---
+  duration_ms: 13.052309
+  ...
+# Subtest: sqlite: an exact node cap still collects every edge among admitted nodes
+ok 138 - sqlite: an exact node cap still collects every edge among admitted nodes
+  ---
+  duration_ms: 21.541747
+  ...
+# Subtest: sqlite: rejected nodes do not stop edges between already admitted nodes
+ok 139 - sqlite: rejected nodes do not stop edges between already admitted nodes
+  ---
+  duration_ms: 17.895362
+  ...
+# Subtest: sqlite: a stale seed cannot lend rank to its current neighbor
+ok 140 - sqlite: a stale seed cannot lend rank to its current neighbor
+  ---
+  duration_ms: 22.79254
+  ...
+# Subtest: sqlite: traversal stops at a stale bridge and reports it
+ok 141 - sqlite: traversal stops at a stale bridge and reports it
+  ---
+  duration_ms: 28.525499
+  ...
+# Subtest: sqlite: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks
+ok 142 - sqlite: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks
+  ---
+  duration_ms: 62.838766
+  ...
+# Subtest: sqlite: graph differences, not extra embeddings, cause related evidence recall
+ok 143 - sqlite: graph differences, not extra embeddings, cause related evidence recall
+  ---
+  duration_ms: 32.945002
+  ...
+# Subtest: sqlite: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it
+ok 144 - sqlite: 0.3 vector and feed migration resumes without document model calls; weights never invalidate it
+  ---
+  duration_ms: 21.136721
+  ...
+# Subtest: sqlite: role direction and grant boundaries also apply to inverse expansion
+ok 145 - sqlite: role direction and grant boundaries also apply to inverse expansion
+  ---
+  duration_ms: 13.163485
+  ...
+# Subtest: edge budget bounds graph collection after the node cap is reached
+ok 146 - edge budget bounds graph collection after the node cap is reached
+  ---
+  duration_ms: 2.58958
+  ...
+# Subtest: candidate budget exhaustion leaves ranking tasks resumable
+ok 147 - candidate budget exhaustion leaves ranking tasks resumable
+  ---
+  duration_ms: 3.472489
+  ...
+# Subtest: automatic recall returns useful memory from a large corpus within the default budget
+ok 148 - automatic recall returns useful memory from a large corpus within the default budget
+  ---
+  duration_ms: 4078.408276
+  ...
+# Subtest: disabled inverse roles cannot add a parent; arbitrary role names remain ordinary roles
+ok 149 - disabled inverse roles cannot add a parent; arbitrary role names remain ordinary roles
+  ---
+  duration_ms: 3.537905
+  ...
+# (node:3893045) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: replayable SQLite import flushes before an external checkpoint and retains rollback
+ok 150 - replayable SQLite import flushes before an external checkpoint and retains rollback
+  ---
+  duration_ms: 6.341371
+  ...
+# (node:3893101) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: metadata prefix scans preserve literal and supplementary Unicode keys
+ok 151 - metadata prefix scans preserve literal and supplementary Unicode keys
+  ---
+  duration_ms: 4.336115
+  ...
+# Subtest: transient cleanup does not load durable write traces
+ok 152 - transient cleanup does not load durable write traces
+  ---
+  duration_ms: 36.543953
+  ...
+# (node:3893107) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SQLite purge follows historical and uncited dependencies without a full scan (legacy=false)
+ok 153 - SQLite purge follows historical and uncited dependencies without a full scan (legacy=false)
+  ---
+  duration_ms: 46.105181
+  ...
+# Subtest: SQLite purge follows historical and uncited dependencies without a full scan (legacy=true)
+ok 154 - SQLite purge follows historical and uncited dependencies without a full scan (legacy=true)
+  ---
+  duration_ms: 33.924745
+  ...
+# Subtest: purge indexes stay atomic for the pre-index SQLite write protocol
+ok 155 - purge indexes stay atomic for the pre-index SQLite write protocol
+  ---
+  duration_ms: 5.869121
+  ...
+# (node:3893108) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory V09-40 package exports and persisted observations
+ok 156 - memory V09-40 package exports and persisted observations
+  ---
+  duration_ms: 55.923421
+  ...
+# Subtest: sqlite V09-40 package exports and persisted observations
+ok 157 - sqlite V09-40 package exports and persisted observations
+  ---
+  duration_ms: 46.118994
+  ...
+# (node:3893131) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: memory V08-22 acquisition and presentation are distinct
+ok 158 - memory V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 81.042488
+  ...
+# Subtest: memory V09-24 independent generations share a commit only
+ok 159 - memory V09-24 independent generations share a commit only
+  ---
+  duration_ms: 18.103805
+  ...
+# Subtest: memory V08-28 forged token is refused
+ok 160 - memory V08-28 forged token is refused
+  ---
+  duration_ms: 8.727924
+  ...
+# Subtest: memory V08-31 independent source survives ordinary relation purge
+ok 161 - memory V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 9.296963
+  ...
+# Subtest: memory V08-33 unavailable required blocks read but permits inspect
+ok 162 - memory V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 5.132291
+  ...
+# Subtest: memory V09-01 five operations use declarative content
+ok 163 - memory V09-01 five operations use declarative content
+  ---
+  duration_ms: 7.723321
+  ...
+# Subtest: memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 164 - memory V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 17.968252
+  ...
+# Subtest: memory V08-03 reading leaves semantic revisions and use state intact
+ok 165 - memory V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 7.002533
+  ...
+# Subtest: memory V08-04 observed inspection and logical links retain separate versions
+ok 166 - memory V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 4.496867
+  ...
+# Subtest: memory V09-05 declarative batches roll back and exact observed CAS wins once
+ok 167 - memory V09-05 declarative batches roll back and exact observed CAS wins once
+  ---
+  duration_ms: 5.121596
+  ...
+# Subtest: memory V08-06 bounded use correction preserves the v0.7 activation formula
+ok 168 - memory V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 9.443711
+  ...
+# Subtest: memory V08-07 use cannot create relevance without matching body or edge
+ok 169 - memory V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 14.692255
+  ...
+# Subtest: memory V08-08 wall clock and iteration count do not mutate use
+ok 170 - memory V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 3.936436
+  ...
+# Subtest: memory V08-09 cold and warm solve the same acquired graph
+ok 171 - memory V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 8.107337
+  ...
+# Subtest: memory V08-10 invalid model values and states fail explicitly
+ok 172 - memory V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 11.905688
+  ...
+# Subtest: memory V08-11 acquisition and numerical truncation are separate diagnostics
+ok 173 - memory V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 3.776042
+  ...
+# Subtest: memory V08-12 long top-ranked body competes with short closure sets
+ok 174 - memory V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 32.833006
+  ...
+# Subtest: memory V08-13 explanation itself can be the answer
+ok 175 - memory V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 2.261247
+  ...
+# Subtest: memory V08-14 shared required body is rendered once
+ok 176 - memory V08-14 shared required body is rendered once
+  ---
+  duration_ms: 3.779511
+  ...
+# Subtest: memory V08-15 deep required cycles close finitely
+ok 177 - memory V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 9.145261
+  ...
+# Subtest: memory V08-16 oversized closure is deferred without ref-only substitution
+ok 178 - memory V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 5.500851
+  ...
+# Subtest: memory V08-17 overlapping verified quotations share evidence
+ok 179 - memory V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 12.539963
+  ...
+# Subtest: memory V08-18 different generated meanings and different sources stay separate
+ok 180 - memory V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 11.15325
+  ...
+# Subtest: memory V08-19 identical quote classes count max activation while retaining selected refs
+ok 181 - memory V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 12.677497
+  ...
+# Subtest: memory V08-20 exact UTF-8 display and explicit packing work limits
+ok 182 - memory V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 5.474847
+  ...
+# Subtest: memory V08-21 small corpus oracle compares every feasible public rendering
+ok 183 - memory V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 12.24115
+  ...
+# {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+# Subtest: memory V08-23 host filtering narrows delivery while preserving acquisition
+ok 184 - memory V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 7.077346
+  ...
+# Subtest: memory V09-25 citations cannot split one generation input
+ok 185 - memory V09-25 citations cannot split one generation input
+  ---
+  duration_ms: 5.020841
+  ...
+# Subtest: memory V08-26 inherited working state cannot drop its dependency
+ok 186 - memory V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 4.842291
+  ...
+# Subtest: memory inherited staged generation outputs remain purge dependencies
+ok 187 - memory inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 5.218572
+  ...
+# Subtest: memory V08-27 unshown selection inputs remain erasure dependencies
+ok 188 - memory V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 8.71338
+  ...
+# Subtest: memory V08-29 historical and empty-query currentness differ
+ok 189 - memory V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 11.148085
+  ...
+# Subtest: memory V09-30 every agent change requires an explicit generation input
+ok 190 - memory V09-30 every agent change requires an explicit generation input
+  ---
+  duration_ms: 2.980583
+  ...
+# Subtest: memory V09 mixed batch rejects a tokenless sibling atomically
+ok 191 - memory V09 mixed batch rejects a tokenless sibling atomically
+  ---
+  duration_ms: 10.405084
+  ...
+# Subtest: memory V08-32 generation and inherited erasure ignore search weights
+ok 192 - memory V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 5.567151
+  ...
+# Subtest: memory V08-34 hidden ordinary targets expose no identity or reason
+ok 193 - memory V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 1.989737
+  ...
+# Subtest: memory V08-35 mixed legacy manifests preserve conservative deletion
+ok 194 - memory V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 6.28094
+  ...
+# Subtest: memory V08-36 failed and budgeted purge blocks reads until explicit resume
+ok 195 - memory V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 1.672978
+  ...
+# Subtest: memory V08-37 ack counts successful exposure once per event and revision
+ok 196 - memory V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 2.306667
+  ...
+# Subtest: memory V08-38 reset, subjects, and revisions preserve isolation
+ok 197 - memory V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 2.5444
+  ...
+# Subtest: memory V08-39 cursor fixes evaluation while each page includes required text
+ok 198 - memory V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 7.359987
+  ...
+# Subtest: sqlite V08-22 acquisition and presentation are distinct
+ok 199 - sqlite V08-22 acquisition and presentation are distinct
+  ---
+  duration_ms: 36.411252
+  ...
+# Subtest: sqlite V09-24 independent generations share a commit only
+ok 200 - sqlite V09-24 independent generations share a commit only
+  ---
+  duration_ms: 10.060572
+  ...
+# Subtest: sqlite V08-28 forged token is refused
+ok 201 - sqlite V08-28 forged token is refused
+  ---
+  duration_ms: 5.637136
+  ...
+# Subtest: sqlite V08-31 independent source survives ordinary relation purge
+ok 202 - sqlite V08-31 independent source survives ordinary relation purge
+  ---
+  duration_ms: 10.351741
+  ...
+# Subtest: sqlite V08-33 unavailable required blocks read but permits inspect
+ok 203 - sqlite V08-33 unavailable required blocks read but permits inspect
+  ---
+  duration_ms: 8.707111
+  ...
+# Subtest: sqlite V09-01 five operations use declarative content
+ok 204 - sqlite V09-01 five operations use declarative content
+  ---
+  duration_ms: 8.469061
+  ...
+# Subtest: sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+ok 205 - sqlite V08-02 shared n-ary roles and cycles use ordinary Atoms
+  ---
+  duration_ms: 12.534606
+  ...
+# Subtest: sqlite V08-03 reading leaves semantic revisions and use state intact
+ok 206 - sqlite V08-03 reading leaves semantic revisions and use state intact
+  ---
+  duration_ms: 6.169714
+  ...
+# Subtest: sqlite V08-04 observed inspection and logical links retain separate versions
+ok 207 - sqlite V08-04 observed inspection and logical links retain separate versions
+  ---
+  duration_ms: 5.816095
+  ...
+# Subtest: sqlite V09-05 declarative batches roll back and exact observed CAS wins once
+ok 208 - sqlite V09-05 declarative batches roll back and exact observed CAS wins once
+  ---
+  duration_ms: 5.512121
+  ...
+# Subtest: sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+ok 209 - sqlite V08-06 bounded use correction preserves the v0.7 activation formula
+  ---
+  duration_ms: 11.977774
+  ...
+# Subtest: sqlite V08-07 use cannot create relevance without matching body or edge
+ok 210 - sqlite V08-07 use cannot create relevance without matching body or edge
+  ---
+  duration_ms: 12.057899
+  ...
+# Subtest: sqlite V08-08 wall clock and iteration count do not mutate use
+ok 211 - sqlite V08-08 wall clock and iteration count do not mutate use
+  ---
+  duration_ms: 5.970733
+  ...
+# Subtest: sqlite V08-09 cold and warm solve the same acquired graph
+ok 212 - sqlite V08-09 cold and warm solve the same acquired graph
+  ---
+  duration_ms: 8.214241
+  ...
+# Subtest: sqlite V08-10 invalid model values and states fail explicitly
+ok 213 - sqlite V08-10 invalid model values and states fail explicitly
+  ---
+  duration_ms: 18.257628
+  ...
+# Subtest: sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+ok 214 - sqlite V08-11 acquisition and numerical truncation are separate diagnostics
+  ---
+  duration_ms: 5.226915
+  ...
+# Subtest: sqlite V08-12 long top-ranked body competes with short closure sets
+ok 215 - sqlite V08-12 long top-ranked body competes with short closure sets
+  ---
+  duration_ms: 51.788857
+  ...
+# Subtest: sqlite V08-13 explanation itself can be the answer
+ok 216 - sqlite V08-13 explanation itself can be the answer
+  ---
+  duration_ms: 5.773603
+  ...
+# Subtest: sqlite V08-14 shared required body is rendered once
+ok 217 - sqlite V08-14 shared required body is rendered once
+  ---
+  duration_ms: 9.037974
+  ...
+# Subtest: sqlite V08-15 deep required cycles close finitely
+ok 218 - sqlite V08-15 deep required cycles close finitely
+  ---
+  duration_ms: 20.917703
+  ...
+# Subtest: sqlite V08-16 oversized closure is deferred without ref-only substitution
+ok 219 - sqlite V08-16 oversized closure is deferred without ref-only substitution
+  ---
+  duration_ms: 9.05705
+  ...
+# Subtest: sqlite V08-17 overlapping verified quotations share evidence
+ok 220 - sqlite V08-17 overlapping verified quotations share evidence
+  ---
+  duration_ms: 13.335945
+  ...
+# Subtest: sqlite V08-18 different generated meanings and different sources stay separate
+ok 221 - sqlite V08-18 different generated meanings and different sources stay separate
+  ---
+  duration_ms: 16.420009
+  ...
+# Subtest: sqlite V08-19 identical quote classes count max activation while retaining selected refs
+ok 222 - sqlite V08-19 identical quote classes count max activation while retaining selected refs
+  ---
+  duration_ms: 19.706596
+  ...
+# Subtest: sqlite V08-20 exact UTF-8 display and explicit packing work limits
+ok 223 - sqlite V08-20 exact UTF-8 display and explicit packing work limits
+  ---
+  duration_ms: 8.403202
+  ...
+# Subtest: sqlite V08-21 small corpus oracle compares every feasible public rendering
+ok 224 - sqlite V08-21 small corpus oracle compares every feasible public rendering
+  ---
+  duration_ms: 20.067049
+  ...
+# {"oracle":0.75,"selected":0.75,"gap":0,"tokens":24,"work":24611,"realLLM":false}
+# Subtest: sqlite V08-23 host filtering narrows delivery while preserving acquisition
+ok 225 - sqlite V08-23 host filtering narrows delivery while preserving acquisition
+  ---
+  duration_ms: 14.73361
+  ...
+# Subtest: sqlite V09-25 citations cannot split one generation input
+ok 226 - sqlite V09-25 citations cannot split one generation input
+  ---
+  duration_ms: 12.233647
+  ...
+# Subtest: sqlite V08-26 inherited working state cannot drop its dependency
+ok 227 - sqlite V08-26 inherited working state cannot drop its dependency
+  ---
+  duration_ms: 9.025573
+  ...
+# Subtest: sqlite inherited staged generation outputs remain purge dependencies
+ok 228 - sqlite inherited staged generation outputs remain purge dependencies
+  ---
+  duration_ms: 8.854798
+  ...
+# Subtest: sqlite V08-27 unshown selection inputs remain erasure dependencies
+ok 229 - sqlite V08-27 unshown selection inputs remain erasure dependencies
+  ---
+  duration_ms: 10.728859
+  ...
+# Subtest: sqlite V08-29 historical and empty-query currentness differ
+ok 230 - sqlite V08-29 historical and empty-query currentness differ
+  ---
+  duration_ms: 24.967296
+  ...
+# Subtest: sqlite V09-30 every agent change requires an explicit generation input
+ok 231 - sqlite V09-30 every agent change requires an explicit generation input
+  ---
+  duration_ms: 5.699039
+  ...
+# Subtest: sqlite V09 mixed batch rejects a tokenless sibling atomically
+ok 232 - sqlite V09 mixed batch rejects a tokenless sibling atomically
+  ---
+  duration_ms: 16.943405
+  ...
+# Subtest: sqlite V08-32 generation and inherited erasure ignore search weights
+ok 233 - sqlite V08-32 generation and inherited erasure ignore search weights
+  ---
+  duration_ms: 12.439395
+  ...
+# Subtest: sqlite V08-34 hidden ordinary targets expose no identity or reason
+ok 234 - sqlite V08-34 hidden ordinary targets expose no identity or reason
+  ---
+  duration_ms: 5.711993
+  ...
+# Subtest: sqlite V08-35 mixed legacy manifests preserve conservative deletion
+ok 235 - sqlite V08-35 mixed legacy manifests preserve conservative deletion
+  ---
+  duration_ms: 15.742159
+  ...
+# Subtest: sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+ok 236 - sqlite V08-36 failed and budgeted purge blocks reads until explicit resume
+  ---
+  duration_ms: 4.783296
+  ...
+# Subtest: sqlite V08-37 ack counts successful exposure once per event and revision
+ok 237 - sqlite V08-37 ack counts successful exposure once per event and revision
+  ---
+  duration_ms: 7.174966
+  ...
+# Subtest: sqlite V08-38 reset, subjects, and revisions preserve isolation
+ok 238 - sqlite V08-38 reset, subjects, and revisions preserve isolation
+  ---
+  duration_ms: 7.43363
+  ...
+# Subtest: sqlite V08-39 cursor fixes evaluation while each page includes required text
+ok 239 - sqlite V08-39 cursor fixes evaluation while each page includes required text
+  ---
+  duration_ms: 13.826654
+  ...
+# (node:3893132) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: V09 declarative batches preallocate local cycles, dedupe shared neighbors, revise and retire
+ok 240 - V09 declarative batches preallocate local cycles, dedupe shared neighbors, revise and retire
+  ---
+  duration_ms: 26.597024
+  ...
+# Subtest: V09 generation grouping is order-independent and local links do not merge inputs
+ok 241 - V09 generation grouping is order-independent and local links do not merge inputs
+  ---
+  duration_ms: 50.955159
+  ...
+# Subtest: V09 memory retire preserves unavailable raw slots and origins
+ok 242 - V09 memory retire preserves unavailable raw slots and origins
+  ---
+  duration_ms: 3.882959
+  ...
+# Subtest: V09 sqlite retire preserves unavailable raw slots and origins
+ok 243 - V09 sqlite retire preserves unavailable raw slots and origins
+  ---
+  duration_ms: 9.723486
+  ...
+# Subtest: V09 inspect is one-hop, pageable, version-exact, scoped and fully receipted
+ok 244 - V09 inspect is one-hop, pageable, version-exact, scoped and fully receipted
+  ---
+  duration_ms: 34.700265
+  ...
+# Subtest: V09 SQLite idempotency survives a discarded acknowledgement, reconnect and expired input
+ok 245 - V09 SQLite idempotency survives a discarded acknowledgement, reconnect and expired input
+  ---
+  duration_ms: 20.765662
+  ...
+# Subtest: V09 rejects partial write shapes, empty batches, inspect depth and tokenless agent retirement
+ok 246 - V09 rejects partial write shapes, empty batches, inspect depth and tokenless agent retirement
+  ---
+  duration_ms: 7.3888
+  ...
+1..246
+# tests 246
+# suites 0
+# pass 246
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5398.848279

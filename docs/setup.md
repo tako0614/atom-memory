@@ -8,8 +8,21 @@
 
 ```ts
 import { memory } from './memory.mjs';
-
-await memory.write('招待リンクの有効期限は24時間です。');
+(
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '招待リンクの有効期限は24時間です。',
+          links: [],
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
 ```
 
 設定するのは次の三つです。

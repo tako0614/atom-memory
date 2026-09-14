@@ -1,6 +1,6 @@
 {
   "name": "atom-memory",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Atom graph storage, revisioned edits and context-aware structural retrieval for host-owned agents.",
   "type": "module",
   "license": "MIT",
@@ -60,7 +60,8 @@
     "example:history": "npm run build && node examples/history-writer.mjs",
     "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs",
     "check:research": "node --test research/composition/*.test.mjs",
-    "check:v08": "npm run build && node --test test/v08*.test.mjs && node scripts/evaluate-v08.mjs"
+    "check:v08": "npm run build && node --test test/v08*.test.mjs && node scripts/evaluate-v08.mjs",
+    "check:v09": "npm run build && node --test test/v09.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

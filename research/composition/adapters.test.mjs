@@ -1,10 +1,10 @@
+import { create, revise } from '../../test/fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryStorage } from '../../dist/index.js';
 import { SqliteStorage } from '../../dist/adapters/sqlite.js';
 import { CompositionCache } from './evaluator.mjs';
 import { atomFixture, acquire, comparePacked, prepare } from './fixture.mjs';
-
 for (const adapter of ['memory', 'sqlite'])
   test(`${adapter}: composed Atom graph preserves packed evidence, scope, updates and stale exclusion`, async () => {
     const storage = adapter === 'memory' ? new MemoryStorage() : new SqliteStorage(':memory:');
@@ -46,9 +46,7 @@ for (const adapter of ['memory', 'sqlite'])
       assert.ok(first.compiled.stats.eliminated > 0);
       const next = await check('different conversation and thought');
       assert.equal(next.compiled.stats.coefficientMisses, 0);
-      const changedText = await f.memory.edit((draft) =>
-        draft.revise(f.leaves[0].ref, 'corrected record text'),
-      );
+      const changedText = await revise(f.memory, f.leaves[0].ref, 'corrected record text');
       await prepare(f.host, f.binding);
       const bodyOnly = await check('launch conditions');
       assert.equal(
@@ -56,23 +54,18 @@ for (const adapter of ['memory', 'sqlite'])
         0,
         'body revision does not alter transition operators',
       );
-
-      const revisedGroup = await f.memory.edit((draft) =>
-        draft.revise(f.groups[0].ref, {
-          text: 'changed membership',
-          links: { member: f.leaves.slice(0, 3).map((l) => l.ref) },
-        }),
-      );
+      const revisedGroup = await revise(f.memory, f.groups[0].ref, {
+        text: 'changed membership',
+        links: { member: f.leaves.slice(0, 3).map((l) => l.ref) },
+      });
       await prepare(f.host, f.binding);
       const topology = await check('launch conditions');
       assert.ok(topology.compiled.stats.coefficientMisses > 0);
       assert.ok(topology.compiled.stats.coefficientHits > 0);
-
       const writer = f.host.connect({ ...f.binding, actor: { type: 'agent' } });
-      const derived = await writer.edit(async (draft) => {
-        await draft.inspect(changedText.value.ref, { version: 'latest' });
-        return draft.write('DERIVED CLAIM', { sources: [{ ref: changedText.value.ref }] });
-      });
+      const derived = {
+        value: await create(writer, 'DERIVED CLAIM', { sources: [{ ref: changedText.value.ref }] }),
+      };
       const privateAuth = f.options.authority.issue({
         subject: 'private',
         readPolicies: ['p', 'q'],
@@ -84,25 +77,32 @@ for (const adapter of ['memory', 'sqlite'])
         storage.metaGet(`sdk:ref:${revisedGroup.value.ref}`).target,
         privateBinding,
       );
+      const privateAgent = { ...privateBinding, actor: { type: 'agent' } };
+      const inspection = await f.host.connect(privateAgent).inspect(privateGroupRef, { limit: 0 });
+      const input = f.host.observe(
+        { presentations: [{ receipt: inspection.receipt }], payloadDigest: '0'.repeat(64) },
+        privateAgent,
+      );
       await assert.rejects(
-        f.host
-          .connect({ ...privateBinding, actor: { type: 'agent' } })
-          .write({ text: 'PRIVATE CLAIM', links: { member: privateGroupRef } }),
+        create(
+          f.host.connect(privateAgent),
+          { text: 'PRIVATE CLAIM', links: { member: privateGroupRef } },
+          { input },
+        ),
         { code: 'ACCESS_DENIED' },
       );
-      await f.host.connect(privateBinding).write('PRIVATE CLAIM');
+      await create(f.host.connect(privateBinding), 'PRIVATE CLAIM');
       await prepare(f.host, privateBinding);
       await prepare(f.host, f.binding);
       const before = await check('claim');
       assert.ok(before.folded.items.some((i) => i.ref === derived.value.ref));
       assert.doesNotMatch(before.folded.text, /PRIVATE CLAIM/);
-      await f.memory.edit((draft) => draft.revise(changedText.value.ref, 'latest correction'));
+      await revise(f.memory, changedText.value.ref, 'latest correction');
       await prepare(f.host, f.binding);
       const after = await check('claim');
       assert.doesNotMatch(after.folded.text, /DERIVED CLAIM|PRIVATE CLAIM/);
-
-      const condition = await f.memory.write('REQUIRED CONDITION');
-      await f.memory.write({
+      const condition = await create(f.memory, 'REQUIRED CONDITION');
+      await create(f.memory, {
         text: 'CONDITIONAL CLAIM',
         links: { required: { ref: condition.ref, required: true } },
       });

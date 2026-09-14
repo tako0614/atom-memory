@@ -19,9 +19,20 @@ export async function writerScenario(generate = async (source) => `認証の整�
   /** @type {import('atom-memory').ClientBinding} */
   const agentBinding = { ...binding, actor: { type: 'agent', generatedOrigin: 'organization' } };
   const writer = host.connect(agentBinding);
-  const source = await memory.write('旧クライアントで認証を利用できる。');
+  const source = (
+    await memory.write({
+      changes: [
+        {
+          id: 'source',
+          op: 'create',
+          content: { text: '旧クライアントで認証を利用できる。', links: [] },
+          sources: [],
+        },
+      ],
+    })
+  ).changes.source;
   const organize = async (ref, previous) => {
-    const inspection = await writer.inspect(ref, { version: 'latest', depth: 0 });
+    const inspection = await writer.inspect(ref, { version: 'latest', limit: 0 });
     const observed = inspection.atom;
     const input = host.observe(
       {
@@ -39,25 +50,40 @@ export async function writerScenario(generate = async (source) => `認証の整�
       text,
       links: { 根拠: { ref: observed.ref, at: 'observed', required: true } },
     };
-    const options = { input, sources: [{ ref: observed.ref }] };
-    return writer.edit((draft) =>
-      previous ? draft.revise(previous, content, options) : draft.write(content, options),
-    );
+    return writer.write({
+      changes: [
+        {
+          id: 'organization',
+          ...(previous ? { op: 'revise', target: previous } : { op: 'create' }),
+          content,
+          input,
+          sources: [{ ref: observed.ref }],
+        },
+      ],
+    });
   };
   const created = await organize(source.ref);
   const options = { tokens: 10000, depth: 2 };
   const first = await memory.read({ query: '認証' }, options);
-  const correction = await memory.edit((draft) =>
-    draft.revise(source.ref, '旧クライアントで認証を利用できない。'),
-  );
+  const correction = await memory.write({
+    changes: [
+      {
+        id: 'source',
+        op: 'revise',
+        target: source.ref,
+        content: { text: '旧クライアントで認証を利用できない。', links: [] },
+        sources: [],
+      },
+    ],
+  });
   const pending = await memory.read({ query: '認証' }, options);
-  assert.ok(pending.stale.includes(created.value.ref));
+  assert.ok(pending.stale.includes(created.changes.organization.ref));
   // The host chooses to refresh now. Production agents can enqueue this instead.
-  await organize(correction.value.ref, created.value.ref);
+  await organize(correction.changes.source.ref, created.changes.organization.ref);
   const reread = await memory.read({ query: '認証' }, options);
   assert.match(reread.text, /利用できない/);
   assert.deepEqual(reread.stale, []);
-  const observed = await memory.inspect(source.ref, { depth: 0 });
+  const observed = await memory.inspect(source.ref, { limit: 0 });
   return { source, first, pending, reread, observed };
 }
 

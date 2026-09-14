@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 
 test('metadata prefix scans preserve literal and supplementary Unicode keys', () => {
   const storage = new SqliteStorage(':memory:');

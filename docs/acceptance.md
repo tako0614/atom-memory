@@ -2,6 +2,10 @@
 
 ライブラリの保存・検索の正しさと、Agentの意味理解は分けて検証します。
 
+::: info 履歴と現行契約
+このページのv0.8・v0.7のゲートとテスト名は、その版で実行したvalidationの履歴です。v0.9.0の現行APIは `read` / `search` / `inspect` / `write` で、`edit` / `Draft` は公開契約ではありません。過去の決定的テストを現行の公開・性能・実LLM品質の証明へ読み替えません。
+:::
+
 ## ライブラリ
 
 `npm run check` は型検査、Memory/SQLiteでのテスト、構造取得の比較、Docsのサンプル実行、サイトビルドを行います。
@@ -21,9 +25,9 @@
 
 `npm run evaluate:ranking` は同じ本文・固定ベクトル・同じ上限で、正しい構造・構造探索なし・同数の誤った関係を比較します。小さな決定的fixtureで取得の因果を分離する試験です。重複した意味をWriterが正しく整理するか、全コーパスの最適順位かは、この試験では主張しません。
 
-## v0.8の追加ゲート
+## 過去のv0.8追加ゲート
 
-`V08_ACCEPTANCE.md` は40シナリオの対応表です。`test/v08*.test.mjs` は両adapterで同じ公開APIシナリオを実行し、旧0.7 packageからの移行と空consumerは `scripts/check-v08-migration.mjs` / `scripts/check-v08-consumer.mjs` で別に検証します。規範仕様と実行記録を分け、未実行・skipを合格に含めません。
+`V08_ACCEPTANCE.md` は40シナリオの対応表です。`test/v08*.test.mjs` は両adapterで同じ公開APIシナリオを実行し、旧0.7 packageからの移行と空consumerは `scripts/check-v08-migration.mjs` で別に検証します。規範仕様と実行記録を分け、未実行・skipを合格に含めません。
 
 ## Agentと実モデル
 
@@ -34,3 +38,9 @@ Sakana側の `scripts/check-memory-refresh.mjs` は、古いAtomの通知、再�
 0.6以前の `validation/*.json` は当時の環境・契約での履歴記録です。旧HarnessやSchur研究の結果をv0.7の検証済み結果へ読み替えません。質問を見せずにWriterが構造を作れるか、構造が同じ費用で検索・回答を改善するかは、それぞれ別の品質評価です。v0.7の利用ackは、成功したモデル応答をアプリが自動記録する境界、AvailabilityModelの同期・状態上限・失敗伝播、0.6状態の遅延変換までをライブラリで検証します。
 
 v0.8で新しい実LLM評価やSakana本番連携の再検証は実施していません。ここに挙げた隣接プロジェクトの試験を、この版の実行済み結果として数えません。
+
+## v0.9.0の契約確認
+
+v0.9.0では、宣言的な `write({ changes })` のcreate/revise/retire、batch-local link、agentごとのInputToken、one-hop inspect、idempotency replay、retireのraw body保持を公開APIテストで確認します。決定的なランキング出力は `validation/ranking-v0.9.0.json` と `validation/selection-v0.9.0.json` に分け、意味品質、全コーパス網羅、実LLM評価、公開済みpackageの事実は別の証拠がない限り主張しません。
+
+現行v0.9の宣言的batch、局所参照、inspectページング、再送契約は `test/v09.test.mjs` で検証します。`scripts/check-v09-consumer.mjs` は配布tarballを空consumerへ導入し、v0.8/v0.9の契約試験、strict TypeScript、同梱サンプル、旧0.8保存データからの移行を実行します。

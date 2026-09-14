@@ -66,6 +66,10 @@ export function present(
   items: readonly AtomView[],
   text: string,
   range?: { start: number; end: number; unit?: 'utf8' | 'byte'; digest?: string },
+  inspection?: {
+    root: AtomRef;
+    neighbors: readonly { atom: AtomView; via: readonly import('./types.js').InspectionVia[] }[];
+  },
 ): void {
   const m = engine.storage.metaGet<ReceiptManifest>(`sdk:manifest:${receipt.id}`);
   if (!m) return; // A host may disable transient receipt retention.
@@ -84,6 +88,12 @@ export function present(
       sources: item.sources,
       provenance: item.provenance,
       state: item.state,
+      ...(inspection?.root === item.ref ? { inspectionRoot: true } : {}),
+      ...(inspection?.neighbors.find((neighbor) => neighbor.atom.ref === item.ref)?.via
+        ? {
+            via: inspection.neighbors.find((neighbor) => neighbor.atom.ref === item.ref)!.via,
+          }
+        : {}),
     },
     display: range ? 'range' : rendered.find((v) => v.ref === item.ref)?.quote ? 'quote' : 'body',
     ...(rendered.find((v) => v.ref === item.ref)?.quote

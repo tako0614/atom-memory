@@ -1,0 +1,38 @@
+{
+  "at": "2026-09-14T00:15:53.460309+00:00",
+  "version": "0.9.0",
+  "node": "v26.1.0",
+  "tests": 246,
+  "researchTests": 16,
+  "minimumNode": {
+    "version": "22.13.0",
+    "tests": 246
+  },
+  "documentationExamples": 14,
+  "documentedOutputs": 6,
+  "consumer": {
+    "tarball": "/tmp/atom-memory-0.9.0.tgz",
+    "node": "v26.1.0",
+    "testExecutions": 91,
+    "failures": 0,
+    "types": "passed",
+    "consumer": "empty",
+    "oldPackageMigration": "passed",
+    "shippedExamples": 3,
+    "realLLM": false
+  },
+  "package": {
+    "integrity": "sha512-EvPGitG+5IoJKVkqeoe5HEJdOJHZs+Q1MBq8QTYB4lRxYBo5K9G5H3HCF1m4BFrQO3d+zDzPG4eKL1MjQGdhBw==",
+    "sha256": "8d8ad41056693609faa727a3b06ab3ec256a3b1b0ce8c2b1355b1038f981aec3",
+    "bytes": 198266,
+    "entryCount": 157,
+    "sourceFilesCompared": 41,
+    "sourceMatchesWorkingTree": true
+  },
+  "sakanaCheck": "passed",
+  "format": "passed",
+  "docsDryRun": "passed",
+  "realLLM": false,
+  "paidCalls": 0,
+  "productionBot": "not deployed: SSH authentication unavailable and Proxmox browser CDP unresponsive"
+}

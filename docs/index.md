@@ -51,7 +51,7 @@ Atom Memory は、エージェントのための TypeScript メモリライブ�
 <div class="memory-features">
 <div>
 <h3><span class="memory-feature-number">01</span> そのまま覚える</h3>
-<p>まずは文章を <code>write</code> するだけ。メモ同士の関係も、後から参照でつなげられます。</p>
+<p>まずは文章を <code>write({ changes })</code> で保存。メモ同士の関係も、batch-local linkや既存refでつなげられます。</p>
 <a href="/api#write">保存する →</a>
 </div>
 <div>

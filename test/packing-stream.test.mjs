@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 import { createPacking, pack } from '../dist/client/retrieval.js';
 
 const budget = { maxCandidates: 1000, maxBytes: 1000000, maxAtoms: 30, maxContextTokens: 100000 };
@@ -8,17 +8,18 @@ test('incremental packing keeps shared quotations and required closures atomic a
   const f = fixture();
   const engine = f.host.engine,
     session = () => engine.session(f.binding, { budget });
-  const source = await f.memory.write('AAAABBBBCCCC');
-  const condition = await f.memory.write('Only after approval.');
+  const source = await create(f.memory, 'AAAABBBBCCCC');
+  const condition = await create(f.memory, 'Only after approval.');
   const writer = f.host.connect({
     ...f.binding,
     actor: { type: 'agent', generatedOrigin: 'extraction' },
   });
-  const left = await writer.write(
+  const left = await create(
+    writer,
     { text: 'AAAABBBB', links: { condition: { ref: condition.ref, required: true } } },
     { sources: [{ ref: source.ref, start: 0, end: 8 }] },
   );
-  const right = await writer.write('BBBBCCCC', {
+  const right = await create(writer, 'BBBBCCCC', {
     sources: [{ ref: source.ref, start: 4, end: 12 }],
   });
   const candidates = [left, right, condition].map((x, i) => ({
@@ -53,7 +54,7 @@ test('incremental packing keeps shared quotations and required closures atomic a
 
 test('incremental packing rechecks authorization before final emission', async () => {
   const f = fixture(),
-    source = await f.memory.write('private');
+    source = await create(f.memory, 'private');
   const engine = f.host.engine,
     s = engine.session(f.binding, { budget });
   const c = { revision: engine.get(engine.resolve(source.ref, s).target, s), score: 1 };

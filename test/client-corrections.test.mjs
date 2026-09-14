@@ -1,9 +1,10 @@
 import { LexicalCandidateProvider } from '../dist/index.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { MemoryStorage, utf8Tokenizer } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 
 const readOptions = { tokens: 30000, limit: 100, depth: 0 };
 for (const adapter of ['memory', 'sqlite']) {
@@ -14,15 +15,15 @@ for (const adapter of ['memory', 'sqlite']) {
   }
   test(`${adapter}: R2 overlapping quotations share the actual context evidence text`, async (t) => {
     const { memory: m, host, binding } = setup(t);
-    const source = await m.write('AAAABBBBCCCC');
+    const source = await create(m, 'AAAABBBBCCCC');
     const extractor = host.connect({
       ...binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
-    const a = await extractor.write('AAAABBBB', {
+    const a = await create(extractor, 'AAAABBBB', {
       sources: [{ ref: source.ref, start: 0, end: 8 }],
     });
-    const b = await extractor.write('BBBBCCCC', {
+    const b = await create(extractor, 'BBBBCCCC', {
       sources: [{ ref: source.ref, start: 4, end: 12 }],
     });
     const result = await m.read({ query: 'BBBB' }, readOptions);
@@ -35,13 +36,13 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: R2 containment keeps each Atom and recall packs shared evidence once`, async (t) => {
     const { memory: m, host, binding } = setup(t);
-    const source = await m.write('AAAABBBBCCCC');
+    const source = await create(m, 'AAAABBBBCCCC');
     const extractor = host.connect({
       ...binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
-    const whole = await extractor.write(source.text, { sources: [{ ref: source.ref }] });
-    const inside = await extractor.write('BBBB', {
+    const whole = await create(extractor, source.text, { sources: [{ ref: source.ref }] });
+    const inside = await create(extractor, 'BBBB', {
       sources: [{ ref: source.ref, start: 4, end: 8 }],
     });
     const result = await m.read({ query: 'BBBB' }, readOptions);
@@ -62,22 +63,22 @@ for (const adapter of ['memory', 'sqlite']) {
     const left = '認証は許可しない。';
     const omitted = 'ここは省略する長い背景説明です。';
     const right = '認証は管理者に確認。';
-    const source = await m.write(left + omitted + right);
+    const source = await create(m, left + omitted + right);
     const extractor = host.connect({
       ...binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
-    const a = await extractor.write(left, {
+    const a = await create(extractor, left, {
       sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(left) }],
     });
-    const overlap = await extractor.write(left.slice(0, -1), {
+    const overlap = await create(extractor, left.slice(0, -1), {
       sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(left.slice(0, -1)) }],
     });
     const start = Buffer.byteLength(left + omitted);
-    const other = await extractor.write(right, {
+    const other = await create(extractor, right, {
       sources: [{ ref: source.ref, start, end: start + Buffer.byteLength(right) }],
     });
-    await m.write({
+    await create(m, {
       text: 'range_fixture',
       links: { when: [a.ref, overlap.ref, other.ref].map((ref) => ({ ref, required: true })) },
     });
@@ -101,16 +102,22 @@ for (const adapter of ['memory', 'sqlite']) {
       canIngestSource: true,
     });
     const other = host.connect({ ...binding, auth });
-    const first = await m.write('AAAABBBBCCCC');
-    const second = await other.write('AAAABBBBCCCC');
+    const first = await create(m, 'AAAABBBBCCCC');
+    const second = await create(other, 'AAAABBBBCCCC');
     const extractor = host.connect({
       ...binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
-    await extractor.edit((d) => d.write(first.text, { sources: [{ ref: first.ref }] }), {
-      basis: 'historical',
-    });
-    await m.edit((d) => d.revise(first.ref, 'AAAABBBBCCCC revised version'));
+    const input = host.observe(
+      {
+        sources: [{ ref: first.ref }],
+        basis: 'historical',
+        payloadDigest: createHash('sha256').update(first.text).digest('hex'),
+      },
+      { ...binding, actor: { type: 'agent', generatedOrigin: 'extraction' } },
+    );
+    await create(extractor, first.text, { input, sources: [{ ref: first.ref }] });
+    await revise(m, first.ref, 'AAAABBBBCCCC revised version');
     const result = await m.read({ query: 'BBBB' }, readOptions);
     const contexts = JSON.parse(result.text);
     assert.equal((result.text.match(/BBBB/g) ?? []).length, 3);
@@ -120,11 +127,13 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: R2 summaries with the same origins are not treated as verbatim equivalents`, async (t) => {
     const { memory: m, writer } = setup(t);
-    const source = await m.write('認証には条件がある。');
-    const a = await writer.write('認証は管理者が承認した場合だけ許可。', {
+    const source = await create(m, '認証には条件がある。');
+    const a = await create(writer, '認証は管理者が承認した場合だけ許可。', {
       sources: [{ ref: source.ref }],
     });
-    const b = await writer.write('認証は検証環境でだけ許可。', { sources: [{ ref: source.ref }] });
+    const b = await create(writer, '認証は検証環境でだけ許可。', {
+      sources: [{ ref: source.ref }],
+    });
     const result = JSON.parse((await m.read({ query: '認証' }, readOptions)).text);
     for (const v of [a, b]) {
       assert.equal(result.memory.find((x) => x.ref === v.ref).text, v.text);
@@ -133,20 +142,21 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: R2 required conditions are included in the final text or the complete claim is omitted`, async (t) => {
     const { memory: m, host, binding } = setup(t);
-    const condition = await m.write('ただし管理者が承認した場合だけ。'.repeat(30));
-    const source = await m.write('認証を許可する。ただし管理者が承認した場合だけ。');
+    const condition = await create(m, 'ただし管理者が承認した場合だけ。'.repeat(30));
+    const source = await create(m, '認証を許可する。ただし管理者が承認した場合だけ。');
     const extractor = host.connect({
       ...binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
     const claimText = '認証を許可する。';
-    const claim = await extractor.write(
+    const claim = await create(
+      extractor,
       { text: claimText, links: { 条件: { ref: condition.ref, required: true } } },
       {
         sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(claimText) }],
       },
     );
-    await extractor.write(claimText, {
+    await create(extractor, claimText, {
       sources: [{ ref: source.ref, start: 0, end: Buffer.byteLength(claimText) }],
     });
     for (const tokens of [500, 1000, 15000]) {

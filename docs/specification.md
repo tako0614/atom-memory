@@ -1,18 +1,57 @@
-# Atom Memory v0.8 規範仕様
+# Atom Memory v0.9.0 規範仕様
 
 > 内容と関係を版付きで保存し、文脈と受理された利用から一つの規則で活性を計算し、必要な条件を欠かさない本文集合を予算内で返す。
 
-この文書を意味の正本とする。MUSTは必須。実行結果は `validation/v0.8.0.md` に分ける。基準は `a2f3c59098ba7f6a46ffd3903d2fc14fa43335f5` (0.7.0)。計画は実装済みの証明ではない。
+この文書を現在の意味の正本とする。MUSTは必須。v0.8の実行結果は `validation/v0.8.0.md` に分け、v0.9の決定的な実行結果は `validation/v0.9.0.md` とする。過去の計画、研究資料、隣接アプリの試験は実装済み・公開済み・実LLM品質の証明ではない。
 
 ## 形式と責務
 
-通常APIは `write/search/inspect/read/edit`。入力は文字列または `{text, links}`。IDと版は自動発行し、不変版を保存する。親、多重所属、n項関係も同じAtom。role名から出典・削除・重要度を推測してはならない。observedは指定版、logicalは読取snapshotのhead。inspectは指定版を別Atomで代替しない。
+通常APIは `write`、`search`、`inspect`、`read` である。IDとrevisionはライブラリが発行し、不変版を保存する。Atomは本文・links・sources・provenance・stateを持つ一つのaddressableな情報で、親子・多重所属・n項関係・循環を同じ形で表せる。role名から親、出典、削除、重要度、後継を推測してはならない。
 
-read/search/inspectは本文、意味links、利用状態を変更しない。索引と観測記録は補助状態。editは有限変更を原子的に保存し、失敗時にcallbackや外部処理を再実行しない。生成単位のIDとcommit IDは異なる。モデル呼出し、入力構成、Writer、費用、ジョブ、後継採用はホスト所有。Coreは自動read、モデルloop、スケジューラーを持たない。
+`read`、`search`、`inspect` は本文・意味links・利用状態を変更しない。索引と観測記録は補助状態である。`write` は宣言された有限batchだけを検証して原子的に保存する。モデル呼出し、入力構成、Writer、費用、ジョブ、後継採用はホストまたはアプリの責務であり、Coreは自動read、モデルloop、スケジューラーを持たない。
+
+### write batch
+
+`write({ changes }, options)` の `changes` は空でない配列で、各changeの `id` はbatch内で一意である。
+
+```ts
+type CreateChange = {
+  id: string;
+  op: 'create';
+  content: { text: string; links: Links };
+  sources: readonly SourceCitation[];
+  input?: InputToken;
+};
+type ReviseChange = {
+  id: string;
+  op: 'revise';
+  target: AtomRef;
+  content: { text: string; links: Links };
+  sources: readonly SourceCitation[];
+  input?: InputToken;
+};
+type RetireChange = { id: string; op: 'retire'; target: AtomRef; input?: InputToken };
+```
+
+create/reviseの `content.links` と `sources` は完全置換で、空でも必ず明示する。revise/retireの `target` は発行済みの観測版であり、同じlogical Atomを一つのbatchで二度変更できない。retireは元のbody・links・sources・originsを保存したままstateだけをretiredへ改訂する。
+
+リンクのtargetは既存 `AtomRef`、`{ ref, at?: 'logical' | 'observed', required?, orderKey? }`、またはbatch-localな `{ local: changeId, at?, required?, orderKey? }` である。local targetは全changeのrevisionを先に割り当ててから解決するため、前後参照・循環・同じneighborへの複数roleを許可する。local idはcommit後に解決可能な参照ではない。通常graphに新しい階層roleを暗黙に導入しない。
+
+`WriteOutcome` は `{ operationId, repeated, indexing, changes }` であり、`changes` はchange idから確定した `AtomView` へのRecordである。batchは全件commitされるか、入力、権限、CAS、budget、dependency検証の失敗で全件commitされないかのどちらかである。
+
+### 入力tokenとactor
+
+`host.observe(input, binding)` が発行する `InputToken` はhost-issuedの不透明なscope-bound値である。agent bindingの各change MUSTがtokenを持つ。humanとinput-adapterのchangeはtokenを省略できる。任意文字列、receipt型の偽装、別主体・別policy・別認可世代・期限切れ・purge済みtokenは受け付けない。tokenはmodel tool schemaへ公開しない。
+
+`HostInput` は `presentations`、`sources`、`inherit`、`basis`、`watches`、`payloadDigest` を持つ。ホストは最終payload、外部tool結果、持越し状態を申告する境界を負うが、敵対的ホストやモデル内部の不可観測な状態まで完全に追跡できるとは限らない。inheritした依存とwatchはscope変更やhistorical指定で消えない。独立token A→a、B→bは同じbatchに含めても相互にstaleにならず、同じtoken A+Bから出したchangeは両入力へ依存する。tokenなしagent changeのlegacy依存は全batch入力へ保守的に残す。
+
+### idempotency
+
+`idempotencyKey` はsubject、write policy、actor、現在のpurge/auth境界とplanのsemantic fingerprintに束縛される。同じkeyで同じplanを再送すると、同じ `operationId` と現在認可できる結果を `repeated: true` で返す。planを変えた再送は `IDEMPOTENCY_CONFLICT`。最初のcommitでは期限切れtokenを拒否するが、commit済みplanの一致replayはtokenが後から期限切れになっても保存済み結果を回収できる。replay時も現在の認可とpurgeは検証し、読めない・消去済みの結果を復活させない。
 
 ## 活性
 
-v0.7のown-body embeddingと本文一致 (semantic 80%、lexical 20%、欠けた信号の扱いを含む) を維持する。
+v0.8までのown-body embeddingと本文一致（semantic 80%、lexical 20%、欠けた信号の扱いを含む）を維持する。
 
 ```text
 u_i = AvailabilityModel.value(state_i, evaluatedAt)
@@ -21,68 +60,52 @@ a = b + T^T a
 score_i = a_i / sum(a)
 ```
 
-Tは許可済み・現在性を満たす取得グラフ上の非負重みを出辺正規化し propagation < 1 を掛ける。出辺なしは0行。利用補正は候補取得順を変えない。source/親/古さ専用の追加採点は禁止。scoreは同じ評価内の相対値で、真偽・確率ではない。
+Tは許可済み・現在性を満たす取得graph上の非負重みを出辺正規化し、propagation < 1を掛ける。出辺なしは0行。利用補正は候補取得順を変えない。source/親/古さ専用の追加採点は禁止する。scoreは同じ評価内の相対値で、真偽・確率ではない。
 
-AvailabilityModelのid/update/valueは同期、有界JSON (1 KiB)、有限非負値。Promise、例外、不正値は明示エラー。主体・policy・版を隔離し、モデルID変更は明示reset。acceptedAtは受理時刻、evaluatedAtと数値反復は別。recordUseは成功した要求への露出を記録する。同じeventIdと版は一度、reset後もdedupを保持。成功は正答の証明ではない。
+AvailabilityModelの `id`、同期 `update` / `value`、JSON 1 KiB上限、有限非負値、例外・Promise・不正値の失敗伝播、subject/policy/revision隔離、eventId dedup、明示resetは継続する。成功したモデル応答をhostが `recordUse` したときだけ利用状態を更新し、read/search/inspectだけでは増やさない。
 
-## 一つのversioned manifest
+## versioned manifest
 
-contractVersion=2のmanifestは次を区別する。旧reads/currentReads/observationsは保存adapter向けの消去依存/現在性の互換投影であり、独立の意味ではない。原資料のreadsは出典依存で、通常リンクの検証を含むacquisitionと必ずしも一致しない。
+contractVersion=2のmanifestは次を区別する。旧 `reads` / `currentReads` / `observations` は保存adapter向けの互換投影であり、独立した意味ではない。
 
-| 部分            | 意味                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| acquisition     | 取得・検証・選択で触れた版、範囲、query観測 (空結果含む)、索引状態                           |
-| presentation    | 表示版、最終digest、実際の本文単位・範囲・対応refs。citationだけの原資料は本文提示に数えない |
-| generation      | ホストが確定したpresentation、外部原資料、継承token、payload digest、出力版                  |
-| watches         | 現在性を要求するheadとquery観測                                                              |
-| acknowledgement | ホストが成功を受理したevent。再送は同じeventId                                               |
+| 部分              | 意味                                                                      |
+| ----------------- | ------------------------------------------------------------------------- |
+| `acquisition`     | 取得・検証・選択で触れた版、範囲、query観測、索引状態                     |
+| `presentation`    | 表示版、最終digest、実際の本文単位・範囲・対応refs                        |
+| `generation`      | hostが確定したpresentation、外部原資料、継承token、payload digest、出力版 |
+| `watches`         | 現在性を要求するheadとquery観測                                           |
+| `acknowledgement` | hostが成功を受理したevent。再送は同じeventId                              |
 
-host.observe(input, binding)はモデルを呼ばず不透明なInputTokenを発行する。inputはpresentations (receiptと任意の実送信refs)、sources (確定済み原資料範囲)、inherit (持越しtoken)、basis (current/historical)、watches (追加receipt)、payloadDigestを持つ。digestはホストが確定したpayloadのSHA-256。省略したrefsはそのpresentationの全本文単位。検索で触れた全候補を提示したとは記録しない。ただし使用した選択のacquisitionは生成の消去・監査依存へ保守的に継承する。
+`sources` は明示した原資料範囲であり、通常linksの取得候補やcitationだけの原資料全文提示と同義ではない。`InputToken` は作成時に入力とoutputを結び付けるが、引用リストを狭めて依存を偽装する機能ではない。
 
-WriteOptions.inputはホストdispatcherだけが注入する。通常tool schemaへ出さない。未発行、期限切れ、別主体・scope・認可世代、purgeした入力を拒否する。入力tokenは引用リストで縮小できない。inheritの依存とwatchは新scopeやhistorical指定でも消さない。信頼したホストが全payload、外部tool結果、持越し状態を提示することが境界であり、敵対ホストやモデル内部の完全な情報流追跡は保証しない。
+## links、stale、retire、purge
 
-独立token A→a、B→bは同一editで保存できる。Aの改訂は同じcommitという理由でbをstaleにしない。同じtoken A+Bから作る全出力は両入力に依存する。tokenなしagent editは全edit入力へのlegacy依存を残す。
+| 記録                 | 伝播              | 本文同時提示       | 消去依存                     |
+| -------------------- | ----------------- | ------------------ | ---------------------------- |
+| 通常links            | 設定したrole/方向 | なし               | 新契約ではなし、legacyはあり |
+| `required`           | 通常linksと同じ   | required閉包を要求 | flagだけでは追加しない       |
+| 出典範囲             | 明示citationのみ  | 追跡可能な引用情報 | あり                         |
+| 生成・継承・選択入力 | なし              | なし               | あり                         |
+| 利用event            | なし              | なし               | 本文導出依存にはしない       |
 
-token付き・なしが混在したeditでは、tokenなし出力だけがtoken経由を含む全edit入力へ保守的に依存する。明示inheritした生成の保存出力も消去依存に含め、同じcommit内の保存後に正確な版を結び付ける。acquisitionだけの入力は監査・消去に残し、宣言していない現在性を自動追加しない。historicalとcurrent watchが同じ版に重なる場合はwatchを優先する。
+`stale` は宣言した現在性が崩れた状態、`blocked` は必須本文を今回返せない状態、`retire` は現在readから外すrevision、`purge` はアクセス停止と保存物消去であり、同義ではない。通常link先が不許可・欠損ならそのedgeは伝播せず、公開 `AtomLink` は `{ role, unavailable: true, required, at, orderKey? }` という安全な形を使う。利用不可形にtarget ID、本文、具体的理由を載せない。inspectは認可された元本文を調べられるが、read適格性の証明にはならない。
 
-## 辺と利用状態
+retireは元のbody・sources・linksを保存し、既に利用不可の通常linkも黙って削除しない。この例外で新しいtargetや本文を追加してはならない。purgeは全履歴の出典・生成入力・継承・選択入力とlegacy linksを逆引きする。role名や本文から旧依存を推測して狭めない。未完了時は停止markerを永続化し、公開read/writeを拒否して同じatomIdで再開する。
 
-| 記録                 | 伝播              | 本文同時提示       | 消去依存                                 |
-| -------------------- | ----------------- | ------------------ | ---------------------------------------- |
-| 通常links            | 設定したrole/方向 | なし               | legacyはあり、新しい検証済み契約ではなし |
-| required             | 通常linksと同じ   | 再帰閉包を要求     | フラグだけでは追加しない                 |
-| 出典範囲             | 明示linkのみ      | 追跡可能な引用情報 | あり                                     |
-| 生成・継承・選択入力 | なし              | なし               | あり                                     |
-| 利用イベント         | なし              | なし               | 本文の導出依存にはしない                 |
+## inspect
 
-staleは宣言した現在性が崩れたこと。blockedは必須本文を今回返せないこと。retireは現在読取から外す改訂。purgeはアクセス停止と保存物の消去。これらを同義にしてはならない。historical入力は新headだけで失効しないが、認可とpurgeは免除しない。
-
-通常リンク先が不許可・欠損ならその辺で伝播しない。独立した本文は返せる。公開linkは利用可能形と `{role, unavailable:true, required, at, orderKey?}` のunion。利用不可形にtarget ID、本文、具体的理由を載せない。inspectは認可された元本文を調べられ、read適格性と区別する。
-
-retireは元の本文・出典・linksを保存して状態だけを改訂する。既に利用不可の通常リンクも黙って削らず、そのまま保持する。この例外で新しい参照先や本文を追加してはならない。
-
-purgeは全履歴の出典・生成入力・継承・選択入力とlegacyの全linksを逆引きする。通常linksを一括で除外してはならない。新旧判定は明示contractで行い、roleや本文で推測しない。旧依存を狭めるには正しく再観測して新しい版を作る。過去版の依存は残る。
-
-purgeはdry-runで影響数とlegacy依存を示す。作業上限・失敗時は読取停止を先に永続化し未完了を返す。再呼出しで再開する。本文/blob/索引/vector/利用状態/cache/保存presentation・generationの対象内容を消去する。物理ページ回収はSQLite compact、バックアップと外部送信済み情報はホスト責任。
+inspectは一-hopのbounded operationである。既定値は `version: 'observed'`、`direction: 'both'`、`limit: 20`。`direction` は incoming/outgoing/both、`roles` はrole filter、`limit: 0` はrootのみ、cursorはneighbor page、`range` はblobのbyte範囲である。inspectには `depth` や `items` はなく、返り値は `atom`、`neighbors: [{ atom, via: [{ direction, role, at, required, orderKey? }] }]`、`receipt`、`readEligibility`、`stale`、`diagnostics`、`usage` を持つ。logical targetは現在head、observed targetは指定revisionへ束縛する。
 
 ## readの集合選択
 
-候補、活性、snapshotを固定する。root集合Sのrequired最小閉包C(S)はpinned revisionを一度だけ訪問する。循環は有限に処理。requiredが欠損・不許可・staleならrootをblockedとし、ref名だけで本文提示済みにしない。未評価のrequired本文の活性は0。
+候補、活性、snapshotを固定する。root集合Sのrequired最小閉包C(S)はpinned revisionを一度だけ訪問し、循環を有限に処理する。requiredが欠損・不許可・staleならrootをblockedとし、ref名だけで本文提示済みにしない。read/searchは `depth` と件数を受け取るが、inspectの一-hop制約とは別である。
 
-U(S)は返す異なる本文単位の既存活性の和。通常identityはpinned revision。同一原資料/版/範囲の検証済み逐語引用で帰属、役割、required条件も一致する場合のみ一クラスとし、重みは最大値。元refsは残す。重なる別範囲は費用を共有しても別単位。別資料の同文、別生成文を統合しない。
+`cost(S) = tokenizer.count(render(C(S))) <= memoryTokenBudget`。共通required本文は一度だけ表示し、同一原資料・版・範囲の検証済み引用だけをevidenceとして費用共有する。itemsの本文を `text` へ重ねず、scoreや監査logをmodel textへ入れない。表示formatVersionは2。
 
-cost(S) = tokenizer.count(render(C(S))) <= memoryTokenBudget。共通requiredは一度表示。同一原資料・版の重なる逐語範囲はevidenceで共有し、範囲、帰属、役割、条件、出典対応、省略区間を含める。itemsをtextへ再追加しない。scoreや監査ログはモデル用textに入れない。表示のformatVersionは2。
+選択は順位順の閉包packerを基準解とし、限界利得 / 限界費用で実行可能rootを追加する。有界budgetで未完了なら保持した解と `selection.baselineComplete: false` を返す。Uは選択用代理目的であり、正答率、真の情報量、独立証拠数、一般的最適性、近似比ではない。`coverageCertified` は常にfalse。
 
-選択は順位順の閉包packerを基準解として保存し、限界利得 deltaU/max(1,deltaCost) で実行可能rootを追加する。同点はdeltaU、最終費用、固定pinned参照順。評価できた単一rootも比較。最良の実行可能解を保持し、U同値では安い解を選ぶ。全シリアライズで費用を検証する。作業予算切れは保持した解と未完了診断を返す。基準解を完了できなかった場合はbaselineComplete=falseを明示する。
+## cursor、診断、互換性
 
-maxPackingWorkの単位は候補比較1、閉包のnode訪問1、slot訪問1、本文/metadata準備のUTF-8 byte数、render処理の素材byte数 (共有引用の比較1ずつを含む)、最終シリアライズbyte数、tokenizerへ渡すbyte数。再評価でも課金し、予約できない大きさのrender/tokenizerを実行しない。内部実装はmemoizeしてよいが、組合せ検討を無課金にしてはならない。標準上限は2,000,000。tokenizer自体の内部CPU時間は信頼したcallbackの責務。
+最初の操作でsnapshot、binding、索引、query、活性設定、利用状態、evaluatedAt、取得graph、数値評価を固定する。search/read/inspectのcursorはquery・options・認可・索引・設定に束縛され、変更時は失効する。diagnosticsの `acquisition`、`validation`、`evaluation`、`selection` を分け、数値誤差は取得graphだけに限定する。
 
-Uは選択用代理目的で、正答率、真の情報量、独立証拠数ではない。一般的最適性・近似比・上流の意味重複への順位不変性を主張しない。比較を完了した同一状態の基準解以上のUのみ保証する。
-
-## cursor・診断・互換性
-
-最初の操作でsnapshot、binding、索引、query、活性設定、利用状態、evaluatedAt、取得グラフ、数値評価を固定。searchは固定順の続き。readは未返却rootから選択し、各ページにrequired全文を含める。別ページでは共通条件が再表示され得る。query/設定/認可/索引の変更はcursor失効。旧版cursorも失効する。
-
-diagnostics.acquisition / validation / evaluation / selectionを分ける。coverageCertifiedは常にfalse。数値誤差は取得グラフのみの保証。全コーパス網羅、意味品質、新規性へ拡大しない。
-
-ID、版、出典、適合するv3 own-body embedding、同じAvailabilityModel.idの利用状態を保持する。新しい表示・unavailable unionには移行例を用意する。旧manifestは推測して縮小せずlegacyとして解釈する。公開ゲートは40シナリオ、既存回帰、SQLite再接続、旧packageで生成したDB、docs抽出実行と空consumer。skip/未実行は合格へ数えない。実LLM品質は別測定。公開・再デプロイ・利用者DB消去は別の明示指示が必要。
+旧v0.8の `edit` / `Draft` は現在の公開APIへ互換層として残さない。過去manifest・validation・researchは歴史資料としてlegacy解釈し、role名や引用から依存を縮小しない。過去版cursorは失効させて新しい操作から始める。公開、再デプロイ、利用者DB消去、実LLM品質評価はこの仕様の実行結果に含めない。

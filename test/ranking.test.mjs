@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 import {
   MemoryHost,
   MemoryStorage,
@@ -83,9 +83,9 @@ for (const adapter of ['memory', 'sqlite']) {
   };
   test(`${adapter}: an exact node cap still collects every edge among admitted nodes`, async (t) => {
     const f = setup(t, { retrieval: { maxNodes: 3, maxSeeds: 1 } });
-    const c = await f.memory.write('C');
-    const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
-    const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+    const c = await create(f.memory, 'C');
+    const b = await create(f.memory, { text: 'B', links: { next: c.ref } });
+    const a = await create(f.memory, { text: 'A', links: { child: [b.ref, c.ref] } });
     const { complete, state } = collectFrom(f, a.ref);
     assert.equal(complete, true);
     assert.equal(state.nodes.length, 3);
@@ -94,9 +94,9 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: rejected nodes do not stop edges between already admitted nodes`, async (t) => {
     const f = setup(t, { retrieval: { maxNodes: 2, maxSeeds: 1 } });
-    const a = await f.memory.write('A');
-    const c = await f.memory.write('C');
-    const b = await f.memory.write({
+    const a = await create(f.memory, 'A');
+    const c = await create(f.memory, 'C');
+    const b = await create(f.memory, {
       text: 'B',
       links: { first: a.ref, reject: c.ref, second: a.ref },
     });
@@ -114,13 +114,14 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: a stale seed cannot lend rank to its current neighbor`, async (t) => {
     const f = setup(t);
-    const evidence = await f.memory.write('old evidence');
-    const neighbor = await f.memory.write('unrelated current neighbor');
-    const stale = await f.writer.write(
+    const evidence = await create(f.memory, 'old evidence');
+    const neighbor = await create(f.memory, 'unrelated current neighbor');
+    const stale = await create(
+      f.writer,
       { text: 'stale seed trigger', links: { related: neighbor.ref } },
       { sources: [{ ref: evidence.ref }] },
     );
-    await f.memory.edit((draft) => draft.revise(evidence.ref, 'new evidence'));
+    await revise(f.memory, evidence.ref, 'new evidence');
     const page = await f.memory.search('stale seed trigger', { depth: 2, budget });
     assert.equal(
       page.items.some((item) => item.ref === stale.ref),
@@ -134,17 +135,18 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: traversal stops at a stale bridge and reports it`, async (t) => {
     const f = setup(t);
-    const evidence = await f.memory.write('bridge old evidence');
-    const neighbor = await f.memory.write('bridge current neighbor');
-    const bridge = await f.writer.write(
+    const evidence = await create(f.memory, 'bridge old evidence');
+    const neighbor = await create(f.memory, 'bridge current neighbor');
+    const bridge = await create(
+      f.writer,
       { text: 'stale bridge', links: { related: neighbor.ref } },
       { sources: [{ ref: evidence.ref }] },
     );
-    const root = await f.memory.write({
+    const root = await create(f.memory, {
       text: 'valid root trigger',
       links: { related: bridge.ref },
     });
-    await f.memory.edit((draft) => draft.revise(evidence.ref, 'bridge new evidence'));
+    await revise(f.memory, evidence.ref, 'bridge new evidence');
     const result = await f.memory.read(
       { query: 'valid root trigger' },
       { depth: 2, tokens: 20000, budget },
@@ -162,13 +164,13 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: relation-only evidence is recalled, duplicate edges have no extra weight, pages keep ranks`, async (t) => {
     const f = setup(t, { activation: { relations: { condition: { forward: 2, reverse: 0 } } } });
-    const condition = await f.memory.write('Only after an administrator signs.');
-    const first = await f.memory.write({
+    const condition = await create(f.memory, 'Only after an administrator signs.');
+    const first = await create(f.memory, {
       text: 'launch alpha',
       links: { condition: condition.ref },
     });
-    await f.memory.write({ text: 'launch beta', links: { condition: condition.ref } });
-    await f.memory.write('irrelevant huge hub');
+    await create(f.memory, { text: 'launch beta', links: { condition: condition.ref } });
+    await create(f.memory, 'irrelevant huge hub');
     const all = await f.memory.search('launch', { limit: 20, budget });
     const target = all.items.find((i) => i.ref === condition.ref);
     assert.ok(target?.score > 0);
@@ -186,12 +188,10 @@ for (const adapter of ['memory', 'sqlite']) {
     );
     for (const [ref, score] of seen)
       assert.ok(Math.abs(score - all.items.find((i) => i.ref === ref).score) <= 2e-6);
-    await f.memory.edit((d) =>
-      d.revise(first.ref, {
-        text: 'launch alpha',
-        links: { condition: [condition.ref, condition.ref] },
-      }),
-    );
+    await revise(f.memory, first.ref, {
+      text: 'launch alpha',
+      links: { condition: [condition.ref, condition.ref] },
+    });
     const repeated = await f.memory.search('launch', { limit: 20, budget });
     assert.ok(
       Math.abs(repeated.items.find((i) => i.ref === condition.ref).score - target.score) < 1e-6,
@@ -206,8 +206,8 @@ for (const adapter of ['memory', 'sqlite']) {
       embed: async (texts) => texts.map((text) => (text.startsWith('launch') ? [1, 0] : [0, 1])),
     };
     const f = setup(t, { embedding });
-    const evidence = await f.memory.write('a separate prerequisite');
-    await f.memory.write({ text: 'launch topic', links: { evidence: evidence.ref } });
+    const evidence = await create(f.memory, 'a separate prerequisite');
+    await create(f.memory, { text: 'launch topic', links: { evidence: evidence.ref } });
     await f.host.prepareIndex(f.binding, { budget });
     const without = await f.memory.read(
       { query: 'launch' },
@@ -233,8 +233,8 @@ for (const adapter of ['memory', 'sqlite']) {
       },
     };
     const f = setup(t, { embedding });
-    await f.memory.write('stored alpha');
-    await f.memory.write('stored beta');
+    await create(f.memory, 'stored alpha');
+    await create(f.memory, 'stored beta');
     await f.host.prepareIndex(f.binding, { budget });
     const engine = f.host.engine;
     for (const [key, value] of f.storage.metaEntries('sdk:index:'))
@@ -257,8 +257,8 @@ for (const adapter of ['memory', 'sqlite']) {
   });
   test(`${adapter}: role direction and grant boundaries also apply to inverse expansion`, async (t) => {
     const f = setup(t, { activation: { relations: { hidden: { forward: 0, reverse: 0 } } } });
-    const target = await f.memory.write('unrelated content');
-    await f.memory.write({ text: 'visible needle', links: { hidden: target.ref } });
+    const target = await create(f.memory, 'unrelated content');
+    await create(f.memory, { text: 'visible needle', links: { hidden: target.ref } });
     const page = await f.memory.search('visible needle', { budget });
     assert.ok(!page.items.some((i) => i.ref === target.ref));
     const auth = f.authority.issue({
@@ -268,7 +268,7 @@ for (const adapter of ['memory', 'sqlite']) {
       canIngestSource: true,
     });
     const secret = f.host.connect({ auth, writePolicy: 'q', actor: { type: 'human' } });
-    await secret.write('visible needle private');
+    await create(secret, 'visible needle private');
     assert.ok(
       !(await f.memory.search('visible needle', { budget })).items.some((i) =>
         i.text.includes('private'),
@@ -280,9 +280,9 @@ for (const adapter of ['memory', 'sqlite']) {
 test('edge budget bounds graph collection after the node cap is reached', async (t) => {
   const f = fixture({ retrieval: { maxNodes: 3, maxSeeds: 1, maxEdges: 2 } });
   t.after(() => f.storage.close());
-  const c = await f.memory.write('C');
-  const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
-  const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+  const c = await create(f.memory, 'C');
+  const b = await create(f.memory, { text: 'B', links: { next: c.ref } });
+  const a = await create(f.memory, { text: 'A', links: { child: [b.ref, c.ref] } });
   const { complete, state } = collectFrom(f, a.ref);
   assert.equal(complete, true);
   assert.equal(state.nodes.length, 3);
@@ -293,9 +293,9 @@ test('edge budget bounds graph collection after the node cap is reached', async 
 test('candidate budget exhaustion leaves ranking tasks resumable', async (t) => {
   const f = fixture({ retrieval: { maxNodes: 3, maxSeeds: 1 } });
   t.after(() => f.storage.close());
-  const c = await f.memory.write('C');
-  const b = await f.memory.write({ text: 'B', links: { next: c.ref } });
-  const a = await f.memory.write({ text: 'A', links: { child: [b.ref, c.ref] } });
+  const c = await create(f.memory, 'C');
+  const b = await create(f.memory, { text: 'B', links: { next: c.ref } });
+  const a = await create(f.memory, { text: 'A', links: { child: [b.ref, c.ref] } });
   const first = collectFrom(
     f,
     a.ref,
@@ -321,7 +321,7 @@ test('candidate budget exhaustion leaves ranking tasks resumable', async (t) => 
 
 test('automatic recall returns useful memory from a large corpus within the default budget', async () => {
   const f = fixture();
-  for (let i = 0; i < 700; i++) await f.memory.write(`common topic ${i}`);
+  for (let i = 0; i < 700; i++) await create(f.memory, `common topic ${i}`);
   const result = await f.memory.read({ context: 'common topic' });
   assert.ok(result.refs.length > 0);
   assert.equal(result.diagnostics.approximate, true);
@@ -346,15 +346,15 @@ test('disabled inverse roles cannot add a parent; arbitrary role names remain or
     candidateProvider: new LexicalCandidateProvider(),
     activation: { relations: { hidden: { forward: 0, reverse: 0 } } },
   });
-  const target = await f.memory.write('needle');
-  await f.memory.write({ text: 'unrelated parent', links: { hidden: target.ref } });
+  const target = await create(f.memory, 'needle');
+  await create(f.memory, { text: 'unrelated parent', links: { hidden: target.ref } });
   assert.equal(
     (await f.memory.search('needle', { depth: 2, budget })).items.some(
       (i) => i.text === 'unrelated parent',
     ),
     false,
   );
-  await f.memory.write({ text: 'another parent', links: { constructor: target.ref } });
+  await create(f.memory, { text: 'another parent', links: { constructor: target.ref } });
   assert.equal(
     (await f.memory.search('needle', { depth: 2, budget })).items.some(
       (i) => i.text === 'another parent',

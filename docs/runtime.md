@@ -15,7 +15,21 @@ const auth = authority.issue({
 const host = new MemoryHost({ authority });
 const raw = { auth, writePolicy: 'p', actor: { type: 'input-adapter' as const } };
 const binding = { ...raw, actor: { type: 'agent' as const } };
-await host.connect(raw).write('招待には管理者の承認が必要。');
+(
+  await host.connect(raw).write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: '招待には管理者の承認が必要。',
+          links: [],
+        },
+        sources: [],
+      },
+    ],
+  })
+).changes.atom;
 const memory = host.connect(binding);
 const recall = await memory.read({ query: '招待' }, { tokens: 4000 });
 const payload = JSON.stringify({ question: '招待の条件は？', memory: recall.text });
@@ -31,12 +45,29 @@ const request = async (_payload: string) => '管理者の承認が必要です�
 const result = await request(payload);
 // Use the same eventId when retrying this acknowledgement.
 host.recordUse(recall.refs, binding, { eventId: 'example-request-1', input });
-await memory.write(result, { input }); // The dispatcher injects input; it is not a model tool argument.
+(
+  await memory.write({
+    changes: [
+      {
+        id: 'atom',
+        op: 'create',
+        content: {
+          text: result,
+          links: [],
+        },
+        sources: [],
+        input,
+      },
+    ],
+  })
+).changes.atom; // The dispatcher injects input; it is not a model tool argument.
 ```
 
 送信前に本文を除いた場合はpresentations.refsも実送信に合わせます。ただし使用したreadのacquisitionは選択依存として保持します。citation参照だけの資料全文を送ったとは記録しません。digestはホストの申告と実payloadを監査するための対応で、モデル内部を物理的に検知するものではありません。
 
-前段から作業状態を持ち越す要求では `inherit: [previousInput]` を指定します。basisをhistoricalにしても継承したwatchは消えません。独立した要求は別tokenで観測し、同じeditの各writeへ対応するinputを注入できます。同じ要求がA/Bを見た場合、引用をa→A、b→Bと分けても生成依存は両入力のままです。
+前段から作業状態を持ち越す要求では `inherit: [previousInput]` を指定します。basisをhistoricalにしても継承したwatchは消えません。独立した要求は別tokenで観測し、同じwrite batchの各agent changeへ対応する `input` を付けます。同じ要求がA/Bを見た場合、引用をa→A、b→Bと分けても生成依存は両入力のままです。humanとinput-adapterのchangeはtokenを省略できます。
+
+writeへ `idempotencyKey` を付けると、同じsubject・policy・actorで同じsemantic planを再送できます。planを変えた再送はconflictです。commit前の期限切れtokenは拒否されますが、commit済みplanの一致replayは、後からtokenが期限切れになっても同じ `operationId` とchangesを回収できます。現在の認可・purge境界はreplayでも検証されます。
 
 入力tokenはbinding・認可世代・有効期限・purgeで検証します。入力未確定のtoken、任意文字列、他scopeのtokenは受け付けません。信頼したホストが全入力、外部tool結果、持越し状態を申告することが境界です。
 

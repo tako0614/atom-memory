@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MemoryHost, LocalAuthority, MemoryStorage, utf8Tokenizer } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
+import { create, revise } from './fixtures.mjs';
 import { canonical, digest } from '../dist/core/util.js';
 
 // Published v0.4/v0.3 identities for this fixture's test-space encoder.
@@ -60,16 +61,18 @@ for (const adapter of ['memory', 'sqlite'])
       adapter === 'sqlite' ? new SqliteStorage(join(dir, 'atom.sqlite')) : new MemoryStorage();
     try {
       const f = setup(storage);
-      const leaf = await f.memory.write('old source');
-      const parent = await f.memory.write({ text: 'collection', links: { member: leaf.ref } });
-      const fixed = await f.memory.write({
+      const leaf = await create(f.memory, 'old source');
+      const parent = await create(f.memory, { text: 'collection', links: { member: leaf.ref } });
+      const fixed = await create(f.memory, {
         text: 'fixed',
         links: { member: { ref: leaf.ref, at: 'observed' } },
       });
       // Multiple revisions share one commit sequence: a one-item page must not skip ties.
-      await f.memory.edit(async (draft) => {
-        await draft.write('first');
-        await draft.write('second');
+      await f.memory.write({
+        changes: [
+          { id: 'first', op: 'create', content: { text: 'first', links: [] }, sources: [] },
+          { id: 'second', op: 'create', content: { text: 'second', links: [] }, sources: [] },
+        ],
       });
       await drain(f.host, f.binding, 1);
       assert.equal(f.calls.filter((call) => call.purpose === 'document').length, 5);
@@ -81,7 +84,7 @@ for (const adapter of ['memory', 'sqlite'])
         [['collection'], ['first'], ['fixed'], ['old source'], ['second']],
       );
       const before = f.calls.length;
-      await f.memory.edit((draft) => draft.revise(leaf.ref, 'new source'));
+      await revise(f.memory, leaf.ref, 'new source');
       const embed = f.options.embedding.embed;
       f.options.embedding.embed = async () => {
         throw Error('encoder unavailable');
@@ -129,8 +132,8 @@ for (const adapter of ['memory', 'sqlite'])
       const f = setup(storage, {
         activation: { relations: { ignored: { forward: 0, reverse: 0 } } },
       });
-      const target = await f.memory.write('orchard fruit');
-      const parent = await f.memory.write({
+      const target = await create(f.memory, 'orchard fruit');
+      const parent = await create(f.memory, {
         text: 'unrelated parent',
         links: { ignored: target.ref },
       });
@@ -153,15 +156,15 @@ for (const adapter of ['memory', 'sqlite'])
       adapter === 'sqlite' ? new SqliteStorage(join(dir, 'atom.sqlite')) : new MemoryStorage();
     try {
       const f = setup(storage);
-      const v2 = await f.memory.write('v2 own body');
-      const v03 = await f.memory.write('v03 own body');
-      const mixedTarget = await f.memory.write('mixed target');
-      const mixedParent = await f.memory.write({
+      const v2 = await create(f.memory, 'v2 own body');
+      const v03 = await create(f.memory, 'v03 own body');
+      const mixedTarget = await create(f.memory, 'mixed target');
+      const mixedParent = await create(f.memory, {
         text: 'mixed parent',
         links: { member: mixedTarget.ref },
       });
-      const wrongPolicy = await f.memory.write('wrong policy');
-      const wrongEncoder = await f.memory.write('wrong encoder');
+      const wrongPolicy = await create(f.memory, 'wrong policy');
+      const wrongEncoder = await create(f.memory, 'wrong encoder');
       const seed = (ref, config, hash, policyId = 'p') =>
         storage.metaSet(indexKey(storage, ref), {
           config,
@@ -219,8 +222,8 @@ for (const adapter of ['memory', 'sqlite'])
       adapter === 'sqlite' ? new SqliteStorage(join(dir, 'atom.sqlite')) : new MemoryStorage();
     try {
       const f = setup(storage);
-      await f.memory.write('first progress item');
-      await f.memory.write('second progress item');
+      await create(f.memory, 'first progress item');
+      await create(f.memory, 'second progress item');
       const oldKey = progressKey(PREVIOUS_INDEX_CONFIG);
       const stale = { after: { sequence: Number.MAX_SAFE_INTEGER, revisionId: 'stale-v2' } };
       storage.metaSet(oldKey, stale);
@@ -258,8 +261,8 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
   const storage = new SqliteStorage(join(dir, 'atom.sqlite'));
   try {
     const f = setup(storage, { retrieval: { maxScan: 16 } });
-    const unrelated = await f.memory.write('unrelated stone 0');
-    for (let i = 1; i < 35; i++) await f.memory.write(`unrelated stone ${i}`);
+    const unrelated = await create(f.memory, 'unrelated stone 0');
+    for (let i = 1; i < 35; i++) await create(f.memory, `unrelated stone ${i}`);
     const foreignAuth = f.options.authority.issue({
       subject: 'foreign',
       readPolicies: ['q'],
@@ -272,14 +275,15 @@ test('SQLite default hybrid vectors find a lexical miss without scanning unrelat
       actor: { type: 'input-adapter' },
     };
     const foreign = f.host.connect(foreignBinding);
-    for (let i = 0; i < 20; i++) await foreign.write(`orchard PRIVATE ${i}`);
+    for (let i = 0; i < 20; i++) await create(foreign, `orchard PRIVATE ${i}`);
     await drain(f.host, foreignBinding, 8);
-    const source = await f.memory.write('orchard');
-    const parent = await f.memory.write('garden');
-    const relation = await f.host.connect({ ...f.binding, actor: { type: 'agent' } }).write({
-      text: 'location relation',
-      links: { group: parent.ref, member: source.ref },
-    });
+    const source = await create(f.memory, 'orchard');
+    const parent = await create(f.memory, 'garden');
+    const relation = await create(
+      f.host.connect({ ...f.binding, actor: { type: 'agent' } }),
+      { text: 'location relation', links: { group: parent.ref, member: source.ref } },
+      { sources: [{ ref: source.ref }] },
+    );
     await drain(f.host, f.binding, 8);
     const result = await f.memory.read(
       { context: 'fruit', thought: 'fruit season' },
@@ -328,7 +332,7 @@ for (const adapter of ['memory', 'sqlite'])
     const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new MemoryStorage();
     try {
       const f = setup(storage);
-      const source = await f.memory.write('orchard');
+      const source = await create(f.memory, 'orchard');
       const revision = storage.metaGet(`sdk:ref:${source.ref}`).target;
       storage.metaSet(`sdk:index:${revision.revisionId}`, {
         config: PREVIOUS_INDEX_CONFIG,
@@ -348,7 +352,7 @@ for (const adapter of ['memory', 'sqlite'])
 
 test('failed indexing never rolls back committed content and cannot publish a purged vector', async () => {
   const f = setup(new MemoryStorage());
-  const source = await f.memory.write('orchard');
+  const source = await create(f.memory, 'orchard');
   const r = f.options.storage.scan({ policies: ['p'], limit: 1 }, f.options.storage.watermark())[0];
   f.options.embedding.embed = async () => {
     f.host.purge(r.atomId);

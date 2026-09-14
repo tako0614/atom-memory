@@ -1,3 +1,4 @@
+import { create, revise } from '../../test/fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryStorage } from '../../dist/index.js';
@@ -6,24 +7,23 @@ import { pack } from '../../dist/client/retrieval.js';
 import { atomFixture, acquire, prepare, budget } from './fixture.mjs';
 import { compileComposition, CompositionCache } from './evaluator.mjs';
 import { createResearchRead, prepareEvaluator } from './reader.mjs';
-
 for (const adapter of ['memory', 'sqlite'])
   test(`${adapter}: budgeted evaluation returns exactly packed evidence and resumes`, async (t) => {
     const storage = adapter === 'memory' ? new MemoryStorage() : new SqliteStorage(':memory:');
     t.after(() => storage.close());
     const f = await atomFixture(storage, 2, 4);
-    const condition = await f.memory.write('APPROVAL REQUIRED');
-    const claim = await f.memory.write({
+    const condition = await create(f.memory, 'APPROVAL REQUIRED');
+    const claim = await create(f.memory, {
       text: 'LAUNCH IS ALLOWED',
       links: { condition: { ref: condition.ref, required: true } },
     });
-    const source = await f.memory.write('AAAABBBBCCCC');
+    const source = await create(f.memory, 'AAAABBBBCCCC');
     const writer = f.host.connect({
       ...f.binding,
       actor: { type: 'agent', generatedOrigin: 'extraction' },
     });
-    await writer.write('AAAABBBB', { sources: [{ ref: source.ref, start: 0, end: 8 }] });
-    await writer.write('BBBBCCCC', { sources: [{ ref: source.ref, start: 4, end: 12 }] });
+    await create(writer, 'AAAABBBB', { sources: [{ ref: source.ref, start: 0, end: 8 }] });
+    await create(writer, 'BBBBCCCC', { sources: [{ ref: source.ref, start: 4, end: 12 }] });
     await prepare(f.host, f.binding);
     const g = await acquire(f),
       cache = new CompositionCache();
@@ -44,7 +44,7 @@ for (const adapter of ['memory', 'sqlite'])
           );
           const r = createResearchRead(f, g, { prepared, tokens, limit, maxWork: 0 });
           assert.equal(r.advance().complete, false);
-          const done = r.advance(2_000_000);
+          const done = r.advance(2000000);
           assert.equal(
             done.complete,
             true,
@@ -63,7 +63,7 @@ for (const adapter of ['memory', 'sqlite'])
     assert.ok(partial.finish().evaluation.work <= 25);
     const changing = createResearchRead(f, g, { maxWork: 0 });
     changing.advance();
-    await f.memory.edit((d) => d.revise(condition.ref, 'UPDATED CONDITION'));
+    await revise(f.memory, condition.ref, 'UPDATED CONDITION');
     assert.throws(() => changing.advance(2e6), { code: 'STATE_INVALIDATED' });
     assert.throws(() => changing.finish(), { code: 'STATE_INVALIDATED' });
     await prepare(f.host, f.binding);

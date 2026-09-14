@@ -87,7 +87,7 @@ for (const adapter of ['memory', 'sqlite']) {
     assert.deepEqual(storage.history(undefined, 100), revisions);
     assert.deepEqual(storage.metaEntries('sdk:index:'), indexes);
     assert.deepEqual(storage.metaEntries('sdk:use:state:'), use);
-    assert.equal((await memory.inspect(A.ref, { depth: 0, budget })).atom.text, A.text);
+    assert.equal((await memory.inspect(A.ref, { limit: 0, budget })).atom.text, A.text);
     await assert.rejects(memory.search('needle', { cursor, limit: 1, budget }), {
       code: 'CURSOR_EXPIRED',
     });
@@ -99,11 +99,31 @@ for (const adapter of ['memory', 'sqlite']) {
     assert.equal(documentCalls, oldCalls);
     assert.equal(host.recordUse([A.ref, D.ref], binding, { eventId: 'old-request' }).repeated, 2);
     const input = host.observe({ sources: [{ ref: A.ref }], payloadDigest: digest(A.text) }, agent);
-    const newDerived = await host.connect(agent).write('needle new derivation', { input });
-    const independent = await memory.write({
-      text: 'independent new source',
-      links: { related: A.ref },
-    });
+    const newDerived = (
+      await host.connect(agent).write({
+        changes: [
+          {
+            id: 'derived',
+            op: 'create',
+            content: { text: 'needle new derivation', links: [] },
+            sources: [],
+            input,
+          },
+        ],
+      })
+    ).changes.derived;
+    const independent = (
+      await memory.write({
+        changes: [
+          {
+            id: 'source',
+            op: 'create',
+            content: { text: 'independent new source', links: { related: A.ref } },
+            sources: [],
+          },
+        ],
+      })
+    ).changes.source;
     const plan = host.purge(target.atomId, { dryRun: true });
     assert.equal(plan.complete, true);
     assert.equal(plan.legacyDependencies, true);
@@ -123,7 +143,7 @@ for (const adapter of ['memory', 'sqlite']) {
     for (const v of [A, P, D, newDerived])
       await assert.rejects(memory.inspect(v.ref), { code: 'ACCESS_DENIED' });
     assert.equal(
-      (await memory.inspect(independent.ref, { budget, depth: 0 })).atom.text,
+      (await memory.inspect(independent.ref, { budget, limit: 0 })).atom.text,
       independent.text,
     );
     assert.equal(storage.metaEntries('sdk:use:state:').length, 0);

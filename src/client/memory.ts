@@ -11,24 +11,24 @@ import type {
   Slot,
 } from '../contracts.js';
 import { BudgetLedger } from '../core/budget.js';
-import { canonical, clone, digest, fail, uid, AtomMemoryError } from '../core/util.js';
+import { canonical, clone, digest, fail, uid, validId, AtomMemoryError } from '../core/util.js';
 import { validateContent } from '../core/validation.js';
 import type {
   AtomRef,
   AtomView,
   ClientBinding,
-  Draft,
-  EditOptions,
-  EditOutcome,
   HostOptions,
   Inspection,
+  InspectionNeighbor,
+  InspectionVia,
   InspectOptions,
   LinkTarget,
   MemoryAPI,
-  MemoryContent,
+  MemoryChange,
   MemoryPage,
   MemoryReceipt,
   MemoryState,
+  MemoryWriteRequest,
   OperationOptions,
   ReadOptions,
   RecallResult,
@@ -43,13 +43,13 @@ import {
   Engine,
   bindingKey,
   pinRevision,
-  type OverlayState,
+  type InspectionCursorState,
   type QueryState,
   type Session,
 } from './engine.js';
-import { graph, graphPage, validateMemory } from './retrieval.js';
+import { validateMemory } from './retrieval.js';
 import { select } from './selection.js';
-import { positive, cancellable } from './control.js';
+import { positive } from './control.js';
 import {
   observe,
   manifest,
@@ -64,10 +64,24 @@ interface Retrieval {
   s: Session;
   state: QueryState;
 }
+interface PreparedChange {
+  change: MemoryChange;
+  atomId: string;
+  revisionId: string;
+  slots: Slot[];
+  normalizedLinks: unknown[];
+  origins: Origin[];
+  normalizedSources: unknown[];
+  previous?: AtomRevision;
+}
 export interface ExecutionScope {
   ledger: BudgetLedger;
   traces?: Trace[];
 }
+const internalBodyWriters = new WeakMap<
+  MemoryClient,
+  (body: AtomContent['body']) => Promise<WriteOutcome>
+>();
 export class MemoryHost {
   private readonly engine: Engine;
   constructor(options: HostOptions) {
@@ -192,7 +206,8 @@ export class MemoryHost {
   ): Promise<WriteOutcome> {
     if (binding.actor.type === 'agent') fail('ACCESS_DENIED');
     const body = this.engine.kernel.putBlob(bytes, binding.writePolicy, mediaType, binding.auth);
-    return this.connect(binding).hostWriteBody(body);
+    const client = this.connect(binding);
+    return internalBodyWriters.get(client)!(body);
   }
   purge(atomId: string, options: import('../core/purge.js').PurgeOptions = {}) {
     const result = this.engine.kernel.purge(atomId, options);
@@ -208,14 +223,23 @@ export class MemoryClient implements MemoryAPI {
     private readonly engine: Engine,
     private readonly binding: ClientBinding,
     private readonly execution?: ExecutionScope,
-    private readonly overlay?: OverlayState,
-  ) {}
+  ) {
+    internalBodyWriters.set(this, (body) =>
+      this.writePrepared(
+        {
+          changes: [{ id: 'source', op: 'create', content: { text: '', links: [] }, sources: [] }],
+        },
+        {},
+        new Map([['source', body]]),
+      ),
+    );
+  }
   /** Share a host-owned memory budget and observed inputs across operations. No model loop runs here. */
   forExecution(scope: ExecutionScope): MemoryClient {
-    return new MemoryClient(this.engine, this.binding, scope, this.overlay);
+    return new MemoryClient(this.engine, this.binding, scope);
   }
   assertAuthorized(receipts: readonly MemoryReceipt[] = []): void {
-    const s = this.engine.session(this.binding, {}, this.execution?.ledger, this.overlay);
+    const s = this.engine.session(this.binding, {}, this.execution?.ledger);
     for (const receipt of receipts) {
       if (this.engine.storage.metaGet(`sdk:manifest:${receipt.id}`)) {
         manifest(this.engine, receipt, this.binding);
@@ -243,13 +267,12 @@ export class MemoryClient implements MemoryAPI {
     if ('historical' in options)
       fail('INVALID_INPUT', 'Inspect an observed revision for historical content');
     let saved: QueryState | undefined;
-    if (options.cursor)
-      saved = this.engine.cursor(options.cursor, this.binding, kind, key, this.overlay);
+    if (options.cursor) saved = this.engine.cursor(options.cursor, this.binding, kind, key);
     const s = this.engine.session(
       this.binding,
       options,
       this.execution?.ledger,
-      this.overlay,
+      undefined,
       saved?.at,
       key,
     );
@@ -267,7 +290,6 @@ export class MemoryClient implements MemoryAPI {
       index: this.engine.storage.metaGet<number>('sdk:index-generation') ?? 0,
       config: this.engine.config,
       expires: Date.now() + 300000,
-      overlay: this.overlay?.id,
       candidates: [],
       offset: 0,
       complete: false,
@@ -494,44 +516,177 @@ export class MemoryClient implements MemoryAPI {
     };
   }
   async inspect(ref: AtomRef, options: InspectOptions = {}): Promise<Inspection> {
-    if (['history', 'successor', 'composition'].some((key) => key in options))
-      fail('INVALID_INPUT', 'Use revisions and ordinary links; history policy belongs to the host');
-    const limit = positive(options.limit, 20);
-    const depth = options.depth ?? 1;
-    if (!Number.isSafeInteger(depth) || depth < 0 || depth > 32) fail('INVALID_INPUT');
+    if (
+      !options ||
+      typeof options !== 'object' ||
+      Object.keys(options).some(
+        (key) =>
+          ![
+            'version',
+            'direction',
+            'roles',
+            'limit',
+            'cursor',
+            'range',
+            'budget',
+            'deadline',
+            'signal',
+          ].includes(key),
+      )
+    )
+      fail('INVALID_INPUT');
+    if (![undefined, 'observed', 'latest'].includes(options.version)) fail('INVALID_INPUT');
+    const limit = options.limit ?? 20;
+    if (!Number.isSafeInteger(limit) || limit < 0 || limit > 10000) fail('INVALID_INPUT');
+    const direction = options.direction ?? 'both';
+    if (!['both', 'incoming', 'outgoing'].includes(direction)) fail('INVALID_INPUT');
+    if (
+      options.roles !== undefined &&
+      (!Array.isArray(options.roles) ||
+        options.roles.length > this.engine.kernel.limits.maxSlots ||
+        options.roles.some((role) => typeof role !== 'string' || !role.length))
+    )
+      fail('INVALID_INPUT');
+    for (const role of options.roles ?? []) validId(role);
+    if (
+      options.range !== undefined &&
+      (!options.range ||
+        typeof options.range !== 'object' ||
+        Object.keys(options.range).some((key) => !['start', 'bytes'].includes(key)))
+    )
+      fail('INVALID_INPUT');
+    const roles = [...new Set(options.roles ?? [])].sort();
     const key = this.key('inspect', ref, {
-      depth,
       version: options.version ?? 'observed',
+      direction,
+      roles,
       rangeStart: options.range?.start,
+      rangeBytes: options.range?.bytes,
     });
     const saved = options.cursor
-      ? this.engine.cursor(options.cursor, this.binding, 'inspect', key, this.overlay)
+      ? this.engine.cursor(options.cursor, this.binding, 'inspect', key)
       : undefined;
     let s = this.engine.session(
       this.binding,
       options,
       this.execution?.ledger,
-      this.overlay,
+      undefined,
       saved?.at,
       key,
     );
     const entry = this.engine.resolve(ref, s);
-    let root = entry.target;
-    if (options.version === 'latest')
+    let root = saved?.root ?? entry.target;
+    if (!saved && options.version === 'latest')
       root = pinRevision(this.engine.get({ kind: 'logical', atomId: root.atomId }, s, true));
     if (saved) s.trace = { ...clone(saved.trace), id: uid('trace') };
     const r = this.engine.get(root, s, options.version === 'latest');
-    const atom = this.engine.view(r, s, options.version === 'latest');
+    // An AtomRef embedded in a returned AtomView is presentation metadata, not a
+    // claim that the referenced body was shown. Record only the AtomViews that
+    // this inspection page actually returns.
+    const atom = this.engine.view(r, s, options.version === 'latest', false);
     if (r.body.kind === 'blob' || options.range)
       return this.blobInspection(r, atom, s, options, key, saved);
-    const graphState = saved?.graph ?? graph(root, depth);
-    const { revisions, complete } = graphPage(this.engine, s, graphState, limit);
-    if (!complete && !revisions.length)
+    if (limit === 0) return this.finishInspection(atom, [], s, true);
+
+    const roleAllowed = (role: string) => !options.roles || roles.includes(role);
+    const via = (slot: Slot, edgeDirection: InspectionVia['direction']): InspectionVia => ({
+      direction: edgeDirection,
+      role: slot.role,
+      at: slot.target.kind === 'logical' ? 'logical' : 'observed',
+      required: slot.mode === 'include' || slot.required === true,
+      ...(slot.orderKey ? { orderKey: slot.orderKey } : {}),
+    });
+    const incomingVias = (candidate: AtomRevision): InspectionVia[] => {
+      const found: InspectionVia[] = [];
+      for (const slot of candidate.slots) {
+        if (!roleAllowed(slot.role)) continue;
+        const matches =
+          slot.target.kind === 'pinned'
+            ? slot.target.atomId === root.atomId && slot.target.revisionId === root.revisionId
+            : this.engine.neighbor(slot.target, s, true, false)?.revisionId === root.revisionId;
+        if (matches) found.push(via(slot, 'incoming'));
+      }
+      return found;
+    };
+    const state: InspectionCursorState =
+      saved?.inspection ??
+      (() => {
+        const outgoing = new Map<
+          string,
+          { ref: PinnedRef; via: InspectionVia[]; outgoing: boolean }
+        >();
+        if (direction !== 'incoming')
+          for (const slot of r.slots) {
+            if (!roleAllowed(slot.role)) continue;
+            const target = this.engine.neighbor(
+              slot.target,
+              s,
+              slot.target.kind === 'logical',
+              false,
+            );
+            if (!target) continue;
+            const old = outgoing.get(target.revisionId);
+            if (old) old.via.push(via(slot, 'outgoing'));
+            else
+              outgoing.set(target.revisionId, {
+                ref: pinRevision(target),
+                via: [via(slot, 'outgoing')],
+                outgoing: true,
+              });
+          }
+        return {
+          pending: [...outgoing.values()],
+          outgoingRevisionIds: [...outgoing.keys()],
+          incomingDone: direction === 'outgoing' || (options.roles !== undefined && !roles.length),
+        };
+      })();
+    const neighbors: InspectionNeighbor[] = [];
+    while (neighbors.length < limit) {
+      this.engine.check(s);
+      const next = state.pending.shift();
+      if (next) {
+        const revision = this.engine.get(next.ref, s);
+        const allVia = [
+          ...next.via,
+          ...(next.outgoing && direction === 'both' ? incomingVias(revision) : []),
+        ];
+        const uniqueVia = [
+          ...new Map(allVia.map((item) => [canonical(item), item] as const)).values(),
+        ];
+        neighbors.push({ atom: this.engine.view(revision, s, false, false), via: uniqueVia });
+        continue;
+      }
+      if (state.incomingDone) break;
+      const available = s.ledger.remaining('maxCandidates');
+      if (available < 2) break;
+      const count = Math.min(16, Math.max(1, Math.floor(available / 2)));
+      const page = this.engine.scan(
+        {
+          policies: [...s.trace.policies],
+          relation: { target: root },
+          after: state.incomingAfter,
+          limit: count,
+        },
+        s,
+        true,
+      );
+      s.ledger.charge({ maxCandidates: page.length });
+      if (page.length < count) state.incomingDone = true;
+      else state.incomingAfter = page.at(-1)!.atomId;
+      for (const candidate of page) {
+        if (state.outgoingRevisionIds.includes(candidate.revisionId)) continue;
+        const candidateVia = incomingVias(candidate);
+        if (candidateVia.length)
+          state.pending.push({
+            ref: pinRevision(candidate),
+            via: candidateVia,
+            outgoing: false,
+          });
+      }
+    }
+    const complete = state.incomingDone && state.pending.length === 0;
+    if (!complete && !neighbors.length)
       fail('BUDGET_EXHAUSTED', 'Adjacency cannot advance with this budget');
-    s.ledger.charge({ maxAtoms: revisions.length });
-    const items = revisions.map((v) => this.engine.view(v, s, options.version === 'latest'));
-    const receipt = this.finish(s);
-    present(this.engine, s, receipt, items, canonical(items));
     const cursor = !complete
       ? this.engine.saveCursor({
           kind: 'inspect',
@@ -541,7 +696,6 @@ export class MemoryClient implements MemoryAPI {
           signalDigest: key,
           index: this.engine.storage.metaGet<number>('sdk:index-generation') ?? 0,
           config: this.engine.config,
-          overlay: this.overlay?.id,
           candidates: [],
           offset: 0,
           complete,
@@ -549,16 +703,38 @@ export class MemoryClient implements MemoryAPI {
           pending: false,
           approximate: false,
           trace: s.trace,
-          graph: graphState,
+          inspection: state,
           root,
         })
       : undefined;
+    return this.finishInspection(atom, neighbors, s, complete, cursor);
+  }
+  private finishInspection(
+    atom: AtomView,
+    neighbors: readonly InspectionNeighbor[],
+    s: Session,
+    complete: boolean,
+    cursor?: string,
+  ): Inspection {
+    const rendered = canonical({ atom, neighbors });
+    s.ledger.charge({
+      maxAtoms: 1 + neighbors.length,
+      maxBytes: Buffer.byteLength(rendered),
+    });
+    const receipt = this.finish(s);
+    const presentedRefs = new Set<AtomRef>();
+    const presented = [atom, ...neighbors.map((neighbor) => neighbor.atom)].filter((item) => {
+      if (presentedRefs.has(item.ref)) return false;
+      presentedRefs.add(item.ref);
+      return true;
+    });
+    present(this.engine, s, receipt, presented, rendered, undefined, { root: atom.ref, neighbors });
     return {
       atom,
+      neighbors,
       readEligibility: atom.links.some((link) => link.required && link.unavailable)
         ? 'blocked'
         : 'unchecked',
-      items,
       stale: [...s.stale],
       receipt,
       ...(cursor ? { cursor } : {}),
@@ -609,13 +785,23 @@ export class MemoryClient implements MemoryAPI {
     s.ledger.charge({ maxBytes: part.length, maxAtoms: 1 });
     const end = start + part.length;
     const complete = end >= total;
+    const returnedAtom = { ...atom, text: text ?? '' };
+    const range = {
+      start,
+      end,
+      totalBytes: total,
+      mediaType,
+      ...(text !== undefined ? { text } : { base64: Buffer.from(part).toString('base64') }),
+    };
+    const rendered = canonical({ atom: returnedAtom, neighbors: [], range });
+    s.ledger.charge({ maxBytes: Buffer.byteLength(rendered) });
     const receipt = this.finish(s);
     present(
       this.engine,
       s,
       receipt,
-      [{ ...atom, text: text ?? Buffer.from(part).toString('base64') }],
-      text ?? Buffer.from(part).toString('base64'),
+      [{ ...returnedAtom, text: text ?? Buffer.from(part).toString('base64') }],
+      rendered,
       { start, end, unit: textual ? 'utf8' : 'byte', digest: digest(part) },
     );
     const cursor = !complete
@@ -627,7 +813,6 @@ export class MemoryClient implements MemoryAPI {
           signalDigest: key,
           index: this.engine.storage.metaGet<number>('sdk:index-generation') ?? 0,
           config: this.engine.config,
-          overlay: this.overlay?.id,
           candidates: [],
           offset: 0,
           complete,
@@ -640,19 +825,13 @@ export class MemoryClient implements MemoryAPI {
         })
       : undefined;
     return {
-      atom: { ...atom, text: text ?? '' },
+      atom: returnedAtom,
+      neighbors: [],
       readEligibility: atom.links.some((link) => link.required && link.unavailable)
         ? 'blocked'
         : 'unchecked',
-      items: [{ ...atom, text: text ?? '' }],
       stale: [],
-      range: {
-        start,
-        end,
-        totalBytes: total,
-        mediaType,
-        ...(text !== undefined ? { text } : { base64: Buffer.from(part).toString('base64') }),
-      },
+      range,
       receipt,
       ...(cursor ? { cursor } : {}),
       diagnostics: {
@@ -663,488 +842,400 @@ export class MemoryClient implements MemoryAPI {
       usage: s.ledger.usage(),
     };
   }
-  private content(
-    input: MemoryContent,
-    s: Session,
-    options: WriteOptions = {},
-    body?: AtomContent['body'],
-  ): AtomContent {
-    const value = typeof input === 'string' ? { text: input } : input;
-    if (!value || typeof value.text !== 'string') fail('INVALID_INPUT');
-    if (Object.keys(value).some((k) => !['text', 'links'].includes(k)))
-      fail('INVALID_INPUT', 'Content cannot set IDs, provenance or authorization');
-    if (Buffer.byteLength(value.text) > this.engine.kernel.limits.maxAtomBytes)
-      fail('LIMIT_EXCEEDED');
-    const links = value.links;
-    const slots: Slot[] = [];
-    const add = (role: string, target: LinkTarget) => {
-      if (typeof role !== 'string' || !role.length) fail('INVALID_INPUT');
-      const spec = typeof target === 'string' ? { ref: target } : target;
-      if (!spec || !['logical', 'observed', undefined].includes(spec.at)) fail('INVALID_INPUT');
-      const entry = this.engine.resolve(spec.ref, s);
-      const observed = this.engine.get(entry.target, s, false);
-      this.engine.record(
-        observed,
-        s,
-        this.binding.actor.type === 'agent' && spec.at !== 'observed',
-      );
-      slots.push({
-        role,
-        mode: 'refer',
-        target:
-          spec.at === 'observed' ? entry.target : { kind: 'logical', atomId: entry.target.atomId },
-        required: spec.required === true,
-        orderKey: spec.orderKey ?? String(slots.length),
-      });
-    };
-    if (Array.isArray(links)) {
-      for (const link of links) add(link.role, link.target);
-    } else if (links) {
-      for (const [role, targets] of Object.entries(links)) {
-        if (Array.isArray(targets)) for (const target of targets) add(role, target);
-        else add(role, targets as LinkTarget);
+  async write(request: MemoryWriteRequest, options: WriteOptions = {}): Promise<WriteOutcome> {
+    return this.writePrepared(request, options);
+  }
+  private async writePrepared(
+    request: MemoryWriteRequest,
+    options: WriteOptions,
+    bodies = new Map<string, AtomContent['body']>(),
+  ): Promise<WriteOutcome> {
+    if (
+      !request ||
+      typeof request !== 'object' ||
+      Object.keys(request).some((key) => key !== 'changes') ||
+      !Array.isArray(request.changes)
+    )
+      fail('INVALID_INPUT');
+    if (
+      !options ||
+      typeof options !== 'object' ||
+      Object.keys(options).some(
+        (key) => !['idempotencyKey', 'budget', 'deadline', 'signal'].includes(key),
+      )
+    )
+      fail('INVALID_INPUT');
+    if (!request.changes.length) fail('INVALID_INPUT', 'A write batch must contain a change');
+    if (request.changes.length > this.engine.kernel.limits.maxBatch) fail('LIMIT_EXCEEDED');
+    if (options.idempotencyKey !== undefined) validId(options.idempotencyKey);
+
+    const generated = this.binding.actor.type === 'agent';
+    const ids = new Set<string>();
+    for (const change of request.changes) {
+      if (!change || typeof change !== 'object') fail('INVALID_INPUT');
+      validId(change.id);
+      if (ids.has(change.id)) fail('INVALID_INPUT', 'Change ids are unique within a batch');
+      ids.add(change.id);
+      if (!['create', 'revise', 'retire'].includes(change.op)) fail('INVALID_INPUT');
+      const allowed =
+        change.op === 'create'
+          ? ['id', 'op', 'content', 'sources', 'input']
+          : change.op === 'revise'
+            ? ['id', 'op', 'target', 'content', 'sources', 'input']
+            : ['id', 'op', 'target', 'input'];
+      if (Object.keys(change).some((key) => !allowed.includes(key))) fail('INVALID_INPUT');
+      if (generated && change.input === undefined)
+        fail('INVALID_INPUT', 'Every agent change requires its host-issued input token');
+      if (change.input !== undefined && typeof change.input !== 'string') fail('INVALID_INPUT');
+      if (change.op !== 'create' && typeof change.target !== 'string') fail('INVALID_REF');
+      if (change.op !== 'retire') {
+        if (
+          !change.content ||
+          typeof change.content !== 'object' ||
+          Object.keys(change.content).some((key) => !['text', 'links'].includes(key)) ||
+          !Object.hasOwn(change.content, 'links') ||
+          typeof change.content.text !== 'string'
+        )
+          fail('INVALID_INPUT', 'Create and revise require full text and links');
+        if (Buffer.byteLength(change.content.text) > this.engine.kernel.limits.maxAtomBytes)
+          fail('LIMIT_EXCEEDED');
+        if (!Array.isArray(change.sources))
+          fail('INVALID_INPUT', 'Create and revise require an explicit sources array');
       }
     }
-    const origins: Origin[] = [];
-    for (const citation of options.sources ?? []) {
-      const entry = this.engine.resolve(citation.ref, s);
-      const source = this.engine.get(entry.target, s, this.binding.actor.type === 'agent');
-      const start = citation.start ?? 0;
-      const end =
-        citation.end ??
-        (source.body.kind === 'blob'
-          ? source.body.bytes
-          : Buffer.byteLength(this.engine.text(source)));
-      const bytes =
-        source.body.kind === 'blob'
-          ? this.engine.storage.blobRange?.(source.body.blobId, start, end - start)
-          : Buffer.from(this.engine.text(source)).subarray(start, end);
-      if (!bytes) fail('REFERENCE_UNAVAILABLE');
-      s.ledger.charge({ maxBytes: bytes.length });
-      origins.push({
-        source: entry.target,
-        selector: { kind: 'utf8', start, end, quoteDigest: digest(bytes) },
-      });
+
+    // Allocate every generated identity before resolving any external or local reference.
+    const prepared: PreparedChange[] = request.changes.map((change) => ({
+      change,
+      atomId: change.op === 'create' ? uid('atom') : '',
+      revisionId: uid('revision'),
+      slots: [],
+      normalizedLinks: [],
+      origins: [],
+      normalizedSources: [],
+    }));
+    const local = new Map(prepared.map((item) => [item.change.id, item] as const));
+    const s = this.engine.session(this.binding, options, this.execution?.ledger);
+    const logicalAtoms = new Set<string>();
+    for (const item of prepared) {
+      if (item.change.op !== 'create') {
+        const entry = this.engine.resolve(item.change.target, s);
+        item.previous = this.engine.get(entry.target, s, true);
+        item.atomId = entry.target.atomId;
+      }
+      if (logicalAtoms.has(item.atomId))
+        fail('INVALID_INPUT', 'A batch may change each logical Atom only once');
+      logicalAtoms.add(item.atomId);
     }
-    const generated = this.binding.actor.type === 'agent';
-    if (options.input !== undefined) inputManifest(this.engine, options.input, this.binding);
-    const kind = generated ? (this.binding.actor.generatedOrigin ?? 'derived') : 'source';
-    const content: AtomContent = {
-      schema: kind === 'source' ? 'source' : 'atom',
-      state: 'active',
-      body: body ?? { kind: 'inline', value: value.text },
-      slots,
-      origins,
-      provenance: {
-        kind,
-        producerId: s.principal.subject,
-        ...(!generated
-          ? { dependencyContract: 'source-v2' as const }
-          : options.input !== undefined
-            ? { dependencyContract: 'observed-v2' as const }
-            : {}),
-        ...(generated ? { inputReceiptId: s.trace.id } : {}),
-      },
-      policyId: this.binding.writePolicy,
-    };
-    s.trace = {
-      ...s.trace,
-      policies: [
-        ...new Set([
-          this.binding.writePolicy,
-          ...s.trace.reads.map(
-            (ref) => this.engine.raw(ref, s)?.policyId ?? fail('REFERENCE_UNAVAILABLE'),
-          ),
-        ]),
-      ],
-    };
-    validateContent(content, s.principal, this.engine.kernel.limits, generated);
-    return content;
-  }
-  async hostWriteBody(body: AtomContent['body']): Promise<WriteOutcome> {
-    return this.writeInternal('', {}, body);
-  }
-  async write(input: MemoryContent, options: WriteOptions = {}): Promise<WriteOutcome> {
-    return this.writeInternal(input, options);
-  }
-  private async writeInternal(
-    input: MemoryContent,
-    options: WriteOptions,
-    body?: AtomContent['body'],
-  ): Promise<WriteOutcome> {
-    if (this.overlay) {
-      const view = await this.stageWrite(input, options, body);
+
+    const resolveLink = (target: LinkTarget, position: number) => {
+      const spec = typeof target === 'string' ? { ref: target } : target;
+      if (!spec || typeof spec !== 'object') fail('INVALID_INPUT');
+      if (
+        Object.keys(spec).some(
+          (key) => !['ref', 'local', 'at', 'required', 'orderKey'].includes(key),
+        ) ||
+        ![undefined, 'logical', 'observed'].includes(spec.at) ||
+        (spec.required !== undefined && typeof spec.required !== 'boolean') ||
+        (spec.orderKey !== undefined && typeof spec.orderKey !== 'string')
+      )
+        fail('INVALID_INPUT');
+      const hasRef = 'ref' in spec;
+      const hasLocal = 'local' in spec;
+      if (hasRef === hasLocal) fail('INVALID_INPUT');
+      const at = spec.at ?? 'logical';
+      const required = spec.required === true;
+      const orderKey = spec.orderKey ?? String(position);
+      validId(orderKey);
+      if (hasLocal) {
+        const targetChange = local.get(spec.local);
+        if (!targetChange) fail('INVALID_REF', 'Unknown batch-local change id');
+        const pinned: PinnedRef = {
+          kind: 'pinned',
+          atomId: targetChange.atomId,
+          revisionId: targetChange.revisionId,
+        };
+        return {
+          slot: {
+            mode: 'refer' as const,
+            target:
+              at === 'observed' ? pinned : { kind: 'logical' as const, atomId: pinned.atomId },
+            required,
+            orderKey,
+          },
+          normalized: { local: spec.local, at, required, orderKey },
+        };
+      }
+      const entry = this.engine.resolve(spec.ref, s);
+      const observed = this.engine.get(entry.target, s, generated && at === 'logical');
       return {
-        ...view,
-        operationId: this.overlay.id,
-        repeated: false,
-        indexing: this.engine.embedding ? 'pending' : 'ready',
+        slot: {
+          mode: 'refer' as const,
+          target:
+            at === 'observed'
+              ? entry.target
+              : { kind: 'logical' as const, atomId: entry.target.atomId },
+          required,
+          orderKey,
+        },
+        normalized: { ref: pinRevision(observed), at, required, orderKey },
       };
+    };
+
+    for (const item of prepared) {
+      const change = item.change;
+      if (change.op === 'retire') continue;
+      const links = change.content.links;
+      if (!links || typeof links !== 'object') fail('INVALID_INPUT');
+      const add = (role: string, target: LinkTarget) => {
+        if (item.slots.length >= this.engine.kernel.limits.maxSlots) fail('LIMIT_EXCEEDED');
+        validId(role);
+        const resolved = resolveLink(target, item.slots.length);
+        item.slots.push({ role, ...resolved.slot });
+        item.normalizedLinks.push({ role, target: resolved.normalized });
+      };
+      if (Array.isArray(links)) {
+        for (const link of links) {
+          if (
+            !link ||
+            typeof link !== 'object' ||
+            Object.keys(link).some((key) => !['role', 'target'].includes(key)) ||
+            typeof link.role !== 'string' ||
+            !Object.hasOwn(link, 'target')
+          )
+            fail('INVALID_INPUT');
+          add(link.role, link.target);
+        }
+      } else {
+        for (const [role, targets] of Object.entries(links)) {
+          if (Array.isArray(targets)) for (const target of targets) add(role, target);
+          else add(role, targets as LinkTarget);
+        }
+      }
+      if (change.sources.length > this.engine.kernel.limits.maxOrigins) fail('LIMIT_EXCEEDED');
+      for (const citation of change.sources) {
+        if (
+          !citation ||
+          typeof citation !== 'object' ||
+          Object.keys(citation).some((key) => !['ref', 'start', 'end'].includes(key)) ||
+          typeof citation.ref !== 'string'
+        )
+          fail('INVALID_INPUT');
+        const entry = this.engine.resolve(citation.ref, s);
+        const source = this.engine.get(entry.target, s, generated);
+        const start = citation.start ?? 0;
+        const end =
+          citation.end ??
+          (source.body.kind === 'blob'
+            ? source.body.bytes
+            : Buffer.byteLength(this.engine.text(source)));
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start)
+          fail('INVALID_SOURCE_SPAN');
+        const bytes =
+          source.body.kind === 'blob'
+            ? this.engine.storage.blobRange?.(source.body.blobId, start, end - start)
+            : Buffer.from(this.engine.text(source)).subarray(start, end);
+        if (!bytes || bytes.length !== end - start) fail('INVALID_SOURCE_SPAN');
+        s.ledger.charge({ maxBytes: bytes.length });
+        item.origins.push({
+          source: entry.target,
+          selector: { kind: 'utf8', start, end, quoteDigest: digest(bytes) },
+        });
+        item.normalizedSources.push({ ref: entry.target, start, end });
+      }
     }
-    const s = this.engine.session(this.binding, { signal: options.signal }, this.execution?.ledger);
-    const signature = digest(
-      canonical({ input, sources: options.sources, generationInput: options.input, body }),
-    );
-    const opKey = options.idempotencyKey
-      ? `sdk:operation:${digest(canonical([s.principal.subject, options.idempotencyKey]))}`
+
+    const normalized = prepared.map((item) => {
+      const change = item.change;
+      return change.op === 'retire'
+        ? { id: change.id, op: change.op, target: pinRevision(item.previous!), input: change.input }
+        : {
+            id: change.id,
+            op: change.op,
+            ...(change.op === 'revise' ? { target: pinRevision(item.previous!) } : {}),
+            content: { text: change.content.text, links: item.normalizedLinks },
+            sources: item.normalizedSources,
+            input: change.input,
+            ...(bodies.has(change.id) ? { body: bodies.get(change.id) } : {}),
+          };
+    });
+    const fingerprint = digest(canonical({ changes: normalized }));
+    const replayKey = options.idempotencyKey
+      ? `sdk:write-v3:${digest(
+          canonical([
+            s.principal.subject,
+            this.binding.writePolicy,
+            this.binding.actor,
+            options.idempotencyKey,
+          ]),
+        )}`
       : undefined;
-    const old = opKey
-      ? this.engine.storage.metaGet<{ signature: string; ref: AtomRef; operationId: string }>(opKey)
+    type ReplayRecord = {
+      version: 3;
+      fingerprint: string;
+      operationId: string;
+      changes: Record<string, PinnedRef>;
+    };
+    const previousReplay = replayKey
+      ? this.engine.storage.metaGet<ReplayRecord>(replayKey)
       : undefined;
-    if (old) {
-      if (old.signature !== signature) fail('IDEMPOTENCY_CONFLICT');
-      const entry = this.engine.resolve(old.ref, s);
-      const r = this.engine.get(entry.target, s);
-      if (!s.principal.writePolicies.includes(r.policyId)) fail('ACCESS_DENIED');
+    if (previousReplay) {
+      if (previousReplay.version !== 3 || previousReplay.fingerprint !== fingerprint)
+        fail('IDEMPOTENCY_CONFLICT');
+      const changes: [string, AtomView][] = [];
+      for (const change of request.changes) {
+        const pinned = Object.hasOwn(previousReplay.changes, change.id)
+          ? previousReplay.changes[change.id]!
+          : fail('IDEMPOTENCY_CONFLICT');
+        const revision = this.engine.get(pinned, s);
+        if (
+          revision.policyId !== this.binding.writePolicy ||
+          !s.principal.writePolicies.includes(revision.policyId)
+        )
+          fail('ACCESS_DENIED');
+        changes.push([change.id, this.engine.view(revision, s)]);
+      }
       return {
-        ...this.engine.view(r, s),
-        ref: old.ref,
-        operationId: old.operationId,
+        operationId: previousReplay.operationId,
         repeated: true,
         indexing: this.engine.embedding ? 'pending' : 'ready',
+        changes: Object.fromEntries(changes),
       };
     }
-    const content = this.content(input, s, options, body);
-    const traces = [...(this.execution?.traces ?? []), s.trace];
-    const combined = this.engine.merge(traces, this.binding, s.at);
-    if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
-    this.engine.bridge(combined, this.binding, this.binding.actor.type !== 'agent');
-    if (this.binding.actor.type !== 'agent')
-      sourceManifest(this.engine, combined.id, content.origins, this.binding.writePolicy);
-    const receiptId =
-      options.input !== undefined
-        ? inputManifest(this.engine, options.input, this.binding).receipt.receiptId
-        : combined.id;
-    const withProvenance = {
-      ...content,
-      provenance: { ...content.provenance, inputReceiptId: receiptId },
-    };
-    const proposal: ProposedRevision = {
-      atomId: uid('atom'),
-      revisionId: uid('revision'),
-      expectedHead: null,
-      content: withProvenance,
-    };
-    s.ledger.charge({ maxAtoms: 1, maxBytes: Buffer.byteLength(canonical(proposal)) });
-    let ref: AtomRef | undefined;
+
+    const manifests = new Map<InputToken, import('../core/store.js').ReceiptManifest>();
+    for (const change of request.changes)
+      if (change.input !== undefined && !manifests.has(change.input))
+        manifests.set(change.input, inputManifest(this.engine, change.input, this.binding));
+
+    const proposals: ProposedRevision[] = [];
+    for (const item of prepared) {
+      const change = item.change;
+      let content: AtomContent;
+      let receiptId: string | undefined = change.input;
+      if (change.op === 'retire') {
+        const old = item.previous!;
+        if (!receiptId) {
+          const trace = { ...s.trace, id: uid('retire') };
+          this.engine.bridge(trace, this.binding, true);
+          receiptId = trace.id;
+          if (old.provenance.kind === 'source')
+            // Retirement republishes no evidence. The immutable old origins stay
+            // byte-for-byte in the retired revision even when their sources are gone.
+            sourceManifest(this.engine, trace.id, [], old.policyId);
+        }
+        content = {
+          schema: old.schema,
+          state: 'retired',
+          body: clone(old.body),
+          slots: clone(old.slots),
+          origins: clone(old.origins),
+          provenance: {
+            ...clone(old.provenance),
+            producerId: s.principal.subject,
+            inputReceiptId: receiptId,
+            dependencyContract: change.input
+              ? 'observed-v2'
+              : old.provenance.kind === 'source'
+                ? 'source-v2'
+                : undefined,
+          },
+          policyId: old.policyId,
+          ...(old.validTime ? { validTime: clone(old.validTime) } : {}),
+        };
+      } else {
+        const kind = generated ? (this.binding.actor.generatedOrigin ?? 'derived') : 'source';
+        if (!receiptId) {
+          const trace = { ...s.trace, id: uid('source') };
+          this.engine.bridge(trace, this.binding, true);
+          sourceManifest(this.engine, trace.id, item.origins, this.binding.writePolicy);
+          receiptId = trace.id;
+        }
+        content = {
+          schema: kind === 'source' ? 'source' : 'atom',
+          state: 'active',
+          body: bodies.get(change.id) ?? { kind: 'inline', value: change.content.text },
+          slots: item.slots,
+          origins: item.origins,
+          provenance: {
+            kind,
+            producerId: s.principal.subject,
+            inputReceiptId: receiptId,
+            dependencyContract: change.input ? 'observed-v2' : 'source-v2',
+          },
+          policyId: this.binding.writePolicy,
+        };
+      }
+      validateContent(
+        content,
+        s.principal,
+        this.engine.kernel.limits,
+        generated && change.op !== 'retire',
+      );
+      proposals.push({
+        atomId: item.atomId,
+        revisionId: item.revisionId,
+        expectedHead: item.previous?.revisionId ?? null,
+        content,
+      });
+    }
+    s.ledger.charge({
+      maxAtoms: proposals.length,
+      maxBytes: Buffer.byteLength(canonical(proposals)),
+    });
+    const internalIdempotencyKey = options.idempotencyKey
+      ? `v09:${digest(
+          canonical([this.binding.writePolicy, this.binding.actor, options.idempotencyKey]),
+        )}`
+      : uid('operation');
     const result = await this.engine.commit(
-      {
-        idempotencyKey: options.idempotencyKey ?? uid('operation'),
-        guards: [],
-        revisions: [proposal],
-        ...(this.binding.actor.type === 'agent' && options.input === undefined
-          ? { actorInputReceiptId: combined.id }
-          : {}),
-      },
+      { idempotencyKey: internalIdempotencyKey, guards: [], revisions: proposals },
       s,
       {
         validate: () => {
           this.engine.check(s);
-          if (options.input !== undefined) inputManifest(this.engine, options.input, this.binding);
+          for (const token of manifests.keys()) inputManifest(this.engine, token, this.binding);
         },
-        committed: (result) => {
-          attachOutputs(this.engine, receiptId, result.committed);
-          attachInheritedOutputs(this.engine, receiptId);
-          const committed = this.engine.storage.get(
-            result.committed[0]!,
-            this.engine.storage.watermark(),
-          )!;
-          // The token's generation owns these outputs. Do not retain an unused
-          // commit-wide manifest implying a second generation with all inputs.
-          if (receiptId !== combined.id) this.engine.storage.metaDelete(`receipt:${combined.id}`);
-          ref = this.engine.issue(committed, { ...s, at: this.engine.storage.watermark() });
-          if (opKey)
-            this.engine.storage.metaSet(opKey, { signature, ref, operationId: result.operationId });
+        committed: (committed) => {
+          const receiptIds = new Set(proposals.map((p) => p.content.provenance.inputReceiptId));
+          for (const receiptId of receiptIds) {
+            const outputs = committed.committed.filter((ref) =>
+              proposals.some(
+                (proposal) =>
+                  proposal.revisionId === ref.revisionId &&
+                  proposal.content.provenance.inputReceiptId === receiptId,
+              ),
+            );
+            attachOutputs(this.engine, receiptId!, outputs);
+          }
+          // Resolve inherited outputs after every generation has its complete output set.
+          for (const receiptId of receiptIds) attachInheritedOutputs(this.engine, receiptId!);
+          if (replayKey)
+            this.engine.storage.metaSet(replayKey, {
+              version: 3,
+              fingerprint,
+              operationId: committed.operationId,
+              changes: Object.fromEntries(
+                request.changes.map((change, index) => [change.id, committed.committed[index]!]),
+              ),
+            } satisfies ReplayRecord);
         },
       },
     );
-    const revision = this.engine.storage.get(
-      result.committed[0]!,
-      this.engine.storage.watermark(),
-    )!;
-    const view = this.engine.view(revision, { ...s, at: this.engine.storage.watermark() });
+    const committedSession = { ...s, at: this.engine.storage.watermark() };
+    const changes: [string, AtomView][] = [];
+    for (let index = 0; index < request.changes.length; index++) {
+      const ref = result.committed[index]!;
+      changes.push([
+        request.changes[index]!.id,
+        this.engine.view(this.engine.storage.get(ref, committedSession.at)!, committedSession),
+      ]);
+    }
     return {
-      ...view,
-      ref: ref ?? view.ref,
       operationId: result.operationId,
       repeated: result.repeatedInput,
       indexing: this.engine.embedding ? 'pending' : 'ready',
+      changes: Object.fromEntries(changes),
     };
-  }
-  private async stageWrite(
-    input: MemoryContent,
-    options: WriteOptions = {},
-    body?: AtomContent['body'],
-    base?: AtomRef,
-    retire = false,
-    retainedSlots?: readonly Slot[],
-  ): Promise<AtomView> {
-    const overlay = this.overlay ?? fail('INVALID_REF');
-    const s = this.engine.session(
-      this.binding,
-      { signal: options.signal },
-      this.execution?.ledger,
-      overlay,
-    );
-    let atomId = uid('atom');
-    let expectedHead: string | null = null;
-    if (base) {
-      const entry = this.engine.resolve(base, s);
-      atomId = entry.target.atomId;
-      const staged = overlay.revisions.get(atomId);
-      if (staged) fail('LIMIT_EXCEEDED', 'One proposed revision per logical Atom per edit');
-      expectedHead = entry.target.revisionId;
-      this.engine.get(entry.target, s);
-    }
-    const content = this.content(input, s, options, body);
-    const revisionId = uid('revision');
-    const proposal: ProposedRevision = {
-      atomId,
-      revisionId,
-      expectedHead,
-      content: {
-        ...content,
-        ...(retire && retainedSlots ? { slots: retainedSlots } : {}),
-        state: retire ? 'retired' : 'active',
-      },
-    };
-    if (
-      overlay.revisions.size >= this.engine.kernel.limits.maxBatch &&
-      !overlay.revisions.has(atomId)
-    )
-      fail('LIMIT_EXCEEDED');
-    s.ledger.charge({ maxAtoms: 1, maxBytes: Buffer.byteLength(canonical(proposal)) });
-    overlay.revisions.set(atomId, proposal);
-    if (options.input !== undefined) {
-      overlay.inputs ??= new Map();
-      overlay.inputs.set(revisionId, options.input);
-    }
-    const r = this.engine.get({ kind: 'pinned', atomId, revisionId }, s);
-    this.finish(s);
-    return this.engine.view(r, s);
-  }
-  async edit<T>(
-    callback: (draft: Draft) => T | Promise<T>,
-    options: EditOptions = {},
-  ): Promise<EditOutcome<T>> {
-    if (this.overlay) fail('INVALID_INPUT', 'Nested edit is not supported');
-    if (typeof callback !== 'function') fail('INVALID_INPUT');
-    const s = this.engine.session(this.binding, options, this.execution?.ledger);
-    const overlay: OverlayState = {
-      id: uid('overlay'),
-      at: s.at,
-      authBinding: bindingKey(this.binding.auth),
-      active: true,
-      revisions: new Map(),
-      refs: new Set(),
-      traces: [],
-    };
-    this.engine.overlays.set(overlay.id, overlay);
-    const scope = { ledger: s.ledger, traces: [...(this.execution?.traces ?? [])] };
-    const client = new MemoryClient(this.engine, this.binding, scope, overlay);
-    const draft: Draft = {
-      write: (value, opts) => client.stageWrite(value, opts),
-      revise: (ref, value, opts) => client.stageWrite(value, opts, undefined, ref),
-      retire: async (ref) => {
-        const ds = this.engine.session(this.binding, {}, scope.ledger, overlay);
-        const entry = this.engine.resolve(ref, ds);
-        const old = this.engine.get(entry.target, ds);
-        const view = this.engine.view(old, ds);
-        client.finish(ds);
-        return client.stageWrite(
-          {
-            text: this.engine.text(old),
-            links: view.links
-              .filter((link) => !link.unavailable)
-              .map((link) => ({
-                role: link.role,
-                target: {
-                  ref: link.ref!,
-                  at: link.at,
-                  required: link.required,
-                  orderKey: link.orderKey,
-                },
-              })),
-          },
-          {
-            sources: old.origins.map((origin) => ({
-              ref: this.engine.issue(this.engine.get(origin.source, ds), ds),
-              start: origin.selector.start,
-              end: origin.selector.end,
-            })),
-          },
-          old.body,
-          ref,
-          true,
-          old.slots,
-        );
-      },
-      search: (query, opts) => client.search(query, opts),
-      inspect: (ref, opts) => client.inspect(ref, opts),
-    };
-    try {
-      const value = await cancellable(() => Promise.resolve(callback(draft)), s.signal);
-      this.engine.check(s);
-      if (!overlay.revisions.size)
-        return {
-          value,
-          changes: [],
-          operationId: uid('empty-edit'),
-          resolve: (ref: AtomRef) => ref,
-        };
-      const hasLegacyOutput =
-        this.binding.actor.type === 'agent' &&
-        [...overlay.revisions.values()].some((p) => !overlay.inputs?.has(p.revisionId));
-      const tokenInputs = hasLegacyOutput
-        ? [...new Set(overlay.inputs?.values())].map((token) =>
-            inputManifest(this.engine, token, this.binding),
-          )
-        : [];
-      const combined = this.engine.merge(
-        [
-          ...scope.traces,
-          ...overlay.traces,
-          // An unknown generation keeps ALL edit inputs, including inputs that
-          // entered through verified siblings. Verified siblings keep their own tokens.
-          ...tokenInputs.map((m) => ({
-            ...s.trace,
-            policies: m.policies,
-            reads: [...m.reads, ...(m.acquisition?.reads ?? [])],
-            current: m.currentReads ?? m.reads,
-            queries: m.observations.map((o) => ({ query: o.query, revisions: o.revisionIds })),
-          })),
-        ],
-        this.binding,
-        s.at,
-      );
-      if (!combined.policies.length) (combined.policies as string[]).push(this.binding.writePolicy);
-      // Tentative inputs are audit records, never CAS preconditions against uncommitted heads.
-      combined.current = combined.current.filter((r) => !overlay.revisions.has(r.atomId));
-      this.engine.bridge(combined, this.binding, options.basis === 'historical');
-      if (tokenInputs.length) {
-        const manifest = this.engine.storage.metaGet<import('../core/store.js').ReceiptManifest>(
-          `receipt:${combined.id}`,
-        )!;
-        manifest.acquisition!.ranges.push(
-          ...tokenInputs.flatMap((m) => m.acquisition?.ranges ?? []),
-        );
-        manifest.acquisition!.observations.push(
-          ...tokenInputs.flatMap((m) => m.acquisition?.observations ?? []),
-        );
-        this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
-      }
-      const proposals = [...overlay.revisions.values()].map((p) => ({
-        ...p,
-        content: {
-          ...p.content,
-          provenance: {
-            ...p.content.provenance,
-            inputReceiptId: overlay.inputs?.get(p.revisionId) ?? combined.id,
-          },
-        },
-      }));
-      if (this.binding.actor.type !== 'agent') {
-        // Separate source ingestion per output as well; sharing a commit does not imply copying siblings.
-        for (const proposal of proposals) {
-          const trace = { ...combined, id: uid('source') };
-          this.engine.bridge(trace, this.binding, true);
-          sourceManifest(this.engine, trace.id, proposal.content.origins, this.binding.writePolicy);
-          proposal.content.provenance.inputReceiptId = trace.id;
-        }
-      }
-      const mapping = new Map<AtomRef, AtomRef>();
-      const changes: AtomView[] = [];
-      const result = await this.engine.commit(
-        {
-          idempotencyKey: uid('edit'),
-          guards: [],
-          revisions: proposals,
-          ...(this.binding.actor.type === 'agent' && !overlay.inputs?.size
-            ? { actorInputReceiptId: combined.id }
-            : {}),
-        },
-        s,
-        {
-          validate: () => {
-            this.engine.check(s);
-            for (const token of overlay.inputs?.values() ?? [])
-              inputManifest(this.engine, token, this.binding);
-          },
-          committed: (result) => {
-            for (const id of new Set(proposals.map((p) => p.content.provenance.inputReceiptId)))
-              attachOutputs(
-                this.engine,
-                id,
-                result.committed.filter((r) =>
-                  proposals.some(
-                    (p) =>
-                      p.revisionId === r.revisionId && p.content.provenance.inputReceiptId === id,
-                  ),
-                ),
-              );
-            const committedSession = { ...s, at: this.engine.storage.watermark() };
-            for (const id of new Set(proposals.map((p) => p.content.provenance.inputReceiptId)))
-              attachInheritedOutputs(this.engine, id);
-            if (hasLegacyOutput) {
-              const manifest = this.engine.storage.metaGet<
-                import('../core/store.js').ReceiptManifest
-              >(`receipt:${combined.id}`)!;
-              manifest.ownedRevisionIds = result.committed.map((r) => r.revisionId);
-              manifest.currentReads = [
-                ...(manifest.currentReads ?? []),
-                ...(options.basis === 'historical' ? [] : result.committed),
-              ];
-              manifest.watches = {
-                reads: manifest.currentReads,
-                observations: manifest.observations,
-              };
-              this.engine.storage.metaSet(`receipt:${combined.id}`, manifest);
-            } else this.engine.storage.metaDelete(`receipt:${combined.id}`);
-            for (const ref of overlay.refs) {
-              const entry = this.engine.storage.metaGet<import('./engine.js').RefEntry>(
-                `sdk:ref:${ref}`,
-              )!;
-              const target = this.engine.storage.get(
-                { kind: 'logical', atomId: entry.target.atomId },
-                this.engine.storage.watermark(),
-              )!;
-              mapping.set(ref, this.engine.issue(target, committedSession));
-            }
-            for (const ref of result.committed)
-              changes.push(
-                this.engine.view(
-                  this.engine.storage.get(ref, this.engine.storage.watermark())!,
-                  committedSession,
-                ),
-              );
-          },
-        },
-      );
-      const replace = (v: unknown): unknown =>
-        typeof v === 'string' && mapping.has(v as AtomRef)
-          ? mapping.get(v as AtomRef)
-          : Array.isArray(v)
-            ? v.map(replace)
-            : v && typeof v === 'object'
-              ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, replace(x)]))
-              : v;
-      return {
-        value: replace(value) as T,
-        changes,
-        operationId: result.operationId,
-        resolve: (ref) => mapping.get(ref) ?? ref,
-      };
-    } finally {
-      overlay.active = false;
-      for (const ref of overlay.refs) {
-        const entry = this.engine.storage.metaGet<import('./engine.js').RefEntry>(`sdk:ref:${ref}`);
-        if (entry)
-          this.engine.storage.metaDelete(
-            `sdk:ref-key:${digest(canonical([entry.authBinding, entry.target.revisionId, overlay.id]))}`,
-          );
-        this.engine.storage.metaDelete(`sdk:ref:${ref}`);
-      }
-      this.engine.overlays.delete(overlay.id);
-    }
   }
 }

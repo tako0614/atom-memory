@@ -6,8 +6,12 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
+const writeOne = async (memory, change, options) => {
+  const result = await memory.write({ changes: [change] }, options);
+  return result.changes[change.id];
+};
 for (const adapter of ['memory', 'sqlite'])
-  test(`${adapter} V08-40 package exports and persisted observations`, async (t) => {
+  test(`${adapter} V09-40 package exports and persisted observations`, async (t) => {
     const dir = mkdtempSync(join(tmpdir(), 'atom-v08-package-'));
     let storage =
       adapter === 'memory' ? new MemoryStorage() : new SqliteStorage(join(dir, 'atoms.sqlite'));
@@ -25,7 +29,12 @@ for (const adapter of ['memory', 'sqlite'])
     const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
     const agent = { ...binding, actor: { type: 'agent' } };
     let host = new MemoryHost({ authority, storage });
-    const source = await host.connect(binding).write('needle original');
+    const source = await writeOne(host.connect(binding), {
+      id: 'source',
+      op: 'create',
+      content: { text: 'needle original', links: [] },
+      sources: [],
+    });
     const page = await host.connect(agent).read({ query: 'needle' }, { tokens: 10000 });
     const input = host.observe(
       {
@@ -34,7 +43,13 @@ for (const adapter of ['memory', 'sqlite'])
       },
       agent,
     );
-    const output = await host.connect(agent).write('needle derived', { input });
+    const output = await writeOne(host.connect(agent), {
+      id: 'output',
+      op: 'create',
+      content: { text: 'needle derived', links: [] },
+      sources: [],
+      input,
+    });
     host.recordUse(page.refs, agent, { eventId: 'request', input });
     if (adapter === 'sqlite') {
       storage.close();
@@ -46,10 +61,9 @@ for (const adapter of ['memory', 'sqlite'])
     assert.equal((await host.connect(agent).inspect(output.ref)).atom.text, 'needle derived');
     assert.equal((await host.connect(binding).inspect(source.ref)).atom.text, 'needle original');
     const marker = 'v08-physical-erasure-canary-982735';
-    const blob = await host.ingestBlob(Buffer.from(marker), 'text/plain', binding);
-    const partial = await host
-      .connect(agent)
-      .inspect(blob.ref, { depth: 0, range: { start: 0, bytes: 3 } });
+    const blobResult = await host.ingestBlob(Buffer.from(marker), 'text/plain', binding);
+    const blob = Object.values(blobResult.changes)[0];
+    const partial = await host.connect(agent).inspect(blob.ref, { range: { start: 0, bytes: 3 } });
     const manifest = host.manifest(partial.receipt, agent);
     assert.deepEqual(manifest.presentation.units[0].range, { start: 0, end: 3 });
     assert.equal(manifest.acquisition.ranges[0].end, 3);
@@ -64,7 +78,13 @@ for (const adapter of ['memory', 'sqlite'])
       },
       agent,
     );
-    const derived = await host.connect(agent).write(marker, { input: token });
+    const derived = await writeOne(host.connect(agent), {
+      id: 'range-derived',
+      op: 'create',
+      content: { text: marker, links: [] },
+      sources: [],
+      input: token,
+    });
     if (adapter === 'sqlite') {
       storage.compact();
       assert.equal(readFileSync(join(dir, 'atoms.sqlite')).includes(Buffer.from(marker)), true);

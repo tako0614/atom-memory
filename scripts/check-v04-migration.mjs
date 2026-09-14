@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -90,13 +91,14 @@ try {
   storage = new SqliteStorage(join(directory, 'atoms.sqlite'));
   host = new current.MemoryHost({ storage, authority, embedding });
   memory = host.connect(binding);
-  const writer = host.connect({ ...binding, actor: { type: 'agent' } });
+  const writerBinding = { ...binding, actor: { type: 'agent' } };
+  const writer = host.connect(writerBinding);
   assert.deepEqual(
     storage.history(undefined, 100),
     previous,
     'content and lineage are not rewritten',
   );
-  assert.equal((await memory.inspect(source.ref, { depth: 0 })).atom.text, source.text);
+  assert.equal((await memory.inspect(source.ref, { limit: 0 })).atom.text, source.text);
   await assert.rejects(memory.search('migration_topic', { cursor: oldCursor, limit: 1, budget }), {
     code: 'CURSOR_EXPIRED',
   });
@@ -110,23 +112,45 @@ try {
   assert.ok(replayed >= previous.length, 'v3 feed does not inherit the completed v2 checkpoint');
   assert.equal(documents.length, oldDocuments + 1);
   const beforeRevision = documents.length;
-  const revised = await memory.edit((draft) =>
-    draft.revise(source.ref, 'migration_topic: corrected rule'),
-  );
+  const revised = await memory.write({
+    changes: [
+      {
+        id: 'source',
+        op: 'revise',
+        target: source.ref,
+        content: { text: 'migration_topic: corrected rule', links: [] },
+        sources: [],
+      },
+    ],
+  });
   await drain(host);
   assert.deepEqual(
     documents.slice(beforeRevision),
-    [revised.value.text],
+    [revised.changes.source.text],
     'source revision does not re-encode parent',
   );
   const stale = await writer.read({ query: 'migration_topic' }, { tokens: 20000, budget });
   assert.ok(stale.stale.includes(organized.value.ref));
   assert.doesNotMatch(stale.text, /migration_topic: interpretation/);
-  await writer.edit((draft) =>
-    draft.revise(organized.value.ref, 'migration_topic: corrected interpretation', {
-      sources: [{ ref: revised.value.ref }],
-    }),
+  const input = host.observe(
+    {
+      sources: [{ ref: revised.changes.source.ref }],
+      payloadDigest: createHash('sha256').update(revised.changes.source.text).digest('hex'),
+    },
+    writerBinding,
   );
+  await writer.write({
+    changes: [
+      {
+        id: 'note',
+        op: 'revise',
+        target: organized.value.ref,
+        input,
+        content: { text: 'migration_topic: corrected interpretation', links: [] },
+        sources: [{ ref: revised.changes.source.ref }],
+      },
+    ],
+  });
   assert.match(
     (await writer.read({ query: 'migration_topic' }, { tokens: 20000, budget })).text,
     /corrected interpretation/,

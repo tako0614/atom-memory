@@ -1,3 +1,4 @@
+import { create } from '../../test/fixtures.mjs';
 // Test/evaluation harness only. Reuses the actual authorization, freshness,
 // candidate, graph and packing paths; does not replace public read/search.
 import { MemoryHost, LocalAuthority, utf8Tokenizer } from '../../dist/index.js';
@@ -6,7 +7,6 @@ import { startRanking, collectRanking } from '../../dist/client/ranking.js';
 import { pack, validateMemory } from '../../dist/client/retrieval.js';
 import { rankingOptions, propagate } from './reference-ranking.mjs';
 import { compileComposition } from './evaluator.mjs';
-
 // Mirrors numeric graph construction at the RFC baseline commit; compared
 // against the frozen v0.5 PPR reference. Production 0.6 uses signed residual evaluation.
 function rankingGraph(state, options) {
@@ -25,7 +25,6 @@ function rankingGraph(state, options) {
   });
   return { seeds: state.nodes.map((c) => c.score), edges };
 }
-
 export const budget = {
   maxAtoms: 1024,
   maxCandidates: 200000,
@@ -89,7 +88,7 @@ export async function atomFixture(storage, count = 4, width = 6, embedding) {
   for (let group = 0; group < count; group++) {
     const members = [];
     for (let item = 0; item < width; item++) {
-      const ref = await memory.write({
+      const ref = await create(memory, {
         text: `record ${group}:${item}`,
         links: item ? { preceding: members[item - 1].ref } : undefined,
       });
@@ -98,14 +97,14 @@ export async function atomFixture(storage, count = 4, width = 6, embedding) {
     }
     // One identity belongs to two groups; it is never copied.
     if (group) members.push(leaves[(group - 1) * width + width - 1]);
-    const parent = await memory.write({
+    const parent = await create(memory, {
       text: `collection ${group}`,
       links: { member: members.map((m) => m.ref) },
     });
     groups.push(parent);
     regions.push([parent.ref, ...members.map((m) => m.ref)]);
   }
-  const root = await memory.write({
+  const root = await create(memory, {
     text: 'community collection',
     links: { member: groups.map((g) => g.ref) },
   });
@@ -134,7 +133,6 @@ export async function atomFixture(storage, count = 4, width = 6, embedding) {
     atomId,
   };
 }
-
 export async function acquire(f, context = 'initial context') {
   const session = f.engine.session(f.binding, { budget });
   const found = await f.engine.candidates({ context }, session);
@@ -151,7 +149,6 @@ export async function acquire(f, context = 'initial context') {
   );
   return { session, state, regions, ...rankingGraph(state, f.options.ranking) };
 }
-
 export async function comparePacked(f, graph, cache, tokens = 2000000, limit = 512) {
   const compiled = compileComposition(graph.state.nodes.length, graph.edges, graph.regions, {
     propagation: f.options.ranking.propagation,

@@ -1,15 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import * as api from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
+
+const payloadDigest = (value) => createHash('sha256').update(value).digest('hex');
+const inputFrom = (host, binding, receipt, value, basis = 'current') =>
+  host.observe(
+    {
+      presentations: [{ receipt }],
+      payloadDigest: payloadDigest(value),
+      ...(basis === 'historical' ? { basis } : {}),
+    },
+    { ...binding, actor: { type: 'agent' } },
+  );
 
 test('the package exposes memory operations, not a model execution protocol', async () => {
   assert.equal('MemoryHarness' in api, false);
   const { memory } = fixture();
-  await memory.edit((draft) => assert.equal('supersede' in draft, false));
+  assert.equal('edit' in memory, false);
   assert.throws(() => fixture({ generator: { generate() {} } }), { code: 'INVALID_INPUT' });
-  const atom = await memory.write('observed revision');
+  const atom = await create(memory, 'observed revision');
   await assert.rejects(memory.inspect(atom.ref, { history: 'retained' }), {
     code: 'INVALID_INPUT',
   });
@@ -20,11 +32,11 @@ test('the package exposes memory operations, not a model execution protocol', as
 
 test('host-owned model execution still cannot forge sources, references or revoked access', async () => {
   const { writer, memory, authority, auth } = fixture();
-  const source = await memory.write('authorized input');
-  await assert.rejects(writer.write({ text: 'forged source', provenance: { kind: 'source' } }), {
+  const source = await create(memory, 'authorized input');
+  await assert.rejects(create(writer, { text: 'forged source', provenance: { kind: 'source' } }), {
     code: 'INVALID_INPUT',
   });
-  await assert.rejects(writer.write({ text: 'forged link', links: { source: 'ref:invented' } }), {
+  await assert.rejects(create(writer, { text: 'forged link', links: { source: 'ref:invented' } }), {
     code: 'INVALID_REF',
   });
   const recalled = await writer.read({ query: 'authorized' });
@@ -38,29 +50,27 @@ for (const adapter of ['memory', 'sqlite']) {
   test(`${adapter}: one durable dependency manifest preserves freshness, conflicts and purge`, async (t) => {
     const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new api.MemoryStorage();
     t.after(() => storage.close());
-    const { memory, writer, host } = fixture({ storage });
-    const source = await memory.write('manifest original evidence');
+    const { memory, writer, host, binding } = fixture({ storage });
+    const source = await create(memory, 'manifest original evidence');
     const receiptsBeforeReadOnlyEdit = storage.metaEntries('receipt:').length;
-    const inspected = await writer.edit((draft) => draft.inspect(source.ref, { depth: 0 }));
-    assert.equal(inspected.value.atom.text, 'manifest original evidence');
-    assert.deepEqual(inspected.changes, []);
+    const inspected = await writer.inspect(source.ref);
+    assert.equal(inspected.atom.text, 'manifest original evidence');
     assert.equal(storage.metaEntries('receipt:').length, receiptsBeforeReadOnlyEdit);
     const inputSnapshot = storage.watermark();
-    const generated = await writer.edit(async (draft) => {
-      await draft.inspect(source.ref, { version: 'latest', depth: 0 });
-      return draft.write('manifest interpretation', { sources: [{ ref: source.ref }] });
+    const input = inputFrom(host, binding, inspected.receipt, 'manifest interpretation');
+    const generated = await create(writer, 'manifest interpretation', {
+      input,
+      sources: [{ ref: source.ref }],
     });
     const sourceEntry = storage.metaGet(`sdk:ref:${source.ref}`);
-    const generatedEntry = storage.metaGet(`sdk:ref:${generated.value.ref}`);
+    const generatedEntry = storage.metaGet(`sdk:ref:${generated.ref}`);
     const revision = storage.get(generatedEntry.target, storage.watermark());
     const key = `receipt:${revision.provenance.inputReceiptId}`;
     const manifest = storage.metaGet(key);
     assert.equal(manifest.watermark, inputSnapshot, 'retain the actual observed storage position');
     assert.ok(manifest.reads.some((r) => r.revisionId === sourceEntry.target.revisionId));
     assert.equal(storage.metaGet(`sdk:trace:${revision.provenance.inputReceiptId}`), undefined);
-    assert.ok(
-      (await writer.search('interpretation')).items.some((i) => i.ref === generated.value.ref),
-    );
+    assert.ok((await writer.search('interpretation')).items.some((i) => i.ref === generated.ref));
 
     // Existing stored manifests may still have old descriptive fields. They do
     // not decide currentness; actual observed revisions and ranges do.
@@ -74,41 +84,39 @@ for (const adapter of ['memory', 'sqlite']) {
         policyValidationToken: 'old',
       },
     });
-    const updated = await memory.edit((draft) =>
-      draft.revise(source.ref, 'manifest updated evidence'),
-    );
+    const updated = await revise(memory, source.ref, 'manifest updated evidence');
     const stale = await writer.search('interpretation', { depth: 0 });
     assert.deepEqual(stale.items, []);
-    assert.ok(stale.stale.includes(generated.value.ref));
-    await assert.rejects(
-      writer.edit(async (draft) => {
-        await draft.search('empty_observation', { depth: 0 });
-        await draft.write('conclusion from absence');
-        await memory.write('empty_observation appeared');
-      }),
-      { code: 'REVISION_CONFLICT' },
+    assert.ok(stale.stale.includes(generated.ref));
+    const empty = await writer.search('empty_observation', { depth: 0 });
+    const absenceInput = host.observe(
+      { watches: [empty.receipt], payloadDigest: payloadDigest('conclusion from absence') },
+      { ...binding, actor: { type: 'agent' } },
     );
+    await create(memory, 'empty_observation appeared');
+    await assert.rejects(create(writer, 'conclusion from absence', { input: absenceInput }), {
+      code: 'REVISION_CONFLICT',
+    });
     assert.equal((await memory.inspect(updated.value.ref)).atom.text, 'manifest updated evidence');
     host.purge(sourceEntry.target.atomId);
-    await assert.rejects(writer.inspect(generated.value.ref), { code: 'ACCESS_DENIED' });
+    await assert.rejects(writer.inspect(generated.ref), { code: 'ACCESS_DENIED' });
   });
 
   test(`${adapter}: stale candidates never lend their rank to current sources`, async (t) => {
     const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new api.MemoryStorage();
     t.after(() => storage.close());
-    const { memory, writer } = fixture({ storage });
-    const source = await memory.write('state_topic original evidence');
+    const { memory, writer, host, binding } = fixture({ storage });
+    const source = await create(memory, 'state_topic original evidence');
     const interpretations = [];
     for (const name of ['one', 'two']) {
-      const result = await writer.edit(async (draft) => {
-        await draft.inspect(source.ref, { version: 'latest', depth: 0 });
-        return draft.write(`state_topic interpreted ${name}`, { sources: [{ ref: source.ref }] });
+      const observed = await writer.inspect(source.ref, { version: 'latest' });
+      const result = await create(writer, `state_topic interpreted ${name}`, {
+        input: inputFrom(host, binding, observed.receipt, `state_topic interpreted ${name}`),
+        sources: [{ ref: source.ref }],
       });
-      interpretations.push(result.value.ref);
+      interpretations.push(result.ref);
     }
-    const current = await memory.edit((draft) =>
-      draft.revise(source.ref, 'state_topic current evidence'),
-    );
+    const current = await revise(memory, source.ref, 'state_topic current evidence');
     const search = await writer.search('interpreted', { depth: 0 });
     assert.deepEqual(search.items, [], 'a source must qualify through its own retrieval path');
     assert.deepEqual(new Set(search.stale), new Set(interpretations));
@@ -135,20 +143,18 @@ for (const adapter of ['memory', 'sqlite']) {
       [current.value.ref],
     );
     assert.deepEqual(stale, new Set(interpretations));
-    assert.equal(
-      (await writer.inspect(interpretations[0], { depth: 0 })).atom.sources[0].ref,
-      source.ref,
-    );
+    assert.equal((await writer.inspect(interpretations[0], {})).atom.sources[0].ref, source.ref);
   });
 
   test(`${adapter}: stale memory is reported, and an explicit Writer edit restores it`, async (t) => {
     const storage = adapter === 'sqlite' ? new SqliteStorage(':memory:') : new api.MemoryStorage();
     if (adapter === 'sqlite') t.after(() => storage.close());
-    const { memory, writer } = fixture({ storage });
-    const source = await memory.write('boundary_topic: old rule');
-    const written = await writer.edit(async (draft) => {
-      await draft.inspect(source.ref, { version: 'latest', depth: 0 });
-      return draft.write('boundary_topic: old interpretation', { sources: [{ ref: source.ref }] });
+    const { memory, writer, host, binding } = fixture({ storage });
+    const source = await create(memory, 'boundary_topic: old rule');
+    const observed = await writer.inspect(source.ref, { version: 'latest' });
+    const written = await create(writer, 'boundary_topic: old interpretation', {
+      input: inputFrom(host, binding, observed.receipt, 'boundary_topic: old interpretation'),
+      sources: [{ ref: source.ref }],
     });
     const before = storage.watermark();
     assert.match(
@@ -156,29 +162,28 @@ for (const adapter of ['memory', 'sqlite']) {
       /old interpretation/,
     );
     assert.equal(storage.watermark(), before, 'read must not commit new revisions');
-    const revised = await memory.edit((draft) =>
-      draft.revise(source.ref, 'boundary_topic: current rule'),
-    );
+    const revised = await revise(memory, source.ref, 'boundary_topic: current rule');
     const read = await writer.read({ query: 'boundary_topic' }, { tokens: 10000 });
     assert.doesNotMatch(read.text, /old interpretation/);
     assert.match(read.text, /current rule/);
     assert.equal(read.diagnostics.derived, 'pending');
-    assert.ok(read.stale.includes(written.value.ref));
+    assert.ok(read.stale.includes(written.ref));
     assert.equal(read.usage.maxModelCalls, 0);
     assert.equal(storage.metaEntries('sdk:cache:derived:').length, 0);
     assert.equal('temporary' in JSON.parse(read.text), false);
-    await writer.edit(async (draft) => {
-      await draft.inspect(revised.value.ref, { version: 'latest', depth: 0 });
-      await draft.revise(written.value.ref, 'boundary_topic: current interpretation', {
-        sources: [{ ref: revised.value.ref }],
-      });
+    const revisedObservation = await writer.inspect(revised.value.ref, { version: 'latest' });
+    await revise(writer, written.ref, 'boundary_topic: current interpretation', {
+      input: inputFrom(
+        host,
+        binding,
+        revisedObservation.receipt,
+        'boundary_topic: current interpretation',
+      ),
+      sources: [{ ref: revised.value.ref }],
     });
     const current = await writer.read({ query: 'boundary_topic' }, { tokens: 10000 });
     assert.match(current.text, /current interpretation/);
     assert.deepEqual(current.stale, []);
-    assert.equal(
-      (await memory.inspect(source.ref, { depth: 0 })).atom.text,
-      'boundary_topic: old rule',
-    );
+    assert.equal((await memory.inspect(source.ref, {})).atom.text, 'boundary_topic: old rule');
   });
 }

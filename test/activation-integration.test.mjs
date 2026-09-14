@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 import { MemoryHost } from '../dist/index.js';
 import { finishRanking, startRanking, collectRanking } from '../dist/client/ranking.js';
 const budget = { maxCandidates: 4000, maxBytes: 4000000, maxAtoms: 100, maxContextTokens: 40000 };
@@ -21,8 +21,8 @@ test('a provider proposes references; injected scores and bodies cannot control 
   };
   const f = fixture({ candidateProvider: provider, activation: { propagation: 0 } });
   t.after(() => f.storage.close());
-  const match = await f.memory.write('needle');
-  const unrelated = await f.memory.write('something different');
+  const match = await create(f.memory, 'needle');
+  const unrelated = await create(f.memory, 'something different');
   refs = [match, unrelated].map((v) => ({
     ...f.storage.metaGet(`sdk:ref:${v.ref}`).target,
     score: v === unrelated ? 1e100 : 0,
@@ -40,8 +40,8 @@ test('a provider proposes references; injected scores and bodies cannot control 
 test('every acquired internal body supplies direct activation, even outside provider seeds', async (t) => {
   const f = fixture();
   t.after(() => f.storage.close());
-  const child = await f.memory.write('needle child');
-  const parent = await f.memory.write({ text: 'unrelated parent', links: { member: child.ref } });
+  const child = await create(f.memory, 'needle child');
+  const parent = await create(f.memory, { text: 'unrelated parent', links: { member: child.ref } });
   const engine = f.host.engine;
   const session = engine.session(f.binding, { budget });
   const revision = engine.get(engine.resolve(parent.ref, session).target, session);
@@ -58,8 +58,8 @@ test('every acquired internal body supplies direct activation, even outside prov
 test('read alone does not record; actual delivery changes only the next frozen evaluation', async (t) => {
   const f = fixture({ activation: { propagation: 0 } });
   t.after(() => f.storage.close());
-  const a = await f.memory.write('needle A');
-  const b = await f.memory.write('needle B');
+  const a = await create(f.memory, 'needle A');
+  const b = await create(f.memory, 'needle B');
   const page = await f.memory.search('needle', { limit: 1, budget });
   assert.equal(f.storage.metaEntries('sdk:use:state:').length, 0);
   const other = page.items[0].ref === a.ref ? b : a;
@@ -76,13 +76,14 @@ test('read alone does not record; actual delivery changes only the next frozen e
 test('warm context and graph corrections agree with cold evaluation within reported bounds', async (t) => {
   const f = fixture();
   t.after(() => f.storage.close());
-  const a = await f.memory.write('alpha');
-  const b = await f.memory.write('beta');
-  const p = await f.memory.write({ text: 'parent', links: { member: [a.ref, b.ref] } });
+  const a = await create(f.memory, 'alpha');
+  const b = await create(f.memory, 'beta');
+  const p = await create(f.memory, { text: 'parent', links: { member: [a.ref, b.ref] } });
   await f.memory.search('alpha', { budget });
-  const revised = await f.memory.edit((d) =>
-    d.revise(p.ref, { text: 'parent', links: { member: b.ref } }),
-  );
+  const revised = await revise(f.memory, p.ref, {
+    text: 'parent',
+    links: { member: b.ref },
+  });
   const warm = await f.memory.search('beta', { budget });
   const coldHost = new MemoryHost({ ...f.host.engine.options, cacheMaxEntries: 0 });
   const cold = await coldHost.connect(f.binding).search('beta', { budget });
@@ -117,7 +118,7 @@ for (const adapter of ['memory', 'sqlite']) {
     const { SqliteStorage } = await import('../dist/adapters/sqlite.js');
     const f = fixture(adapter === 'sqlite' ? { storage: new SqliteStorage(':memory:') } : {});
     t.after(() => f.storage.close());
-    const atom = await f.memory.write('atomic use');
+    const atom = await create(f.memory, 'atomic use');
     const constrained = new MemoryHost({ ...f.host.engine.options, defaults: { maxBytes: 1 } });
     assert.throws(() => constrained.recordUse([atom.ref], f.binding, { eventId: 'retry' }), {
       code: 'BUDGET_EXHAUSTED',
@@ -180,7 +181,7 @@ for (const adapter of ['memory', 'sqlite']) {
           },
     );
     t.after(() => f.storage.close());
-    const item = await f.memory.write('value boundary');
+    const item = await create(f.memory, 'value boundary');
     f.host.recordUse([item.ref], f.binding, { eventId: 'value-state' });
     for (const value of [
       () => {
@@ -221,8 +222,12 @@ test('SQLite reopen, scoped reset, and transitive purge preserve exact use-event
     rmSync(directory, { recursive: true, force: true });
   });
   const f = fixture({ storage });
-  const child = await f.memory.write('child');
-  const parent = await f.writer.write({ text: 'parent', links: { member: child.ref } });
+  const child = await create(f.memory, 'child');
+  const parent = await create(
+    f.writer,
+    { text: 'parent', links: { member: child.ref } },
+    { sources: [{ ref: child.ref }] },
+  );
   f.host.recordUse([child.ref, parent.ref, child.ref], f.binding, { eventId: 'request:0' });
   const childPin = storage.metaGet(`sdk:ref:${child.ref}`).target;
   storage.close();

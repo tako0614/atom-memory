@@ -24,6 +24,7 @@ import type {
   ClientBinding,
   Diagnostics,
   HostOptions,
+  InspectionVia,
   MemoryReceipt,
   MemoryState,
   OperationOptions,
@@ -92,9 +93,16 @@ export interface QueryState {
   trace: Trace;
   scanAfter?: string;
   graph?: GraphState;
+  inspection?: InspectionCursorState;
   root?: PinnedRef;
   blobOffset?: number;
   evaluation?: { evaluatedAt: number; evaluationConverged: boolean; numericErrorL1Upper: number };
+}
+export interface InspectionCursorState {
+  pending: { ref: PinnedRef; via: InspectionVia[]; outgoing: boolean }[];
+  outgoingRevisionIds: string[];
+  incomingAfter?: string;
+  incomingDone: boolean;
 }
 export interface GraphTask {
   ref: PinnedRef;
@@ -199,7 +207,7 @@ export class Engine {
           relations: activation.relations,
         },
         retrieval: this.options.retrieval,
-        version: 8,
+        version: 9,
       }),
     );
   }
@@ -297,10 +305,10 @@ export class Engine {
     return r;
   }
   /** Missing or unauthorized neighbors are opaque; session invalidation still fails. */
-  neighbor(ref: Ref, s: Session, current = false): AtomRevision | undefined {
+  neighbor(ref: Ref, s: Session, current = false, record = true): AtomRevision | undefined {
     this.check(s);
     try {
-      return this.get(ref, s, current);
+      return this.get(ref, s, current, record);
     } catch (error) {
       if (
         error instanceof AtomMemoryError &&
@@ -406,11 +414,16 @@ export class Engine {
       fail('INVALID_REF', 'Tentative reference is outside its active edit');
     return entry;
   }
-  view(r: AtomRevision, s: Session, current = false): AtomView {
+  view(r: AtomRevision, s: Session, current = false, recordReferences = true): AtomView {
     this.record(r, s, current);
     const links: AtomView['links'][number][] = [];
     for (const slot of r.slots) {
-      const target = this.neighbor(slot.target, s, slot.target.kind === 'logical' && current);
+      const target = this.neighbor(
+        slot.target,
+        s,
+        slot.target.kind === 'logical' && current,
+        recordReferences,
+      );
       links.push({
         role: slot.role,
         ...(target ? { ref: this.issue(target, s) } : { unavailable: true as const }),
@@ -421,7 +434,18 @@ export class Engine {
     }
     const sources: AtomView['sources'][number][] = [];
     for (const o of r.origins) {
-      const source = this.get(o.source, s);
+      let source: AtomRevision;
+      try {
+        source = this.get(o.source, s, false, recordReferences);
+      } catch (error) {
+        if (
+          r.state === 'retired' &&
+          error instanceof AtomMemoryError &&
+          ['ACCESS_DENIED', 'REFERENCE_UNAVAILABLE'].includes(error.code)
+        )
+          continue;
+        throw error;
+      }
       sources.push({ ref: this.issue(source, s), start: o.selector.start, end: o.selector.end });
     }
     if (r.provenance.kind === 'source' && !sources.length)

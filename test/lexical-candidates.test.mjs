@@ -8,6 +8,7 @@ import {
   ExactCandidateProvider,
 } from '../dist/index.js';
 import { SqliteStorage } from '../dist/adapters/sqlite.js';
+import { create, retire } from './fixtures.mjs';
 
 for (const adapter of ['memory', 'sqlite'])
   test(`${adapter}: default ingress reaches a known match beyond the finite exact scan`, async () => {
@@ -84,15 +85,15 @@ test('lexical ingress finds late matches within a small scan budget and preserve
       });
     const memory = connect('visible'),
       hidden = connect('hidden');
-    for (let index = 0; index < 12; index++) await memory.write('unrelated source ' + index);
-    const match = await memory.write('NeedleMatch: retained visible fact');
-    await hidden.write('NeedleMatch: SECRET');
+    for (let index = 0; index < 12; index++) await create(memory, 'unrelated source ' + index);
+    const match = await create(memory, 'NeedleMatch: retained visible fact');
+    await create(hidden, 'NeedleMatch: SECRET');
     const read = await memory.read({ query: 'needleMatch' }, { tokens: 12000 });
     assert.match(read.text, /retained visible fact/);
     assert.doesNotMatch(read.text, /SECRET/);
     assert.equal(read.diagnostics.approximate, true);
     assert.ok(read.diagnostics.scanned <= 2);
-    await memory.edit((draft) => draft.retire(match.ref));
+    await retire(memory, match.ref);
     assert.doesNotMatch(
       (await memory.read({ query: 'NeedleMatch' })).text,
       /retained visible fact/,

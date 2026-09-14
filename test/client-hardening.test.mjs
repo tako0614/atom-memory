@@ -2,10 +2,11 @@ import { AtomicStore } from '../dist/core/store.js';
 import { content, membership } from '../dist/core/helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fixture } from './fixtures.mjs';
+import { fixture, create, revise, retire } from './fixtures.mjs';
 import {
   MemoryHost,
   LocalAuthority,
@@ -26,17 +27,12 @@ test('A03/A34 a lost commit acknowledgment retries the exact operation without r
     if (++attempts === 1) throw new RetryableCommitError('acknowledgment lost');
     return result;
   };
-  const a = await m.write('one event');
+  const a = await create(m, 'one event');
   assert.equal(attempts, 2);
   assert.equal((await m.search('one event')).items.length, 1);
   assert.equal(host.engine.storage.watermark(), 1);
-  let callbacks = 0;
   attempts = 0;
-  await m.edit(async (d) => {
-    callbacks++;
-    return d.revise(a.ref, 'updated');
-  });
-  assert.equal(callbacks, 1);
+  await revise(m, a.ref, 'updated');
   assert.equal(attempts, 2);
   assert.equal(host.engine.storage.watermark(), 2);
 });
@@ -87,33 +83,37 @@ test('A35 legacy SQLite data and memberships keep exact IDs/revisions/origins ac
   let memory = host.connect(binding);
   const ref = host.reference(pin('old-parent', 'parent-1'), binding);
   assert.ok((await memory.search('authentication')).items.length);
-  assert.ok(
-    (await memory.inspect(ref, { depth: 2, limit: 100 })).items.some(
-      (i) => i.text === 'legacy authentication',
-    ),
+  const legacyGraph = await memory.inspect(ref, { limit: 100 });
+  const relation = legacyGraph.neighbors.find((neighbor) =>
+    neighbor.via.some((via) => via.direction === 'incoming' && via.role === 'group'),
   );
+  assert.ok(relation, 'the inbound legacy membership relation remains inspectable');
+  const member = relation.atom.links.find((link) => link.role === 'member');
+  assert.equal((await memory.inspect(member.ref)).atom.text, 'legacy authentication');
   assert.deepEqual(storage.history(undefined, 100), before);
-  const blob = await host.ingestBlob(Buffer.from('blob 日本語 content'), 'text/plain', binding);
+  const blobWrite = await host.ingestBlob(
+    Buffer.from('blob 日本語 content'),
+    'text/plain',
+    binding,
+  );
+  const blob = Object.values(blobWrite.changes)[0];
   storage.close();
   storage = new SqliteStorage(path);
   t.after(() => storage.close());
   host = new MemoryHost({ storage, authority });
   memory = host.connect(binding);
-  assert.equal((await memory.inspect(ref, { depth: 0 })).atom.text, 'legacy group');
+  assert.equal((await memory.inspect(ref, {})).atom.text, 'legacy group');
   assert.equal(
     (await memory.inspect(blob.ref, { range: { bytes: 100 } })).range.text,
     'blob 日本語 content',
   );
-  await memory.edit((d) => d.revise(ref, 'new arrangement'));
+  await revise(memory, ref, 'new arrangement');
   storage.close();
   storage = new SqliteStorage(path);
   host = new MemoryHost({ storage, authority });
   memory = host.connect(binding);
-  assert.equal((await memory.inspect(ref, { depth: 0 })).atom.text, 'legacy group');
-  assert.equal(
-    (await memory.inspect(ref, { version: 'latest', depth: 0 })).atom.text,
-    'new arrangement',
-  );
+  assert.equal((await memory.inspect(ref, {})).atom.text, 'legacy group');
+  assert.equal((await memory.inspect(ref, { version: 'latest' })).atom.text, 'new arrangement');
 });
 
 test('A08/A32 index preparation advances and index changes expire search cursors', async () => {
@@ -125,7 +125,7 @@ test('A08/A32 index preparation advances and index changes expire search cursors
     embed: async () => [[0, 0]],
   };
   const { host, memory: m, binding } = fixture({ embedding });
-  for (let i = 0; i < 3; i++) await m.write(`search term ${i}`);
+  for (let i = 0; i < 3; i++) await create(m, `search term ${i}`);
   const old = await m.search('search term', { limit: 1 });
   let page = await host.prepareIndex(binding, { limit: 1 });
   let indexed = page.indexed;
@@ -142,7 +142,7 @@ test('A08/A32 index preparation advances and index changes expire search cursors
 
 test('A07/A20/A32 bounded ranking freezes its candidates before paginating without reranking', async () => {
   const { memory: m } = fixture({ retrieval: { maxScan: 5 } });
-  for (let i = 0; i < 14; i++) await m.write(`candidate ${i}`);
+  for (let i = 0; i < 14; i++) await create(m, `candidate ${i}`);
   let page = await m.search('candidate', { limit: 2 });
   const seen = new Set(page.items.map((i) => i.ref));
   let steps = 0;
@@ -178,7 +178,7 @@ test('A31 vector cache is partitioned by authorization and cancellation reaches 
     },
   };
   const { host, binding, memory: m, authority } = fixture({ embedding });
-  await m.write('cache target');
+  await create(m, 'cache target');
   await m.search('cache target');
   await m.search('cache target');
   assert.equal(calls, 1);
@@ -202,8 +202,8 @@ test('A31 vector cache is partitioned by authorization and cancellation reaches 
 
 test('A31 purge invalidates issued refs, summaries and cached representation routes', async () => {
   const { host, memory: m, writer, binding } = fixture();
-  const a = await m.write('private erase');
-  await writer.write('private summary', { sources: [{ ref: a.ref }] });
+  const a = await create(m, 'private erase');
+  await create(writer, 'private summary', { sources: [{ ref: a.ref }] });
   const trace = await m.read({ query: 'private' });
   const target = host.engine.storage.metaGet(`sdk:ref:${a.ref}`).target;
   host.purge(target.atomId);
@@ -214,42 +214,50 @@ test('A31 purge invalidates issued refs, summaries and cached representation rou
 
 test('A19 stale required generated conditions cannot enter as unvalidated companions', async () => {
   const { memory: m, writer } = fixture();
-  const source = await m.write('approval is granted');
-  const condition = await writer.write('approval granted', { sources: [{ ref: source.ref }] });
-  const claim = await m.write({
+  const source = await create(m, 'approval is granted');
+  const condition = await create(writer, 'approval granted', { sources: [{ ref: source.ref }] });
+  const claim = await create(m, {
     text: 'permission allowed',
     links: { condition: { ref: condition.ref, required: true } },
   });
-  await m.edit((d) => d.revise(source.ref, 'approval is denied'));
+  await revise(m, source.ref, 'approval is denied');
   const recalled = await m.read({ query: 'permission allowed' }, { tokens: 10000 });
   assert.ok(!recalled.items.some((i) => i.ref === claim.ref));
   assert.doesNotMatch(recalled.text, /approval granted/);
 });
 
 test('historical analysis of old generated inputs preserves provenance without demanding current heads', async () => {
-  const { memory: m, writer } = fixture();
-  const a = await m.write('historical original');
-  const generated = await writer.write('historical explanation', { sources: [{ ref: a.ref }] });
-  await m.edit((d) => d.revise(a.ref, 'current source'));
-  const analysis = await writer.edit(
-    async (draft) => {
-      await draft.inspect(generated.ref, { depth: 0 });
-      return draft.write('historical analysis of that explanation');
+  const { memory: m, writer, host, binding } = fixture();
+  const a = await create(m, 'historical original');
+  const generated = await create(writer, 'historical explanation', { sources: [{ ref: a.ref }] });
+  await revise(m, a.ref, 'current source');
+  const observed = await writer.inspect(generated.ref);
+  const historicalInput = host.observe(
+    {
+      presentations: [{ receipt: observed.receipt }],
+      basis: 'historical',
+      payloadDigest: createHash('sha256')
+        .update('historical analysis of that explanation')
+        .digest('hex'),
     },
-    { basis: 'historical' },
+    { ...binding, actor: { type: 'agent' } },
   );
+  const analysis = await create(writer, 'historical analysis of that explanation', {
+    input: historicalInput,
+  });
   const read = await m.read({ query: 'historical analysis' }, { tokens: 10000 });
-  assert.ok(read.items.some((i) => i.ref === analysis.value.ref));
+  assert.ok(read.items.some((i) => i.ref === analysis.ref));
 });
 
 test('retiring generated Atoms preserves links and citations while host controls provenance', async () => {
   const { memory: m, writer } = fixture();
-  const a = await m.write('retirement source');
-  const summary = await writer.write(
+  const a = await create(m, 'retirement source');
+  const summary = await create(
+    writer,
     { text: 'retirement summary', links: { 資料: a.ref } },
     { sources: [{ ref: a.ref }] },
   );
-  const result = await m.edit((d) => d.retire(summary.ref));
+  const result = await retire(m, summary.ref);
   const detail = await m.inspect(result.value.ref);
   assert.equal(detail.atom.state, 'retired');
   assert.equal(detail.atom.links[0].ref, a.ref);
@@ -266,19 +274,24 @@ test('a host with multiple read policies can write an independent input without 
     canIngestSource: true,
   });
   const memory = host.connect({ ...binding, auth });
-  const a = await memory.write('ordinary input');
+  const a = await create(memory, 'ordinary input');
   assert.equal((await memory.inspect(a.ref)).atom.text, 'ordinary input');
 });
 
 test('range-dependent edits require the adapter query-guard capability before publishing', async () => {
-  const { host, memory, writer } = fixture();
-  await memory.write('guarded source');
+  const { host, memory, writer, binding } = fixture();
+  await create(memory, 'guarded source');
+  const observed = await writer.search('guarded');
+  const input = host.observe(
+    {
+      watches: [observed.receipt],
+      payloadDigest: createHash('sha256').update('guarded explanation').digest('hex'),
+    },
+    { ...binding, actor: { type: 'agent' } },
+  );
   host.engine.storage.capabilities = { snapshot: true, atomicBatch: true, queryGuards: false };
   await assert.rejects(
-    writer.edit(async (draft) => {
-      await draft.search('guarded');
-      await draft.write('guarded explanation');
-    }),
+    create(writer, 'guarded explanation', { input }),
     error('GUARD_VALIDATION_UNAVAILABLE'),
   );
   assert.equal((await memory.search('explanation')).items.length, 0);

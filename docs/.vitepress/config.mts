@@ -42,7 +42,7 @@ export default defineConfig({
           { text: 'search · 検索', link: '/api#search' },
           { text: 'inspect · 参照', link: '/api#inspect' },
           { text: 'read · 記憶の取得', link: '/api#read' },
-          { text: 'edit · 編集', link: '/api#edit' },
+          { text: 'write · 保存・変更', link: '/api#write' },
           { text: 'TypeScript', link: '/contracts' },
         ],
       },
@@ -61,7 +61,7 @@ export default defineConfig({
         text: '移行',
         collapsed: true,
         items: [
-          { text: 'v0.7 への移行', link: '/migration' },
+          { text: 'v0.8 → v0.9.0 移行', link: '/migration' },
           { text: '歴史資料：設計 v1.0', link: '/migration-architecture' },
         ],
       },

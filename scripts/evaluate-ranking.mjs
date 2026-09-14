@@ -1,3 +1,4 @@
+import { create } from '../test/fixtures.mjs';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { MemoryHost, MemoryStorage, LocalAuthority, utf8Tokenizer } from '../dist/index.js';
@@ -32,11 +33,11 @@ for (const variant of ['correct', 'none', 'damaged']) {
   });
   const binding = { auth, writePolicy: 'p', actor: { type: 'human' } };
   const memory = host.connect(binding);
-  const prerequisite = await memory.write('administrator signature required');
-  const unrelated = await memory.write('paint the meeting room');
+  const prerequisite = await create(memory, 'administrator signature required');
+  const unrelated = await create(memory, 'paint the meeting room');
   const target = variant === 'damaged' ? unrelated : prerequisite;
   for (const text of ['launch procedure', 'launch decision'])
-    await memory.write({ text, links: { condition: target.ref } });
+    await create(memory, { text, links: { condition: target.ref } });
   const budget = { maxCandidates: 4000, maxBytes: 4000000, maxAtoms: 100, maxContextTokens: 40000 };
   await host.prepareIndex(binding, { budget });
   const heapBefore = process.memoryUsage().heapUsed,
@@ -78,7 +79,7 @@ const record = {
 };
 if (process.argv.includes('--record'))
   writeFileSync(
-    new URL('../validation/ranking-v0.5.0.json', import.meta.url),
+    new URL('../validation/ranking-v0.9.0.json', import.meta.url),
     JSON.stringify(record, null, 2) + '\n',
   );
 console.log(JSON.stringify(record, null, 2));

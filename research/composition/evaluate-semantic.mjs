@@ -1,3 +1,4 @@
+import { create, revise } from '../../test/fixtures.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
@@ -39,19 +40,20 @@ try {
   });
   // Corpus construction has no access to the future query or evaluation answer.
   for (const record of records()) {
-    const source = await f.memory.write(record.source),
+    const source = await create(f.memory, record.source),
       boundary = Buffer.byteLength(record.claim);
-    const condition = await extractor.write(record.condition, {
+    const condition = await create(extractor, record.condition, {
       sources: [{ ref: source.ref, start: boundary, end: Buffer.byteLength(record.source) }],
     });
-    const claim = await extractor.write(
+    const claim = await create(
+      extractor,
       { text: record.claim, links: { condition: { ref: condition.ref, required: true } } },
       { sources: [{ ref: source.ref, start: 0, end: boundary }] },
     );
     const history = [];
-    for (const text of record.history) history.push(await f.memory.write(text));
+    for (const text of record.history) history.push(await create(f.memory, text));
     const members = [source, claim, condition, ...history];
-    const summary = await f.memory.write({
+    const summary = await create(f.memory, {
       text: record.summary,
       links: { member: members.map((x) => x.ref) },
     });
@@ -66,12 +68,10 @@ try {
       ],
     });
   }
-  await f.memory.edit((d) =>
-    d.revise(f.root.ref, {
-      text: 'community collection',
-      links: { member: summaries.map((x) => x.ref) },
-    }),
-  );
+  await revise(f.memory, f.root.ref, {
+    text: 'community collection',
+    links: { member: summaries.map((x) => x.ref) },
+  });
   f.regions = [...regions, [f.atomId(f.root.ref), ...regions.flat()]];
   await prepare(f.host, f.binding);
   const results = [];
@@ -133,7 +133,7 @@ try {
           prepareMs = performance.now() - start;
         const reader = createResearchRead(f, graph, {
           prepared,
-          maxWork: 2_000_000,
+          maxWork: 2000000,
           tokens: 8192,
           limit: 8,
           coverage: {
