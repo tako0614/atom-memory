@@ -1,0 +1,92 @@
+{
+  "at": "2026-09-14T00:21:05.143Z",
+  "origin": "https://atom-memory.takos.jp",
+  "workerVersion": "21946ccc-cd2d-40bf-86d7-d2ce8df293b1",
+  "manifestSha256": "b097eb634754affa7b8761d22371dbe57cc31000990f8628d992a081b028d72e",
+  "manifestMatches": true,
+  "version": "0.9.0",
+  "pages": [
+    {
+      "url": "https://atom-memory.takos.jp/acceptance",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/adapters",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/api",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/composition",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/concepts",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/contracts",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/design-review",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/examples",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/guide",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/history",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/migration-architecture",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/migration-v07",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/migration",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/ranking",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/release",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/runtime",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/setup",
+      "status": 200
+    },
+    {
+      "url": "https://atom-memory.takos.jp/specification",
+      "status": 200
+    }
+  ],
+  "apiTerms": [
+    "local",
+    "changes",
+    "neighbors",
+    "InputToken"
+  ]
+}

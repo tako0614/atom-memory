@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 const root = resolve(import.meta.dirname, '..');
 const tarball = process.argv[2];
-if (!tarball) throw Error('Pass the local npm pack tarball path');
+if (!tarball) throw Error('Pass a local npm tarball path or atom-memory@version');
+const packageInput = tarball.startsWith('atom-memory@') ? tarball : resolve(tarball);
 if (!process.env.ATOM_V08_PACKAGE)
   throw Error('Set ATOM_V08_PACKAGE for the consumer migration gate');
 const directory = mkdtempSync(join(tmpdir(), 'atom-v09-consumer-'));
@@ -15,7 +16,16 @@ const run = (command, args) => {
 };
 try {
   writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', resolve(tarball)]);
+  run('npm', [
+    'install',
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+    packageInput,
+    '--cache',
+    join(directory, 'npm-cache'),
+    '--prefer-online',
+  ]);
   mkdirSync(join(directory, 'test'));
   for (const file of ['fixtures.mjs', 'v08.test.mjs', 'v08-package.test.mjs', 'v09.test.mjs']) {
     const text = readFileSync(join(root, 'test', file), 'utf8')
@@ -77,7 +87,8 @@ function dispatch(host: MemoryHost, change: MemoryChange, manifest: ReceiptManif
     run(process.execPath, [join(directory, 'node_modules/atom-memory/examples', example)]);
   console.log(
     JSON.stringify({
-      tarball: resolve(tarball),
+      packageInput,
+      cache: 'empty',
       node: process.version,
       testExecutions: Number(output.match(/# tests (\d+)/)?.[1]),
       failures: Number(output.match(/# fail (\d+)/)?.[1]),
