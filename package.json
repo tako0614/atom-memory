@@ -59,7 +59,9 @@
     "example:writer": "npm run build && node examples/writer.mjs",
     "example:history": "npm run build && node examples/history-writer.mjs",
     "evaluate:ranking": "npm run build && node scripts/evaluate-ranking.mjs",
-    "check:research": "node --test research/composition/*.test.mjs",
+    "check:research": "node --test research/composition/*.test.mjs research/v010/*.test.mjs",
+    "check:v010": "npm run build && node --test test/evaluation-time.test.mjs research/v010/*.test.mjs",
+    "evaluate:v010": "npm run build && node research/v010/evaluate.mjs",
     "check:v08": "npm run build && node --test test/v08*.test.mjs && node scripts/evaluate-v08.mjs",
     "check:v09": "npm run build && node --test test/v09.test.mjs"
   },

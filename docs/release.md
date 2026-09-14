@@ -1,5 +1,7 @@
 # リリース
 
+0.10候補の活性に基づく関係探索は、[比較試験](/acquisition)まで実装しました。今回の方式は採用条件を満たさず、安定版は0.9.0を維持しています。研究コードの追加をnpm 0.10公開と扱いません。
+
 v0.9.0では、公開書き込みAPIを宣言的な `write({ changes })` batchへ統一しました。`create`、`revise`、`retire` を同じatomic planへまとめ、batch-local link、host-issued InputToken、idempotency replay、retireのraw body保持を扱います。`inspect` は一-hopの隣接を `direction`、`roles`、`limit`、cursorで取得し、`read` / `search` のdepthとは分離しています。
 
 現在の意味の正本は[規範仕様](/specification)、v0.8からの置換手順は[移行](/migration)、型の対応は[TypeScript](/contracts)です。npmのversion、integrity、対応commit、公開状態は生成される[公開manifest](/release.json)と検証記録で確認し、このページから公開済みやデプロイ済みとは推測しません。

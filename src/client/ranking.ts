@@ -152,6 +152,7 @@ export function finishRanking(
   s: Session,
   state: RankingState,
   signals: readonly RetrievalSignal[],
+  options?: { evaluatedAt?: number },
 ): {
   candidates: Candidate[];
   evaluation: NonNullable<import('./engine.js').QueryState['evaluation']>;
@@ -169,11 +170,13 @@ export function finishRanking(
       { from: to, to: from, weight: weights.reverse },
     ];
   });
-  // Freeze usage only after content-based acquisition and freshness validation.
+  // Ordinary retrieval freezes usage here, after acquisition and validation.
+  // Research callers may supply a fixed time while holding use state immutable.
   const usage = snapshotUse(
     engine,
     s,
     state.nodes.map((c) => c.revision),
+    options?.evaluatedAt,
   );
   const seeds = state.nodes.map((c, i) => {
     const body = engine.indexedBody(c.revision);

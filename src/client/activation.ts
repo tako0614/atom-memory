@@ -332,17 +332,20 @@ export function resetUse(engine: Engine, binding: ClientBinding): void {
 /**
  * Snapshot finite, already-acquired revisions at one wall-clock instant. The
  * returned boosts are aligned with `nodes`; no history or corpus scan occurs.
+ * An explicit time is an internal evaluation seam, not a historical state
+ * snapshot. Callers must hold the use state fixed; newer state is rejected.
  */
 export function snapshotUse(
   engine: Engine,
   s: Session,
   nodes: readonly AtomRevision[],
+  evaluatedAt?: number,
 ): { at: number; boosts: number[] } {
   if (!Array.isArray(nodes)) fail('INVALID_INPUT');
   const policies = engine.policies(s.binding, s.principal);
   return engine.storage.transaction(() => {
     const config = activationOptions(engine.options.activation);
-    const observedAt = Date.now();
+    const observedAt = evaluatedAt ?? Date.now();
     if (!timestamp(observedAt)) fail('INVALID_INPUT', 'Invalid availability evaluation time');
     engine.check(s);
     let at = observedAt;
@@ -358,6 +361,8 @@ export function snapshotUse(
       checkStateScope(current, s.principal.subject, node.policyId, node.revisionId);
       checkModel(current, config.model);
       const state = previousState(current);
+      if (evaluatedAt !== undefined && (stateUpdatedAt(current) ?? 0) > evaluatedAt)
+        invalidState('Use state is newer than the fixed evaluation time');
       at = Math.max(at, stateUpdatedAt(current) ?? at);
       const metadataBytes = Buffer.byteLength(
         canonical(current === undefined ? null : current.record),

@@ -53,6 +53,7 @@ export default defineConfig({
           { text: 'アーキテクチャ', link: '/specification' },
           { text: '設計レビューと改善方針', link: '/design-review' },
           { text: '合成評価の研究', link: '/composition' },
+          { text: '活性による探索の研究', link: '/acquisition' },
           { text: '受入条件と検証', link: '/acceptance' },
           { text: 'リリース', link: '/release' },
         ],

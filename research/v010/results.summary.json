@@ -1,0 +1,279 @@
+{
+  "sourceSha256": {
+    "collector.mjs": "eeae77b0f9381fbdd58fdc9cb1a9b0026797ec94e147ad3c4d1162610dd794bd",
+    "harness.mjs": "b5a5c8dfb25383f27bf4ff235de443b6c28a45833bd3e881b7905c7e153cdf17",
+    "fixtures.mjs": "d2723e157f36eb5b898d29f4f86a51e783b7fc7803018f2d84c2167acbf61660",
+    "setup.mjs": "3d81c158f6f2bbe6863b34596975b890902e0a58fe2b57667965341522b59046",
+    "reference.mjs": "42592564cc6584506075377d3954be37245ce6169eee94c83597c82c28a3bf0c",
+    "evaluate.mjs": "a8c9b088f0e06fb6a140a378d93757c8954ba7d1f4a117c070ebb1b7aabe71e0"
+  },
+  "kind": "v010 acquisition research; fixed structural fixtures, not LLM answer quality",
+  "generatedAt": "2026-09-14T08:40:42.592Z",
+  "node": "v26.1.0",
+  "repeat": 3,
+  "modes": [
+    "candidate-only",
+    "fifo-v09",
+    "priority-only",
+    "fair-only",
+    "fair-evaluated",
+    "active-fair"
+  ],
+  "preparation": [
+    {
+      "fixture": "relation-only-2-hop",
+      "totalMs": 5.551363000000002,
+      "indexMs": 1.937429999999999,
+      "metadataBytes": 3027,
+      "corpusBytes": 1339,
+      "atoms": 3
+    },
+    {
+      "fixture": "relation-only-3-hop",
+      "totalMs": 1.10043799999994,
+      "indexMs": 0.4640749999998661,
+      "metadataBytes": 3732,
+      "corpusBytes": 1806,
+      "atoms": 4
+    },
+    {
+      "fixture": "relation-only-4-hop",
+      "totalMs": 1.1884949999998753,
+      "indexMs": 0.4836649999997462,
+      "metadataBytes": 4457,
+      "corpusBytes": 2278,
+      "atoms": 5
+    },
+    {
+      "fixture": "hub-low-matching-bridge",
+      "totalMs": 5.244415999999546,
+      "indexMs": 3.4542559999999867,
+      "metadataBytes": 17035,
+      "corpusBytes": 10742,
+      "atoms": 23
+    },
+    {
+      "fixture": "shared-mandatory-condition",
+      "totalMs": 0.8926219999993918,
+      "indexMs": 0.3654480000004696,
+      "metadataBytes": 3769,
+      "corpusBytes": 1775,
+      "atoms": 4
+    },
+    {
+      "fixture": "popular-topic-to-novel-context",
+      "totalMs": 4.359875000000102,
+      "indexMs": 0.4214879999999539,
+      "metadataBytes": 9740,
+      "corpusBytes": 1781,
+      "atoms": 4
+    },
+    {
+      "fixture": "cycles-and-multiple-paths",
+      "totalMs": 1.0781409999999596,
+      "indexMs": 0.48683400000118127,
+      "metadataBytes": 4427,
+      "corpusBytes": 2691,
+      "atoms": 5
+    },
+    {
+      "fixture": "graph-growth-normalization",
+      "totalMs": 1.0143260000004375,
+      "indexMs": 0.4558130000004894,
+      "metadataBytes": 4530,
+      "corpusBytes": 2342,
+      "atoms": 5
+    },
+    {
+      "fixture": "small-direct-answer-control",
+      "totalMs": 0.686545999998998,
+      "indexMs": 0.2531859999999142,
+      "metadataBytes": 2373,
+      "corpusBytes": 784,
+      "atoms": 2
+    },
+    {
+      "fixture": "candidate-only-multi-control",
+      "totalMs": 0.6908300000031886,
+      "indexMs": 0.24609100000088802,
+      "metadataBytes": 3135,
+      "corpusBytes": 1169,
+      "atoms": 3
+    },
+    {
+      "fixture": "long-then-short-path",
+      "totalMs": 0.9421890000012354,
+      "indexMs": 0.4316759999965143,
+      "metadataBytes": 4423,
+      "corpusBytes": 2363,
+      "atoms": 5
+    },
+    {
+      "fixture": "zero-reverse-incoming-direct-seed",
+      "totalMs": 0.6619969999992463,
+      "indexMs": 0.27082700000028126,
+      "metadataBytes": 3142,
+      "corpusBytes": 1288,
+      "atoms": 3
+    },
+    {
+      "fixture": "oversized-bridge-compact-evidence",
+      "totalMs": 1.2327000000004773,
+      "indexMs": 0.5476310000012745,
+      "metadataBytes": 3833,
+      "corpusBytes": 2419,
+      "atoms": 4
+    },
+    {
+      "fixture": "order-permutation-a",
+      "totalMs": 1.1302280000018072,
+      "indexMs": 0.5006009999997332,
+      "metadataBytes": 4481,
+      "corpusBytes": 2461,
+      "atoms": 5
+    },
+    {
+      "fixture": "order-permutation-b",
+      "totalMs": 1.1484100000016042,
+      "indexMs": 0.5076609999996435,
+      "metadataBytes": 4481,
+      "corpusBytes": 2461,
+      "atoms": 5
+    }
+  ],
+  "summary": {
+    "memory": {
+      "candidate-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 3,
+        "qualityAcquiredEvidence": 2,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 1056,
+        "qualityWallMs": 11.355414999997151
+      },
+      "fifo-v09": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 66576,
+        "qualityWallMs": 37.07299199999855
+      },
+      "priority-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 322477,
+        "qualityWallMs": 77.46916999999839
+      },
+      "fair-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 73184,
+        "qualityWallMs": 51.250847999999664
+      },
+      "fair-evaluated": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 313898,
+        "qualityWallMs": 77.26486700000271
+      },
+      "active-fair": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 314598,
+        "qualityWallMs": 78.00180200000057
+      }
+    },
+    "sqlite": {
+      "candidate-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 3,
+        "qualityAcquiredEvidence": 2,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 1056,
+        "qualityWallMs": 21.78148299999532
+      },
+      "fifo-v09": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 66576,
+        "qualityWallMs": 85.67592799999682
+      },
+      "priority-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 322477,
+        "qualityWallMs": 164.0993819999877
+      },
+      "fair-only": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 73184,
+        "qualityWallMs": 113.63370899999774
+      },
+      "fair-evaluated": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 313898,
+        "qualityWallMs": 160.49475200000575
+      },
+      "active-fair": {
+        "cases": 150,
+        "returned": 150,
+        "qualityCases": 15,
+        "qualityCompleteEvidence": 15,
+        "qualityAcquiredEvidence": 15,
+        "conditionOmissions": 0,
+        "qualityEvaluationWork": 314598,
+        "qualityWallMs": 170.43765899999846
+      }
+    }
+  },
+  "limitations": [
+    "Fixed 4D vectors and fixed candidate provider; ANN recall is not measured.",
+    "Read graph and use state are immutable across each synchronous measured retrieval.",
+    "Oracle verification and cloning are outside retrieval wall time; initial index preparation is reported separately.",
+    "Cold independent engines; within-traversal provisional values are reused, but cross-request warm latency is not measured.",
+    "Short fixture timings include transaction and validation work, but are not a general latency benchmark."
+  ],
+  "rows": 1800,
+  "raw": "research/v010/results.json.gz"
+}

@@ -1,0 +1,12 @@
+{
+  "status": "not-adopted",
+  "productionVersion": "0.9.0",
+  "candidate": "active-fair",
+  "runs": 5400,
+  "reason": [
+    "No displayed-evidence improvement over fair-evaluated with equal provisional evaluation.",
+    "No displayed-evidence improvement over cheaper fair-only; ten losses per adapter under tested budgets.",
+    "Concurrent use-state snapshot and cross-request warm performance remain outside this prototype."
+  ],
+  "results": "results.json.gz"
+}
