@@ -1,0 +1,153 @@
+{
+  "sourceCommit": "2b4b3caa9597a5e4ab6c872605f0f85b9feb3a1b",
+  "decision": "Do not adopt the experimental collector; retain production/npm 0.9.0.",
+  "tests": {
+    "node26": {
+      "library": 249,
+      "research": 31
+    },
+    "node2213": 280,
+    "docsExamples": 14,
+    "documentedOutputs": 6,
+    "format": "passed",
+    "sakanaCheck": "passed"
+  },
+  "comparison": {
+    "variants": 6,
+    "fixtures": 15,
+    "budgetsPerFixture": 10,
+    "adapters": ["memory", "sqlite"],
+    "repeats": 3,
+    "runs": 5400,
+    "artifact": "research/v010/results.json.gz",
+    "artifactSha256": "be7ee2b16807e6aa5a03ab0e74a5eb65a866242ae19f15f455503a8ec8c09dd9"
+  },
+  "ci": {
+    "url": "https://github.com/tako0614/atom-memory/actions/runs/34824045460",
+    "conclusion": "success"
+  },
+  "npm": {
+    "latestConfirmed": "0.9.0",
+    "newVersionPublished": false
+  },
+  "docs": {
+    "url": "https://atom-memory.takos.jp/acquisition",
+    "deploymentVersion": "923ae904-75c3-4439-9f64-780c1e7b87f4",
+    "sourceCommit": "2b4b3caa9597a5e4ab6c872605f0f85b9feb3a1b",
+    "exactReadback": [
+      {
+        "path": "/acceptance",
+        "status": 200,
+        "sha256": "19398571a3b53481eb9f2aa0071755b7a43102745a8497f046aefb4a682f295a"
+      },
+      {
+        "path": "/acquisition",
+        "status": 200,
+        "sha256": "e1d0514e5e5018d0ff1400d82614ccc84413dce98c2c3caae425af0d5527efc9"
+      },
+      {
+        "path": "/adapters",
+        "status": 200,
+        "sha256": "1123b1b672bc7fcf9310e6e6493454c2c4f0ea2e1b113e2e9bf0b850ad163a9b"
+      },
+      {
+        "path": "/api",
+        "status": 200,
+        "sha256": "603b4b8d9c34fa00f26be44e8d27f14d6fe0ca9b367b4e9cdd23b997f6e5957d"
+      },
+      {
+        "path": "/composition",
+        "status": 200,
+        "sha256": "17099a68c41132de6bb66d3a2a68d330c7eb30dfb244729ebfab7cde30d2b74d"
+      },
+      {
+        "path": "/concepts",
+        "status": 200,
+        "sha256": "6febf50f6fe411159c19b2da2483285a4eae9ea3c45bbb3fcfe2509c16b4db03"
+      },
+      {
+        "path": "/contracts",
+        "status": 200,
+        "sha256": "875c09f534de515eb2cb4fc8911db96708353d7bc7f4d26672fd2b6f7f1f132d"
+      },
+      {
+        "path": "/design-review",
+        "status": 200,
+        "sha256": "1625ea74fa562a89cda7cadbd55f12a872af02341a44a7d54c5780f705520dd6"
+      },
+      {
+        "path": "/examples",
+        "status": 200,
+        "sha256": "8dd89f719834f59679337a53c80c196ed1fab9191fb574167d4d6f9e9eff4d73"
+      },
+      {
+        "path": "/guide",
+        "status": 200,
+        "sha256": "be8ac2822f41bcfbb50fd3c334b24b83514cc5f03f69dda30897d804f3016370"
+      },
+      {
+        "path": "/history",
+        "status": 200,
+        "sha256": "9e4c59c7d63907e0815437ccd88d7fa69b353e2bf4ae04f4e40038eb1adcc554"
+      },
+      {
+        "path": "/",
+        "status": 200,
+        "sha256": "64887f622ae220bfe5026b83aca6f9d8f23d689c0b55b2e4786e100ca47e7693"
+      },
+      {
+        "path": "/migration-architecture",
+        "status": 200,
+        "sha256": "b1d34464483ecd78ad706d902b36b7909b28cab5bd2a31dbe5e6f8185b794307"
+      },
+      {
+        "path": "/migration-v07",
+        "status": 200,
+        "sha256": "b95e86970aa968084acd816d8fe76bf01587e711925b5d0de085693742aaa8dd"
+      },
+      {
+        "path": "/migration",
+        "status": 200,
+        "sha256": "4539dd485f404d323df12b8920c5ff922078976a88e223796bb0915dd9e78be2"
+      },
+      {
+        "path": "/ranking",
+        "status": 200,
+        "sha256": "f61e4e279b60c4d25313eafdc54d69d5e89620633a04578975af6a106c0192f9"
+      },
+      {
+        "path": "/release",
+        "status": 200,
+        "sha256": "f053dba5fc4ccc51dd5677f3e5c0228f74694985bafa793332779e6f583e10a0"
+      },
+      {
+        "path": "/runtime",
+        "status": 200,
+        "sha256": "e777c7e3b821c378cf4929a17917b4147286cc19d2a925c904d6a08dac21c3d4"
+      },
+      {
+        "path": "/setup",
+        "status": 200,
+        "sha256": "958c8a9117e2200ca8378292458b98739949adca3795b05dcc7c7630707b3fbc"
+      },
+      {
+        "path": "/specification",
+        "status": 200,
+        "sha256": "79b707ac47cbb16cfc34d8992f61138d050e0fcd327d8d108d8b0c455fcd1557"
+      },
+      {
+        "path": "/release.json",
+        "status": 200,
+        "sha256": "b097eb634754affa7b8761d22371dbe57cc31000990f8628d992a081b028d72e"
+      }
+    ]
+  },
+  "realModel": {
+    "paidCalls": 0,
+    "qualityEvaluation": false
+  },
+  "productionBot": {
+    "deployed": false,
+    "reason": "Research collector was not adopted; npm dependency and production default remain 0.9.0."
+  }
+}
