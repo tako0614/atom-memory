@@ -5,6 +5,10 @@ export default defineConfig({
   description: 'メモと関係を保存し、現在の文脈から記憶を読み出す TypeScript ライブラリ。',
   cleanUrls: true,
   head: [
+    [
+      'meta',
+      { name: 'adring-site-verification', content: 'adring_vrf_HqFENosQ8aEIxwuC13n9gEYaqP_JNAVD' },
+    ],
     ['link', { rel: 'icon', href: 'data:,' }],
     ['meta', { name: 'theme-color', content: '#ffffff' }],
   ],
